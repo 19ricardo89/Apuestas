@@ -166,7 +166,7 @@
       'Plus', 'Trash2', 'Users', 'Save', 'History', 'PieChart', 'TrendingUp',
       'CheckCircle', 'XCircle', 'Clock', 'Activity', 'Target', 'Zap',
       'BarChart2', 'Menu', 'ChevronRight', 'AlertCircle', 'RefreshCw', 'Check', 'X', 'Calendar', 'Layers', 'Trophy', 'Flame',
-      'Filter', 'Tag', 'Camera', 'Sparkles', 'Brain', 'Upload', 'Scan', 'TrendingDown', 'UserPlus'
+      'Filter', 'Tag', 'Camera', 'Sparkles', 'Brain', 'Upload', 'Scan', 'TrendingDown', 'UserPlus', 'Edit'
     ];
 
     const Icons = IconList.reduce((acc, name) => {
@@ -178,7 +178,7 @@
       Plus, Trash2, Users, Save, History, PieChart, TrendingUp,
       CheckCircle, XCircle, Clock, Activity, Target, Zap,
       BarChart2, Menu, ChevronRight, AlertCircle, RefreshCw, Check, X, Calendar, Layers, Trophy, Flame,
-      Filter, Tag, Camera, Sparkles, Brain, Upload, Scan, TrendingDown, UserPlus
+      Filter, Tag, Camera, Sparkles, Brain, Upload, Scan, TrendingDown, UserPlus, Edit
     } = Icons;
     const {
       LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip: RechartsTooltip, ResponsiveContainer,
@@ -402,6 +402,34 @@
 
       // ESTADO FORMULARIO APUESTA RETO
       const [challengeForm, setChallengeForm] = useState({ id: null, stake: '', odds: '', desc: '' });
+
+      // ESTADO EDICIÓN EN VIVO (V10)
+      const [editingBet, setEditingBet] = useState(null);
+
+      const handleSaveEditedBet = (e) => {
+        e.preventDefault();
+        if (!editingBet) return;
+        setBets(bets.map(b => b.id === editingBet.id ? editingBet : b));
+        setEditingBet(null);
+      };
+
+      const toggleLineVoid = (lineIndex) => {
+        if (!editingBet.betLines) return;
+        const newLines = [...editingBet.betLines];
+        const line = newLines[lineIndex];
+        // Toggle void/active. If void, we mark it.
+        // Simplified: We assume pending status unless voided.
+        line.status = line.status === 'void' ? 'pending' : 'void';
+
+        // Recalculate Global Odds
+        let newOdds = 0;
+        const activeLines = newLines.filter(l => l.status !== 'void');
+        if (activeLines.length > 0) {
+          newOdds = activeLines.reduce((acc, l) => acc * parseFloat(l.odds), 1);
+        }
+
+        setEditingBet({ ...editingBet, betLines: newLines, odds: parseFloat(newOdds.toFixed(2)) });
+      };
 
       // LÓGICA DE RETOS (V9)
       const handleCreateChallenge = (e) => {
@@ -1298,6 +1326,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           </div>
                           <div className="flex gap-2 w-full mt-3">
                             <button onClick={() => handleOracle(bet.description, bet.odds)} className="w-10 py-2 bg-purple-600/20 text-purple-400 border border-purple-600/50 rounded hover:bg-purple-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Analizar con IA"><Sparkles size={16} /></button>
+                            <button onClick={() => setEditingBet(bet)} className="w-10 py-2 bg-blue-600/20 text-blue-400 border border-blue-600/50 rounded hover:bg-blue-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Editar Apuesta"><Edit size={16} /></button>
                             <button onClick={() => updateSimpleStatus(bet.id, 'win')} className="flex-1 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 rounded hover:bg-emerald-600 hover:text-white font-bold text-sm">Ganada</button>
                             <button onClick={() => updateSimpleStatus(bet.id, 'void')} className="w-10 py-2 bg-slate-700/50 text-slate-400 border border-slate-600/50 rounded hover:bg-slate-600 hover:text-slate-200 font-bold text-sm" title="Anulada">A</button>
                             <button onClick={() => updateSimpleStatus(bet.id, 'loss')} className="flex-1 py-2 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600 hover:text-white font-bold text-sm">Perdida</button>
@@ -2309,7 +2338,65 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             )}
 
           </div>
-        </div >
+          {/* MODAL EDICIÓN EN VIVO (V10) */}
+          {editingBet && (
+            <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={() => setEditingBet(null)}>
+              <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
+                  <h3 className="font-bold text-white uppercase text-sm flex items-center gap-2"><Edit size={16} className="text-blue-400" /> Editar Apuesta en Vivo</h3>
+                  <button onClick={() => setEditingBet(null)}><X size={20} className="text-slate-500 hover:text-white" /></button>
+                </div>
+                <form onSubmit={handleSaveEditedBet} className="p-6 space-y-4">
+                  {/* DESCRIPTION */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción</label>
+                    <input type="text" value={editingBet.description} onChange={e => setEditingBet({ ...editingBet, description: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm focus:border-blue-500 transition-colors" required />
+                  </div>
+
+                  {/* STAKE & ODDS */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake (€)</label>
+                      <input type="number" step="0.01" value={editingBet.stake} onChange={e => setEditingBet({ ...editingBet, stake: parseFloat(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm focus:border-blue-500 transition-colors" required />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Cuota Total (@)</label>
+                      <input type="number" step="0.01" value={editingBet.odds} onChange={e => setEditingBet({ ...editingBet, odds: parseFloat(e.target.value) })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm font-bold text-emerald-400 focus:border-blue-500 transition-colors" required />
+                    </div>
+                  </div>
+
+                  {/* LÍNEAS (SOLO SI HAY) */}
+                  {editingBet.betLines && editingBet.betLines.length > 0 && (
+                    <div className="bg-slate-950/50 rounded border border-slate-800 p-3 mt-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase mb-2 block flex items-center gap-2"><Layers size={12} /> Gestión de Líneas (Marcar Nulas)</label>
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                        {editingBet.betLines.map((line, idx) => {
+                          const isVoid = line.status === 'void';
+                          return (
+                            <div key={idx} className={`flex items-center justify-between p-2 rounded border ${isVoid ? 'bg-slate-800/50 border-slate-700 opacity-60' : 'bg-slate-900 border-slate-700'}`}>
+                              <div className="flex-1 min-w-0 mr-2">
+                                <div className={`text-xs font-bold truncate ${isVoid ? 'line-through text-slate-500' : 'text-white'}`}>{line.description}</div>
+                                <div className="text-[10px] text-slate-400">@{line.odds} • {line.tipster}</div>
+                              </div>
+                              <button type="button" onClick={() => toggleLineVoid(idx)} className={`px-2 py-1 text-[10px] font-bold rounded border transition-colors ${isVoid ? 'bg-slate-700 text-slate-400 border-slate-600' : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20'}`}>
+                                {isVoid ? 'ANULADA' : 'ANULAR'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded font-bold text-white shadow-lg mt-2 flex items-center justify-center gap-2">
+                    <Save size={16} /> Guardar Cambios
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+        </div>
       );
     }
 
