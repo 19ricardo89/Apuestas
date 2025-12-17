@@ -166,7 +166,7 @@
       'Plus', 'Trash2', 'Users', 'Save', 'History', 'PieChart', 'TrendingUp',
       'CheckCircle', 'XCircle', 'Clock', 'Activity', 'Target', 'Zap',
       'BarChart2', 'Menu', 'ChevronRight', 'AlertCircle', 'RefreshCw', 'Check', 'X', 'Calendar', 'Layers', 'Trophy', 'Flame',
-      'Filter', 'Tag', 'Camera', 'Sparkles', 'Brain', 'Upload', 'Scan'
+      'Filter', 'Tag', 'Camera', 'Sparkles', 'Brain', 'Upload', 'Scan', 'TrendingDown'
     ];
 
     const Icons = IconList.reduce((acc, name) => {
@@ -178,7 +178,7 @@
       Plus, Trash2, Users, Save, History, PieChart, TrendingUp,
       CheckCircle, XCircle, Clock, Activity, Target, Zap,
       BarChart2, Menu, ChevronRight, AlertCircle, RefreshCw, Check, X, Calendar, Layers, Trophy, Flame,
-      Filter, Tag, Camera, Sparkles, Brain, Upload, Scan
+      Filter, Tag, Camera, Sparkles, Brain, Upload, Scan, TrendingDown
     } = Icons;
     const {
       LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip: RechartsTooltip, ResponsiveContainer,
@@ -554,24 +554,7 @@
       }, [bets, filterTag]);
 
       // --- STATS GLOBALES ---
-      const financialStats = useMemo(() => {
-        const valid = filteredBets.filter(b => b.result !== 'void' && b.result !== 'pending');
-        const staked = valid.reduce((acc, b) => acc + b.stake, 0);
-        const profit = valid.reduce((acc, b) => acc + b.profit, 0);
-        const yield_val = staked > 0 ? ((profit / staked) * 100).toFixed(2) : 0;
-
-        // Gráfico acumulativo
-        let runningProfit = 0;
-        const chartData = [...filteredBets]
-          .filter(b => b.result !== 'pending')
-          .sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id)
-          .map(b => {
-            runningProfit += b.profit;
-            return { name: b.date.slice(5), fullDate: b.date, profit: runningProfit };
-          });
-
-        return { staked, profit, yield_val, chartData };
-      }, [filteredBets]);
+      // (financialStats moved below to consolidate with deep analytics logic)
 
       const strategyStats = useMemo(() => {
         const stats = {};
@@ -696,10 +679,46 @@
         return filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').map(b => ({
           x: b.odds, // Eje X: Cuota
           y: b.profit, // Eje Y: Beneficio
-          z: 1, // Tamaño burbuja (opcional, set to 1 for standard scatter)
+          z: 1,
           name: b.tipster,
-          desc: b.description
+          desc: b.description,
+          result: b.result // Needed for coloring
         }));
+      }, [filteredBets]);
+
+      // --- STATS GLOBALES ---
+      const financialStats = useMemo(() => {
+        const valid = filteredBets.filter(b => b.result !== 'void' && b.result !== 'pending');
+        const staked = valid.reduce((acc, b) => acc + b.stake, 0);
+        const profit = valid.reduce((acc, b) => acc + b.profit, 0);
+        const yield_val = staked > 0 ? ((profit / staked) * 100).toFixed(2) : 0;
+
+        // Gráfico acumulativo Ganancias
+        let runningProfit = 0;
+        const chartData = [...filteredBets]
+          .filter(b => b.result !== 'pending')
+          .sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id)
+          .map(b => {
+            runningProfit += b.profit;
+            return { name: b.date.slice(5), fullDate: b.date, profit: runningProfit };
+          });
+
+        // Gráfico acumulativo PÉRDIDAS (Solo suma los rojos)
+        let runningLoss = 0;
+        const lossChartData = [...filteredBets]
+          .filter(b => b.result !== 'pending')
+          .sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id)
+          .map(b => {
+            // Si es perdida, sumamos (en negativo). Si es ganancia, se mantiene plano (o sube si queremos Net Loss? No, Cumulative Loss suelo ser solo las perdidas sumadas).
+            // User dijo: "cuente las apuestas perdidas... acumulativa igual que las ganancias".
+            // Interpretación: Una linea que baja (o sube en valor absoluto) cada vez que pierdes.
+            // Para visualizar "Pérdida Total Acumulada", mejor que vaya bajando (negativo).
+            if (b.result === 'loss') runningLoss += b.profit; // b.profit es negativo (-stake)
+            return { name: b.date.slice(5), fullDate: b.date, loss: runningLoss };
+          });
+
+
+        return { staked, profit, yield_val, chartData, lossChartData };
       }, [filteredBets]);
 
       // 4. Heatmap Data (Calendar)
@@ -816,6 +835,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       const [simSelectedTipster, setSimSelectedTipster] = useState('');
       const [excludeFunbets, setExcludeFunbets] = useState(true); // Default ON
 
+      // Deep Analytics State
+      const [selectedDay, setSelectedDay] = useState(null); // For Heatmap Modal
+
       // Goal Seeker State
       const [goalProfit, setGoalProfit] = useState(1000);
       const [goalMonth, setGoalMonth] = useState('Próximo Mes');
@@ -829,7 +851,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           sourceBets = filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void' && b.tipster === simSelectedTipster);
         }
 
-        if (sourceBets.length === 0) { alert("No hay suficientes datos para calcular estadísticas."); return; }
+        // 2. Filtro Anti-Ludopatia (Excluir Combis/Funbets)
+        if (excludeFunbets) {
+          sourceBets = sourceBets.filter(b => {
+            const d = b.description.toLowerCase();
+            const isLuck = d.includes('combi') || d.includes('combinada') || d.includes('funbet') || (b.tags && b.tags.includes('FUNBET'));
+            return !isLuck;
+          });
+        }
+
+        if (sourceBets.length === 0) { alert("No hay suficientes datos para calcular estadísticas (o el filtro ha eliminado todo)."); return; }
 
         const wins = sourceBets.filter(b => b.result === 'win').length;
         const wr = (wins / sourceBets.length) * 100;
@@ -837,7 +868,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
         setSimWinRate(wr.toFixed(1));
         setSimAvgOdds(avgOdds.toFixed(2));
-        alert(`Datos cargados (${simMode}): WinRate ${wr.toFixed(1)}% | Cuota Media @${avgOdds.toFixed(2)}`);
+        alert(`Datos cargados (${simMode})${excludeFunbets ? ' [Sin Funbets]' : ''}: WinRate ${wr.toFixed(1)}% | Cuota Media @${avgOdds.toFixed(2)}`);
       };
 
       const calculateGoal = () => {
@@ -1168,15 +1199,22 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     </div>
                   </div>
                   <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-xl">
-                    <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-400 uppercase tracking-wider"><PieChart size={16} /> Distribución del Riesgo (Stake)</h3>
-                    <div className="h-[250px] w-full flex justify-center items-center">
+                    <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-400 uppercase tracking-wider"><TrendingDown size={16} className="text-red-500" /> Curva de Pérdidas (Acumulado)</h3>
+                    <div className="h-[250px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <RechartsPieChart>
-                          <Pie data={strategyStats} dataKey="staked" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label={({ percent }) => `${(percent * 100).toFixed(0)}%`}>
-                            {strategyStats.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                          </Pie>
-                          <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '10px' }} />
-                        </RechartsPieChart>
+                        <AreaChart data={financialStats.lossChartData}>
+                          <defs>
+                            <linearGradient id="colorLoss" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.5} />
+                              <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}€`} />
+                          <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}€`, 'Pérdida Acumulada']} />
+                          <Area type="monotone" dataKey="loss" stroke="#ef4444" fill="url(#colorLoss)" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#ef4444' }} />
+                        </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
@@ -1489,7 +1527,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               }
                               return null;
                             }} />
-                            <Scatter name="Bets" data={sniperData} fill="#8b5cf6" shape="circle" />
+                            <Scatter name="Bets" data={sniperData} shape="circle">
+                              {sniperData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.result === 'win' ? '#10b981' : '#ef4444'} />
+                              ))}
+                            </Scatter>
                           </ScatterChart>
                         </ResponsiveContainer>
                       </div>
@@ -1501,8 +1543,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       <div className="flex-1 flex items-center justify-center p-4">
                         <div className="grid grid-cols-7 gap-2">
                           {heatmapData.map((day, i) => (
-                            <div key={i} title={`${day.date}: ${day.value.toFixed(2)}€`}
-                              className={`w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-bold transition-all cursor-help
+                            <div key={i} title={`${day.date}: ${day.value.toFixed(2)}€`} onClick={() => day.hasActivity && setSelectedDay(day)}
+                              className={`w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-bold transition-all cursor-pointer
                                             ${!day.hasActivity ? 'bg-slate-800 text-slate-600' :
                                   (day.value > 0 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-500 hover:text-white' :
                                     'bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white')
@@ -1528,6 +1570,44 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       ¡Mantén la disciplina!
                     </p>
                   </div>
+
+                  {/* HEATMAP DETAILS MODAL (V6) */}
+                  {selectedDay && (
+                    <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={() => setSelectedDay(null)}>
+                      <div className="bg-slate-900 w-full max-w-md rounded-xl border border-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className={`p-4 ${selectedDay.value >= 0 ? 'bg-emerald-900/30 border-b border-emerald-500/30' : 'bg-red-900/30 border-b border-red-500/30'} flex justify-between items-center`}>
+                          <div>
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2"><Calendar size={18} /> {selectedDay.date}</h3>
+                            <div className={`text-sm font-mono font-bold ${selectedDay.value >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {selectedDay.value > 0 ? '+' : ''}{selectedDay.value.toFixed(2)}€
+                            </div>
+                          </div>
+                          <button onClick={() => setSelectedDay(null)} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"><X size={20} /></button>
+                        </div>
+                        <div className="max-h-[400px] overflow-y-auto p-0">
+                          <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-950 text-slate-500 text-xs uppercase sticky top-0">
+                              <tr><th className="p-3">Tipster</th><th className="p-3 text-center">Cuota</th><th className="p-3 text-right">Profit</th></tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800">
+                              {filteredBets.filter(b => b.date === selectedDay.date && b.result !== 'pending' && b.result !== 'void').map(bet => (
+                                <tr key={bet.id} className="hover:bg-slate-800/50">
+                                  <td className="p-3">
+                                    <div className="font-bold text-white">{bet.tipster}</div>
+                                    <div className="text-[10px] text-slate-500 truncate max-w-[120px]">{bet.description}</div>
+                                  </td>
+                                  <td className="p-3 text-center text-slate-400 bg-slate-900/50 font-mono">@{bet.odds.toFixed(2)}</td>
+                                  <td className={`p-3 text-right font-bold ${bet.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    {bet.profit > 0 ? '+' : ''}{bet.profit.toFixed(2)}€
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
               </div>
