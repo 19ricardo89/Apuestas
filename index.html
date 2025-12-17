@@ -782,11 +782,15 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         reader.readAsDataURL(file);
       };
 
-      const handleOracle = async () => {
-        if (!formDesc) { alert("Introduce descripción primero."); return; }
+      const handleOracle = async (descOverride = null, oddsOverride = null) => {
+        const d = descOverride || formDesc;
+        const o = oddsOverride || formOdds;
+
+        if (!d) { alert("No hay descripción para analizar."); return; }
+
         setIsAnalyzing(true);
         try {
-          const prompt = `Actúa como experto en apuestas deportivas. Analiza esta apuesta: "${formDesc}" a cuota @${formOdds}. Estima la probabilidad real (%) y calcula si tiene EV+ (Valor Esperado). Responde en formato corto: "Probabilidad: X% | EV: Positivo/Negativo | Consejo: [Frase corta]".`;
+          const prompt = `Actúa como experto en apuestas deportivas. Analiza esta apuesta: "${d}" a cuota @${o}. Estima la probabilidad real (%) y calcula si tiene EV+ (Valor Esperado). Responde en formato corto: "Probabilidad: X% | EV: Positivo/Negativo | Consejo: [Frase corta]".`;
           const text = await analyzeTextWithGemini(prompt);
           alert("🔮 ORACULO GEMINI DICE:\n\n" + text);
         } catch (err) {
@@ -800,12 +804,59 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       const [isMultiLine, setIsMultiLine] = useState(false);
       const [betLines, setBetLines] = useState([]); // { odds: 1.0, description: '' }
 
-      // Simulator State (V3)
+      // Simulator State (V5 Refined)
       const [simBank, setSimBank] = useState(1000);
       const [simWinRate, setSimWinRate] = useState(50);
       const [simAvgOdds, setSimAvgOdds] = useState(2.00);
       const [simNumBets, setSimNumBets] = useState(500);
-      const [simResults, setSimResults] = useState(null); // { best, worst, avg, paths: [] }
+      const [simResults, setSimResults] = useState(null);
+
+      // V5 New States
+      const [simMode, setSimMode] = useState('GLOBAL'); // GLOBAL | TIPSTER | MONTHLY_GOAL
+      const [simSelectedTipster, setSimSelectedTipster] = useState('');
+
+      // Goal Seeker State
+      const [goalProfit, setGoalProfit] = useState(1000);
+      const [goalMonth, setGoalMonth] = useState('Próximo Mes');
+      const [goalResults, setGoalResults] = useState(null); // { betsNeeded, reqWinRate }
+
+      const loadRealStats = () => {
+        let sourceBets = [];
+        if (simMode === 'GLOBAL') {
+          sourceBets = filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void');
+        } else if (simMode === 'TIPSTER' && simSelectedTipster) {
+          sourceBets = filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void' && b.tipster === simSelectedTipster);
+        }
+
+        if (sourceBets.length === 0) { alert("No hay suficientes datos para calcular estadísticas."); return; }
+
+        const wins = sourceBets.filter(b => b.result === 'win').length;
+        const wr = (wins / sourceBets.length) * 100;
+        const avgOdds = sourceBets.reduce((a, b) => a + b.odds, 0) / sourceBets.length;
+
+        setSimWinRate(wr.toFixed(1));
+        setSimAvgOdds(avgOdds.toFixed(2));
+        alert(`Datos cargados (${simMode}): WinRate ${wr.toFixed(1)}% | Cuota Media @${avgOdds.toFixed(2)}`);
+      };
+
+      const calculateGoal = () => {
+        const wr = parseFloat(simWinRate) / 100;
+        const odds = parseFloat(simAvgOdds);
+        const stake = 10;
+
+        const profitPerBet = (stake * (odds - 1) * wr) - (stake * (1 - wr));
+
+        if (profitPerBet <= 0) {
+          setGoalResults({ error: "Matemáticamente imposible con EV actual (Neutro o Negativo)." });
+        } else {
+          const betsNeeded = parseFloat(goalProfit) / profitPerBet;
+          setGoalResults({
+            betsNeeded: Math.ceil(betsNeeded),
+            avgStakeUsed: stake,
+            profitPerBet: profitPerBet
+          });
+        }
+      };
 
       const runSimulation = () => {
         const paths = [];
@@ -1089,6 +1140,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             <p className="text-sm text-slate-300">{bet.description}</p>
                           </div>
                           <div className="flex gap-2 w-full mt-3">
+                            <button onClick={() => handleOracle(bet.description, bet.odds)} className="w-10 py-2 bg-purple-600/20 text-purple-400 border border-purple-600/50 rounded hover:bg-purple-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Analizar con IA"><Sparkles size={16} /></button>
                             <button onClick={() => updateSimpleStatus(bet.id, 'win')} className="flex-1 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 rounded hover:bg-emerald-600 hover:text-white font-bold text-sm">Ganada</button>
                             <button onClick={() => updateSimpleStatus(bet.id, 'void')} className="w-10 py-2 bg-slate-700/50 text-slate-400 border border-slate-600/50 rounded hover:bg-slate-600 hover:text-slate-200 font-bold text-sm" title="Anulada">A</button>
                             <button onClick={() => updateSimpleStatus(bet.id, 'loss')} className="flex-1 py-2 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600 hover:text-white font-bold text-sm">Perdida</button>
@@ -1570,18 +1622,123 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               </div>
             )}
 
-            {/* SIMULATOR V3 */}
+            {/* SIMULATOR V5 (Goal Seeker) */}
             {activeSection === 'simulador' && (
-              <div className="space-y-6 animate-fade-in">
-                <h2 className="text-2xl font-bold text-emerald-400 flex items-center gap-2"><TrendingUp /> Simulador Monte Carlo (V3)</h2>
-                <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-xl space-y-6">
+              <div className="space-y-6 animate-fade-in pb-10">
+                <h2 className="text-2xl font-bold text-emerald-400 flex items-center gap-2"><TrendingUp /> Simulador de Ganancias (Goal Seeker)</h2>
+
+                {/* 1. DATA SOURCE & VIABILITY */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* CONF DATA */}
+                  <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-xl space-y-4">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase border-b border-slate-800 pb-2 mb-2 flex items-center gap-2"><Zap size={14} className="text-yellow-500" /> Configuración de Datos</h3>
+                    <div className="flex gap-2 bg-slate-950 p-2 rounded-lg">
+                      <button onClick={() => setSimMode('GLOBAL')} className={`flex-1 py-2 rounded text-xs font-bold transition-all ${simMode === 'GLOBAL' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>GLOBAL</button>
+                      <button onClick={() => setSimMode('TIPSTER')} className={`flex-1 py-2 rounded text-xs font-bold transition-all ${simMode === 'TIPSTER' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>POR TIPSTER</button>
+                    </div>
+
+                    {simMode === 'TIPSTER' && (
+                      <select value={simSelectedTipster} onChange={e => setSimSelectedTipster(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm">
+                        <option value="">Selecciona Tipster...</option>
+                        {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                      </select>
+                    )}
+
+                    <button onClick={loadRealStats} className="w-full py-2 border border-slate-700 hover:bg-slate-800 text-slate-300 rounded flex justify-center items-center gap-2 text-sm font-bold transition-colors">
+                      <RefreshCw size={14} /> Cargar Estadísticas Reales
+                    </button>
+
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                        <div className="text-[10px] text-slate-500 uppercase">Win Rate Actual</div>
+                        <div className="text-xl font-bold text-white">{simWinRate}%</div>
+                      </div>
+                      <div className="bg-slate-900 p-2 rounded border border-slate-800">
+                        <div className="text-[10px] text-slate-500 uppercase">Cuota Media</div>
+                        <div className="text-xl font-bold text-white">@{simAvgOdds}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* VIABILITY PANEL */}
+                  <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-xl space-y-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5"><Activity size={100} /></div>
+                    <h3 className="text-sm font-bold text-slate-400 uppercase border-b border-slate-800 pb-2 mb-2 flex items-center gap-2"><Activity size={14} className="text-emerald-500" /> Análisis de Salud</h3>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-300 text-sm">Punto de Equilibrio (Break Even):</span>
+                      <span className="font-mono font-bold text-yellow-500 text-lg">{(100 / simAvgOdds).toFixed(1)}% WR</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
+                      <div className="bg-red-500 h-full" style={{ width: `${(100 / simAvgOdds)}%` }}></div>
+                      <div className="bg-emerald-500 h-full flex-1"></div>
+                    </div>
+                    <div className="text-[10px] text-slate-500 text-right">Zona Roja: Pérdidas | Zona Verde: Ganancias</div>
+
+                    <div className="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center">
+                      <span className="text-slate-300 text-sm">Proyección Rentable (ROI 10%):</span>
+                      {/* ROI = ((Yield + 1) * Turnover) - Turnover? No. Yield = (Profit/Stake)*100. 
+                                Yield 10% -> Profit = 0.10 * Stake.
+                                Profit = (Stake*(Odds-1)*WR) - (Stake*(1-WR)).
+                                0.10 Stake = Stake [ (Odds-1)WR - (1-WR) ]
+                                0.10 = (Odds-1)WR - 1 + WR
+                                1.10 = WR(Odds-1+1) = WR(Odds)
+                                WR = 1.10 / Odds
+                            */}
+                      <span className="font-mono font-bold text-emerald-400 text-lg">{((1.10 / simAvgOdds) * 100).toFixed(1)}% WR</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. GOAL SEEKER MODULE */}
+                <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 p-6 rounded-xl border border-indigo-500/30 shadow-2xl">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Target className="text-indigo-400" /> Buscador de Objetivos (Goal Seeker)</h3>
+                  <div className="flex flex-col md:flex-row gap-4 items-end">
+                    <div className="flex-1 w-full">
+                      <label className="text-xs font-bold text-indigo-300 uppercase mb-1 block">Objetivo de Ganancia (€)</label>
+                      <input type="number" value={goalProfit} onChange={e => setGoalProfit(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white focus:border-indigo-500 font-bold text-lg" placeholder="ej: 1000" />
+                    </div>
+                    <div className="flex-1 w-full">
+                      <label className="text-xs font-bold text-indigo-300 uppercase mb-1 block">Periodo Objetivo</label>
+                      <select value={goalMonth} onChange={e => setGoalMonth(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm">
+                        <option>Este Mes</option>
+                        <option>Próximo Mes</option>
+                        <option>Trimestre</option>
+                        <option>Año Completo</option>
+                      </select>
+                    </div>
+                    <button onClick={calculateGoal} className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 px-8 py-3 rounded font-bold text-white shadow-lg flex items-center justify-center gap-2 mb-[1px]">
+                      <Sparkles size={18} /> Calcular Plan
+                    </button>
+                  </div>
+
+                  {goalResults && !goalResults.error && (
+                    <div className="mt-6 bg-slate-950/50 p-4 rounded-lg border border-indigo-500/50 flex flex-col md:flex-row gap-6 items-center animate-fade-in">
+                      <div className="text-center md:text-left">
+                        <div className="text-xs text-slate-400 uppercase mb-1">Volumen Necesario</div>
+                        <div className="text-3xl font-bold text-white">{goalResults.betsNeeded} <span className="text-sm font-normal text-slate-500">apuestas</span></div>
+                      </div>
+                      <div className="h-10 w-[1px] bg-slate-700 hidden md:block"></div>
+                      <div className="text-sm text-slate-300 flex-1">
+                        Para ganar <span className="text-white font-bold">{goalProfit}€</span> en <span className="text-white font-bold">{goalMonth}</span> con tus métricas actuales, necesitas realizar un volumen de {goalResults.betsNeeded} apuestas (aprox {(goalResults.betsNeeded / 30).toFixed(1)} al día).
+                      </div>
+                    </div>
+                  )}
+                  {goalResults && goalResults.error && (
+                    <div className="mt-4 text-red-400 font-bold bg-red-900/20 p-3 rounded border border-red-500/30 text-sm text-center animate-pulse">{goalResults.error}</div>
+                  )}
+                </div>
+
+                {/* 3. CLASSIC MONTE CARLO */}
+                <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-xl space-y-6 opacity-75 hover:opacity-100 transition-opacity">
+                  <h3 className="text-sm font-bold text-slate-500 uppercase flex items-center gap-2"><Layers size={14} /> Simulación Monte Carlo Clásica</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div><label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Bank Inicial</label><input type="number" value={simBank} onChange={e => setSimBank(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white" /></div>
                     <div><label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Win Rate (%)</label><input type="number" value={simWinRate} onChange={e => setSimWinRate(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white" /></div>
                     <div><label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Cuota Media</label><input type="number" step="0.01" value={simAvgOdds} onChange={e => setSimAvgOdds(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white" /></div>
                     <div><label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Nº Apuestas</label><input type="number" value={simNumBets} onChange={e => setSimNumBets(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white" /></div>
                   </div>
-                  <button onClick={runSimulation} className="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded font-bold text-white flex justify-center items-center gap-2 shadow-lg transition-all transform hover:scale-[1.01]"><Zap size={18} /> Ejecutar Simulación (5 Escenarios - 1% Flat Stake)</button>
+                  <button onClick={runSimulation} className="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded font-bold text-slate-200 flex justify-center items-center gap-2 shadow-lg transition-all"><Zap size={18} /> Ejecutar Simulación Visual</button>
                 </div>
 
                 {simResults && (
