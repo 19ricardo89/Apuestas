@@ -1821,17 +1821,21 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     )}
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Tipster</label><select value={formTipster} onChange={e => { setFormTipster(e.target.value); const t = tipsters.find(ti => ti.name === e.target.value); if (t) setFormStake(t.defaultStake) }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500">{tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}</select></div>
+                      <div><label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Tipster</label><select value={formTipster} onChange={e => {
+                        const val = e.target.value;
+                        setFormTipster(val);
+                        if (val === 'Mezcla-Tips') setIsMultiLine(true); // Force V7
+                        const t = tipsters.find(ti => ti.name === val);
+                        if (t) setFormStake(t.defaultStake)
+                      }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500">{tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}</select></div>
                       <div><label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Stake Total (€)</label><input type="number" step="0.01" value={formStake} onChange={e => setFormStake(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500" /></div>
                     </div>
 
-                    {/* MULTI-LINE TOGGLE */}
-                    {formTipster !== 'Mezcla-Tips' && (
-                      <div className="flex items-center gap-3 bg-slate-950 p-3 rounded border border-slate-800">
-                        <input type="checkbox" id="multiLine" checked={isMultiLine} onChange={e => setIsMultiLine(e.target.checked)} className="w-5 h-5 accent-emerald-500" />
-                        <label htmlFor="multiLine" className="text-sm font-bold text-slate-300 select-none cursor-pointer">Activar Modo Multilínea (Suma de cuotas automática)</label>
-                      </div>
-                    )}
+                    {/* MULTI-LINE TOGGLE (Always Visible) */}
+                    <div className="flex items-center gap-3 bg-slate-950 p-3 rounded border border-slate-800">
+                      <input type="checkbox" id="multiLine" checked={isMultiLine} onChange={e => setIsMultiLine(e.target.checked)} className="w-5 h-5 accent-emerald-500" />
+                      <label htmlFor="multiLine" className="text-sm font-bold text-slate-300 select-none cursor-pointer">Activar Modo Multilínea (Suma de cuotas automática)</label>
+                    </div>
 
                     {/* LOGICA LINEAS MULTIPLES */}
                     {isMultiLine && (
@@ -1879,7 +1883,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       </div>
                     )}
 
-                    {formTipster === 'Mezcla-Tips' && (<div className="bg-blue-900/10 border border-blue-900/50 p-4 rounded-lg space-y-3"><h4 className="text-sm font-bold text-blue-400 flex items-center gap-2"><Zap size={16} /> Configurar Líneas Scout</h4><div className="space-y-2"><select value={subTipster} onChange={e => setSubTipster(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white"><option value="">1. Elige Tipster...</option>{tipsters.filter(t => t.name !== 'Mezcla-Tips').map(t => <option key={t.name} value={t.name}>{t.name}</option>)}</select><div className="flex gap-2"><input type="text" value={subDetail} onChange={e => setSubDetail(e.target.value)} placeholder="2. Detalle (ej: Madrid gana)" className="flex-1 bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white" /><button type="button" onClick={addSubPickToForm} className="bg-blue-600 hover:bg-blue-500 px-4 rounded text-white font-bold"><Plus size={20} /></button></div></div>{subPicks.length > 0 && (<div className="mt-3 space-y-2">{subPicks.map((sub, idx) => (<div key={idx} className="flex justify-between items-center text-xs bg-slate-800 p-2 rounded border border-slate-700"><span className="text-blue-200 font-bold mr-2">{sub.tipster}:</span><span className="text-slate-400 truncate flex-1">{sub.detail}</span><button type="button" onClick={() => setSubPicks(subPicks.filter((_, i) => i !== idx))} className="text-red-400 p-1"><Trash2 size={14} /></button></div>))}</div>)}</div>)}
+                    {/* Legacy Mix UI Removed - Unified with V7 Lines */}
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
