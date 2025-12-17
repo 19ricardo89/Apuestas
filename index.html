@@ -641,18 +641,22 @@
               }
             });
           }
-          // V7 Granular Support (New)
+          // V7 Granular Support (New) with Joint Tipster Support
           if (bet.betLines && bet.betLines.length > 0) {
             bet.betLines.forEach(line => {
-              const tName = line.tipster || bet.tipster; // Fallback to main tipster if line has none (shouldn't happen with new UI)
+              const tName = line.tipster || bet.tipster;
               if (!tName) return;
-              const cleanName = tName.split(' (')[0];
-              if (stats[cleanName]) {
-                if (line.result === 'win') { stats[cleanName].wins++; stats[cleanName].picks++; }
-                if (line.result === 'loss') { stats[cleanName].losses++; stats[cleanName].picks++; }
-                if (line.result === 'void') { stats[cleanName].voids++; }
-                if (!line.result || line.result === 'pending' || bet.result === 'pending') { stats[cleanName].pending++; }
-              }
+              // Split joint tipsters (e.g., "Torete + Elite")
+              const names = tName.split(' + ');
+              names.forEach(rawName => {
+                const cleanName = rawName.trim().split(' (')[0];
+                if (stats[cleanName]) {
+                  if (line.result === 'win') { stats[cleanName].wins++; stats[cleanName].picks++; }
+                  if (line.result === 'loss') { stats[cleanName].losses++; stats[cleanName].picks++; }
+                  if (line.result === 'void') { stats[cleanName].voids++; }
+                  if (!line.result || line.result === 'pending' || bet.result === 'pending') { stats[cleanName].pending++; }
+                }
+              });
             });
           }
         });
@@ -1042,7 +1046,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           odds: parseFloat(formOdds),
           result: 'pending',
           description: finalDesc,
-          profit: 0, // Se actualiza al ganar/perder
+          profit: 0,
+          betLines: isMultiLine ? betLines : [], // FIX: Save V7 lines
           subPicks: formTipster === 'Mezcla-Tips' ? subPicks : [],
           tags: tagsArray // V3
         };
@@ -1060,7 +1065,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       };
 
       const addLine = () => {
-        setBetLines([...betLines, { odds: '', description: '', tipster: formTipster }]);
+        setBetLines([...betLines, { odds: '', description: '', tipster: formTipster, isJoint: false }]);
       };
 
       const updateLine = (index, field, value) => {
@@ -1828,16 +1833,49 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     {isMultiLine && (
                       <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 space-y-3">
                         <h4 className="text-xs font-bold text-emerald-400 uppercase flex items-center gap-2"><Layers size={14} /> Líneas de Apuesta</h4>
-                        {betLines.map((line, idx) => (
-                          <div key={idx} className="flex gap-2 items-center">
-                            <select className="w-24 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white truncate" value={line.tipster || formTipster} onChange={e => updateLine(idx, 'tipster', e.target.value)}>
-                              {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
-                            </select>
-                            <input type="text" placeholder="Descripción línea..." className="flex-1 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" value={line.description} onChange={e => updateLine(idx, 'description', e.target.value)} />
-                            <input type="number" placeholder="Cuota" step="0.01" className="w-16 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" value={line.odds} onChange={e => updateLine(idx, 'odds', e.target.value)} />
-                            <button type="button" onClick={() => removeLine(idx)} className="text-red-400 hover:text-red-300"><X size={16} /></button>
-                          </div>
-                        ))}
+                        {betLines.map((line, idx) => {
+                          const [t1, t2] = (line.tipster || formTipster).split(' + ');
+                          return (
+                            <div key={idx} className="flex gap-2 items-center flex-wrap">
+                              <div className="flex items-center gap-1">
+                                <select className="w-24 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white truncate text-ellipsis" value={t1} onChange={e => updateLine(idx, 'tipster', e.target.value + (t2 ? ' + ' + t2 : ''))}>
+                                  {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                                </select>
+                                <button type="button" onClick={() => {
+                                  if (line.isJoint) {
+                                    // Remove joint
+                                    updateLine(idx, 'tipster', t1); // Keep only main
+                                    // We need to update isJoint manualy or via updateLine? updateLine only updates one field.
+                                    // We need to update line object. 
+                                    // Current updateLine only does: newLines[index][field] = value.
+                                    // To update isJoint, we call updateLine(idx, 'isJoint', false).
+                                    // But we need to do TWO updates. updateLine doesn't support batch.
+                                    // Hack: Just toggle isJoint. If false, clear t2.
+                                    // Let's assume updateLine is fast enough or use a custom handler inline here.
+                                    const newLines = [...betLines];
+                                    newLines[idx].isJoint = !newLines[idx].isJoint;
+                                    if (!newLines[idx].isJoint) newLines[idx].tipster = t1; // Clear 2nd
+                                    setBetLines(newLines);
+                                  } else {
+                                    const newLines = [...betLines];
+                                    newLines[idx].isJoint = true;
+                                    setBetLines(newLines);
+                                  }
+                                }} className={`p-1 rounded ${line.isJoint ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-indigo-400'}`} title="Añadir Co-Tipster"><UserPlus size={14} /></button>
+                              </div>
+
+                              {line.isJoint && (
+                                <select className="w-24 bg-indigo-900/30 border border-indigo-500/50 rounded p-2 text-xs text-indigo-200 truncate" value={t2 || ''} onChange={e => updateLine(idx, 'tipster', t1 + ' + ' + e.target.value)}>
+                                  <option value="">Co-Tipster...</option>
+                                  {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                                </select>
+                              )}
+                              <input type="text" placeholder="Descripción línea..." className="flex-1 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" value={line.description} onChange={e => updateLine(idx, 'description', e.target.value)} />
+                              <input type="number" placeholder="Cuota" step="0.01" className="w-16 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" value={line.odds} onChange={e => updateLine(idx, 'odds', e.target.value)} />
+                              <button type="button" onClick={() => removeLine(idx)} className="text-red-400 hover:text-red-300"><X size={16} /></button>
+                            </div>
+                          );
+                        })}
                         <button type="button" onClick={addLine} className="text-xs font-bold text-emerald-400 hover:text-white flex items-center gap-1"><Plus size={14} /> Añadir Línea</button>
                       </div>
                     )}
