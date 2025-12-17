@@ -359,6 +359,7 @@
           currentBank: 100,
           targetBank: 11000,
           color: 'purple',
+          status: 'active', // 'active', 'won', 'lost'
           history: [
             {
               id: 1003,
@@ -379,6 +380,7 @@
           currentBank: 50,
           targetBank: 1000,
           color: 'orange',
+          status: 'active',
           history: [
             {
               id: 1004,
@@ -391,12 +393,55 @@
             }
           ]
         }
-      ];
+      ]);
 
-      const [challenges, setChallenges] = useState([]);
+      // ESTADO UI RETOS (V9)
+      const [challengeTab, setChallengeTab] = useState('active');
+      const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
+      const [newChallengeData, setNewChallengeData] = useState({ title: '', target: '', bank: '', color: 'emerald' });
 
-      // ESTADO FORMULARIO RETO
+      // ESTADO FORMULARIO APUESTA RETO
       const [challengeForm, setChallengeForm] = useState({ id: null, stake: '', odds: '', desc: '' });
+
+      // LÓGICA DE RETOS (V9)
+      const handleCreateChallenge = (e) => {
+        e.preventDefault();
+        const newCh = {
+          id: Date.now(),
+          title: newChallengeData.title,
+          subtitle: `Objetivo ${parseFloat(newChallengeData.target).toLocaleString()}€`,
+          initialBank: parseFloat(newChallengeData.bank),
+          currentBank: parseFloat(newChallengeData.bank),
+          targetBank: parseFloat(newChallengeData.target),
+          color: newChallengeData.color,
+          status: 'active',
+          history: []
+        };
+        setChallenges([...challenges, newCh]);
+        setIsCreatingChallenge(false);
+        setNewChallengeData({ title: '', target: '', bank: '', color: 'emerald' });
+      };
+
+      const updateChallengeStatus = (id, newStatus) => {
+        if (confirm(newStatus === 'won' ? '¿Marcar reto como COMPLETADO/GANADO?' : '¿Marcar reto como FALLIDO? Se moverá al historial.')) {
+          setChallenges(challenges.map(c => c.id === id ? { ...c, status: newStatus } : c));
+        }
+      };
+
+      const rescueChallenge = (oldChallenge) => {
+        if (confirm('¿Rescatar este reto? Se creará una copia nueva con el bank inicial original.')) {
+          const rescued = {
+            ...oldChallenge,
+            id: Date.now(),
+            title: `${oldChallenge.title} (Rescue)`,
+            currentBank: oldChallenge.initialBank,
+            status: 'active',
+            history: [] // Start fresh
+          };
+          setChallenges([...challenges, rescued]);
+          setChallengeTab('active');
+        }
+      };
 
       // --- UTILIDAD: RECALCULAR SALDO RETOS ---
       const recalculateChallengeBank = (challenge) => {
@@ -1316,15 +1361,46 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             )}
 
             {/* 2. CHALLENGES */}
+            {/* 2. CHALLENGES (IMPROVED V9) */}
             {activeSection === 'challenges' && (
-              <div className="space-y-6 animate-fade-in">
-                <header>
-                  <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2"><Trophy className="text-yellow-500" /> Retos Activos</h2>
-                  <p className="text-sm text-slate-400">Seguimiento independiente de retos de capitalización compuesta.</p>
+              <div className="space-y-6 animate-fade-in relative">
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2"><Trophy className="text-yellow-500" /> Retos & Competición</h2>
+                    <p className="text-sm text-slate-400">Seguimiento de interés compuesto y objetivos.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="bg-slate-900 p-1 rounded-lg border border-slate-800 flex">
+                      <button onClick={() => setChallengeTab('active')} className={`px-4 py-2 text-xs font-bold rounded-md transition-all ${challengeTab === 'active' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>ACTIVOS</button>
+                      <button onClick={() => setChallengeTab('history')} className={`px-4 py-2 text-xs font-bold rounded-md transition-all ${challengeTab === 'history' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>HISTORIAL</button>
+                    </div>
+                    <button onClick={() => setIsCreatingChallenge(true)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2 shadow-lg hover:shadow-emerald-900/20 transition-all"><Plus size={16} /> NUEVO RETO</button>
+                  </div>
                 </header>
 
+                {/* MODAL CREAR RETO */}
+                {isCreatingChallenge && (
+                  <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={() => setIsCreatingChallenge(false)}>
+                    <div className="bg-slate-900 w-full max-w-md rounded-xl border border-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                      <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
+                        <h3 className="font-bold text-white uppercase text-sm">Nuevo Reto Personalizado</h3>
+                        <button onClick={() => setIsCreatingChallenge(false)}><X size={20} className="text-slate-500 hover:text-white" /></button>
+                      </div>
+                      <form onSubmit={handleCreateChallenge} className="p-6 space-y-4">
+                        <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Título del Reto</label><input type="text" value={newChallengeData.title} onChange={e => setNewChallengeData({ ...newChallengeData, title: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm" placeholder="Ej: Reto Verano 10k" required /></div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Bank Inicial (€)</label><input type="number" step="0.01" value={newChallengeData.bank} onChange={e => setNewChallengeData({ ...newChallengeData, bank: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm" placeholder="100" required /></div>
+                          <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Objetivo Total (€)</label><input type="number" step="1" value={newChallengeData.target} onChange={e => setNewChallengeData({ ...newChallengeData, target: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm" placeholder="10000" required /></div>
+                        </div>
+                        <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Color Tema</label><select value={newChallengeData.color} onChange={e => setNewChallengeData({ ...newChallengeData, color: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm"><option value="emerald">Verde (Default)</option><option value="purple">Púrpura (High Stakes)</option><option value="blue">Azul (Conservador)</option><option value="orange">Naranja (Agresivo)</option></select></div>
+                        <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded font-bold text-white shadow-lg mt-2">Crear Reto</button>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {challenges.map(challenge => {
+                  {challenges.filter(c => (challengeTab === 'active' ? (!c.status || c.status === 'active') : (c.status === 'won' || c.status === 'lost'))).map(challenge => {
                     const percent = Math.min(100, (challenge.currentBank / challenge.targetBank) * 100).toFixed(1);
                     const isAdding = challengeForm.id === challenge.id;
 
@@ -1334,18 +1410,43 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     if (challenge.color === 'blue') { headerColor = "from-slate-900 to-blue-900/30"; barColor = "bg-blue-500"; }
                     if (challenge.color === 'orange') { headerColor = "from-slate-900 to-orange-900/30"; barColor = "bg-orange-500"; }
 
+                    // STATUS BADGES FOR HISTORY
+                    const isWon = challenge.status === 'won';
+                    const isLost = challenge.status === 'lost';
+
                     return (
-                      <div key={challenge.id} className="bg-slate-900 rounded-xl border border-slate-800 shadow-xl overflow-hidden">
+                      <div key={challenge.id} className={`bg-slate-900 rounded-xl border ${isWon ? 'border-emerald-500/50' : (isLost ? 'border-red-500/50' : 'border-slate-800')} shadow-xl overflow-hidden relative`}>
+                        {isWon && <div className="absolute top-4 right-4 z-10 text-emerald-500 font-black text-6xl opacity-10 rotate-12 pointer-events-none">WIN</div>}
+                        {isLost && <div className="absolute top-4 right-4 z-10 text-red-500 font-black text-6xl opacity-10 rotate-12 pointer-events-none">LOST</div>}
+
                         <div className={`p-6 border-b border-slate-800 bg-gradient-to-r ${headerColor}`}>
                           <div className="flex justify-between items-start mb-4">
-                            <div>
+                            <div className="flex-1">
                               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                                 {challenge.title}
-                                <button onClick={() => addFunds(challenge.id)} title="Reingresar Saldo (Another Bullet)" className="text-xs bg-slate-800 hover:bg-emerald-600/30 text-slate-400 hover:text-emerald-400 p-1.5 rounded border border-slate-700 transition-colors">
-                                  <RefreshCw size={12} />
-                                </button>
+                                {challengeTab === 'active' && (
+                                  <button onClick={() => addFunds(challenge.id)} title="Reingresar Saldo (Another Bullet)" className="text-xs bg-slate-800 hover:bg-emerald-600/30 text-slate-400 hover:text-emerald-400 p-1.5 rounded border border-slate-700 transition-colors">
+                                    <RefreshCw size={12} />
+                                  </button>
+                                )}
                               </h3>
                               <div className="text-slate-400 text-sm mt-1">{challenge.subtitle}</div>
+                              {/* ACTION BUTTONS FOR ACTIVE & HISTORY */}
+                              <div className="flex gap-2 mt-3">
+                                {challengeTab === 'active' ? (
+                                  <>
+                                    <button onClick={() => updateChallengeStatus(challenge.id, 'won')} className="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded text-[10px] font-bold flex items-center gap-1 transition-colors"><CheckCircle size={10} /> COMPLETADO</button>
+                                    <button onClick={() => updateChallengeStatus(challenge.id, 'lost')} className="px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded text-[10px] font-bold flex items-center gap-1 transition-colors"><XCircle size={10} /> FALLIDO</button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className={`px-2 py-1 rounded text-[10px] font-bold border ${isWon ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>{isWon ? 'RETO COMPLETADO' : 'RETO FALLIDO'}</span>
+                                    {isLost && (
+                                      <button onClick={() => rescueChallenge(challenge)} className="px-2 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-[10px] font-bold flex items-center gap-1 transition-colors"><RefreshCw size={10} /> RESCATAR Y REINICIAR</button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                             </div>
                             <div className="text-right">
                               <div className={`text-3xl font-bold font-mono ${challenge.currentBank >= challenge.initialBank ? 'text-emerald-400' : 'text-red-400'}`}>{challenge.currentBank.toFixed(2)}€</div>
@@ -1361,28 +1462,30 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           </div>
                         </div>
 
-                        {isAdding ? (
-                          <div className="p-4 bg-slate-950 border-b border-slate-800 animate-fade-in">
-                            <h4 className="text-sm font-bold text-emerald-400 mb-3 uppercase">Registrar paso del reto</h4>
-                            <form onSubmit={(e) => addChallengeBet(e, challenge.id)} className="space-y-3">
-                              <div className="grid grid-cols-2 gap-3">
-                                <div className="relative">
-                                  <input type="number" placeholder="Stake" step="0.01" value={challengeForm.stake} onChange={e => setChallengeForm({ ...challengeForm, stake: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm pr-8" required />
-                                  <button type="button" onClick={() => setChallengeForm({ ...challengeForm, stake: challenge.currentBank })} className="absolute right-1 top-1 bottom-1 text-[10px] font-bold text-emerald-500 hover:bg-emerald-900/30 px-2 rounded">MAX</button>
+                        {challengeTab === 'active' && (
+                          isAdding ? (
+                            <div className="p-4 bg-slate-950 border-b border-slate-800 animate-fade-in">
+                              <h4 className="text-sm font-bold text-emerald-400 mb-3 uppercase">Registrar paso del reto</h4>
+                              <form onSubmit={(e) => addChallengeBet(e, challenge.id)} className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="relative">
+                                    <input type="number" placeholder="Stake" step="0.01" value={challengeForm.stake} onChange={e => setChallengeForm({ ...challengeForm, stake: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm pr-8" required />
+                                    <button type="button" onClick={() => setChallengeForm({ ...challengeForm, stake: challenge.currentBank })} className="absolute right-1 top-1 bottom-1 text-[10px] font-bold text-emerald-500 hover:bg-emerald-900/30 px-2 rounded">MAX</button>
+                                  </div>
+                                  <input type="number" placeholder="Cuota" step="0.01" value={challengeForm.odds} onChange={e => setChallengeForm({ ...challengeForm, odds: e.target.value })} className="bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" required />
                                 </div>
-                                <input type="number" placeholder="Cuota" step="0.01" value={challengeForm.odds} onChange={e => setChallengeForm({ ...challengeForm, odds: e.target.value })} className="bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" required />
-                              </div>
-                              <input type="text" placeholder="Descripción (ej: Paso 1 - Madrid)" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" required />
-                              <div className="flex gap-2">
-                                <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 rounded font-bold text-sm hover:bg-emerald-500">Guardar Apuesta</button>
-                                <button type="button" onClick={() => setChallengeForm({ id: null, stake: '', odds: '', desc: '' })} className="px-4 bg-slate-800 text-slate-400 py-2 rounded font-bold text-sm hover:bg-slate-700">Cancelar</button>
-                              </div>
-                            </form>
-                          </div>
-                        ) : (
-                          <div className="p-4 bg-slate-900 border-b border-slate-800 flex justify-end">
-                            <button onClick={() => setChallengeForm({ id: challenge.id, stake: '', odds: '', desc: '' })} className="flex items-center gap-2 text-emerald-400 text-sm font-bold hover:text-emerald-300 bg-emerald-900/20 px-3 py-2 rounded border border-emerald-900/50"><Plus size={16} /> Añadir Apuesta al Reto</button>
-                          </div>
+                                <input type="text" placeholder="Descripción (ej: Paso 1 - Madrid)" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" required />
+                                <div className="flex gap-2">
+                                  <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 rounded font-bold text-sm hover:bg-emerald-500">Guardar Apuesta</button>
+                                  <button type="button" onClick={() => setChallengeForm({ id: null, stake: '', odds: '', desc: '' })} className="px-4 bg-slate-800 text-slate-400 py-2 rounded font-bold text-sm hover:bg-slate-700">Cancelar</button>
+                                </div>
+                              </form>
+                            </div>
+                          ) : (
+                            <div className="p-4 bg-slate-900 border-b border-slate-800 flex justify-end">
+                              <button onClick={() => setChallengeForm({ id: challenge.id, stake: '', odds: '', desc: '' })} className="flex items-center gap-2 text-emerald-400 text-sm font-bold hover:text-emerald-300 bg-emerald-900/20 px-3 py-2 rounded border border-emerald-900/50"><Plus size={16} /> Añadir Apuesta al Reto</button>
+                            </div>
+                          )
                         )}
 
                         <div className="max-h-[300px] overflow-y-auto">
