@@ -444,6 +444,10 @@
         if (targetBet && ((targetBet.betLines && targetBet.betLines.length > 0) || (targetBet.subPicks && targetBet.subPicks.length > 0))) {
           setResolutionBet({ ...targetBet, tempLines: targetBet.betLines || [], tempSubPicks: targetBet.subPicks || [] });
           return;
+        } else if (targetBet && (targetBet.tipster === 'Mezcla-Tips' || targetBet.description.includes('Mezcla') || (targetBet.betLines && targetBet.betLines.length === 0 && targetBet.subPicks && targetBet.subPicks.length === 0 && targetBet.tipster.includes('+')))) {
+          // Safety check for broken old bets
+          alert("⚠️ Esta apuesta parece ser una Mezcla antigua o dañada (sin líneas guardadas). Por favor elimínala y créala de nuevo para usar la resolución detallada.");
+          return;
         }
 
         const updatedBets = bets.map(b => {
@@ -2092,6 +2096,106 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* RESOLUTION MODAL (V7 - GRANULAR) */}
+            {resolutionBet && (
+              <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
+                <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in">
+                  <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-900/20 border-b border-slate-800">
+                    <h3 className="text-xl font-bold text-white mb-1">Resolución Detallada</h3>
+                    <p className="text-sm text-slate-400">Define el resultado de cada línea para el Scout.</p>
+                  </div>
+                  <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                    {/* Support V7 Lines */}
+                    {resolutionBet.tempLines && resolutionBet.tempLines.length > 0 && resolutionBet.tempLines.map((line, idx) => (
+                      <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
+                        <div className="flex justify-between">
+                          <span className="font-bold text-indigo-400 text-sm">{line.tipster || resolutionBet.tipster}</span>
+                          <span className="text-slate-500 text-xs text-right">@{line.odds}</span>
+                        </div>
+                        <div className="text-sm text-slate-300">{line.description}</div>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          <button onClick={() => {
+                            const newLines = [...resolutionBet.tempLines]; newLines[idx].result = 'win';
+                            setResolutionBet({ ...resolutionBet, tempLines: newLines });
+                          }} className={`p-2 rounded text-xs font-bold border transition-all ${line.result === 'win' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-emerald-500'}`}>GANADA</button>
+                          <button onClick={() => {
+                            const newLines = [...resolutionBet.tempLines]; newLines[idx].result = 'void';
+                            setResolutionBet({ ...resolutionBet, tempLines: newLines });
+                          }} className={`p-2 rounded text-xs font-bold border transition-all ${line.result === 'void' ? 'bg-slate-500 text-white border-slate-500' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500'}`}>NULA</button>
+                          <button onClick={() => {
+                            const newLines = [...resolutionBet.tempLines]; newLines[idx].result = 'loss';
+                            setResolutionBet({ ...resolutionBet, tempLines: newLines });
+                          }} className={`p-2 rounded text-xs font-bold border transition-all ${line.result === 'loss' ? 'bg-red-500 text-white border-red-500' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-red-500'}`}>PERDIDA</button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Support V3 SubPicks (Legacy) */}
+                    {(!resolutionBet.tempLines || resolutionBet.tempLines.length === 0) && resolutionBet.tempSubPicks && resolutionBet.tempSubPicks.map((sub, idx) => (
+                      <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
+                        <div className="flex justify-between">
+                          <span className="font-bold text-blue-400 text-sm">{sub.tipster}</span>
+                        </div>
+                        <div className="text-sm text-slate-300">{sub.detail}</div>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          <button onClick={() => {
+                            const newSubs = [...resolutionBet.tempSubPicks]; newSubs[idx].status = 'win';
+                            setResolutionBet({ ...resolutionBet, tempSubPicks: newSubs });
+                          }} className={`p-2 rounded text-xs font-bold border transition-all ${sub.status === 'win' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-emerald-500'}`}>GANADA</button>
+                          <button onClick={() => {
+                            const newSubs = [...resolutionBet.tempSubPicks]; newSubs[idx].status = 'pending';
+                            setResolutionBet({ ...resolutionBet, tempSubPicks: newSubs });
+                          }} className={`p-2 rounded text-xs font-bold border transition-all ${sub.status === 'pending' ? 'bg-slate-500 text-white border-slate-500' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500'}`}>PENDIENTE</button>
+                          <button onClick={() => {
+                            const newSubs = [...resolutionBet.tempSubPicks]; newSubs[idx].status = 'loss';
+                            setResolutionBet({ ...resolutionBet, tempSubPicks: newSubs });
+                          }} className={`p-2 rounded text-xs font-bold border transition-all ${sub.status === 'loss' ? 'bg-red-500 text-white border-red-500' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-red-500'}`}>PERDIDA</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-6 border-t border-slate-800 flex justify-end gap-3 bg-slate-900">
+                    <button onClick={() => setResolutionBet(null)} className="px-4 py-2 text-slate-400 hover:text-white font-bold transition-colors">Cancelar</button>
+                    <button onClick={() => {
+                      const isV7 = resolutionBet.tempLines && resolutionBet.tempLines.length > 0;
+                      const lines = isV7 ? resolutionBet.tempLines : resolutionBet.tempSubPicks;
+
+                      let parentResult = 'win';
+                      let parentProfit = (resolutionBet.stake * resolutionBet.odds) - resolutionBet.stake;
+
+                      const anyLoss = isV7 ? lines.some(l => l.result === 'loss') : lines.some(l => l.status === 'loss');
+                      const allVoid = isV7 ? lines.every(l => l.result === 'void') : false;
+
+                      if (anyLoss) {
+                        parentResult = 'loss';
+                        parentProfit = -resolutionBet.stake;
+                      } else if (allVoid) {
+                        parentResult = 'void';
+                        parentProfit = 0;
+                      }
+
+                      const updatedBets = bets.map(b => {
+                        if (b.id === resolutionBet.id) {
+                          return {
+                            ...b,
+                            result: parentResult,
+                            profit: parseFloat(parentProfit.toFixed(2)),
+                            betLines: isV7 ? resolutionBet.tempLines : undefined,
+                            subPicks: !isV7 ? resolutionBet.tempSubPicks : undefined
+                          };
+                        }
+                        return b;
+                      });
+                      setBets(updatedBets);
+                      setResolutionBet(null);
+                    }} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 transition-all transform active:scale-95">
+                      Confirmar Resolución
+                    </button>
                   </div>
                 </div>
               </div>
