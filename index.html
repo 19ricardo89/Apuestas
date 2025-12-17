@@ -718,7 +718,28 @@
           });
 
 
-        return { staked, profit, yield_val, chartData, lossChartData };
+        // Gráfico Semanal (Weekly Evolution)
+        const weeklyMap = {};
+        filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
+          const d = new Date(b.date);
+          const onejan = new Date(d.getFullYear(), 0, 1);
+          const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+          const key = `W${week}-${d.getFullYear().toString().slice(2)}`; // W42-24
+
+          if (!weeklyMap[key]) weeklyMap[key] = 0;
+          weeklyMap[key] += b.profit;
+        });
+
+        const weeklyChartData = Object.keys(weeklyMap).map(k => ({
+          name: k,
+          profit: weeklyMap[k]
+        })).sort((a, b) => {
+          const [wA, yA] = a.name.substring(1).split('-');
+          const [wB, yB] = b.name.substring(1).split('-');
+          return parseInt(yA) - parseInt(yB) || parseInt(wA) - parseInt(wB);
+        });
+
+        return { staked, profit, yield_val, chartData, weeklyChartData };
       }, [filteredBets]);
 
       // 4. Heatmap Data (Calendar)
@@ -855,7 +876,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         if (excludeFunbets) {
           sourceBets = sourceBets.filter(b => {
             const d = b.description.toLowerCase();
-            const isLuck = d.includes('combi') || d.includes('combinada') || d.includes('funbet') || (b.tags && b.tags.includes('FUNBET'));
+            const t = b.tipster.toLowerCase();
+            const isLuck =
+              d.includes('combi') || d.includes('combinada') || d.includes('funbet') ||
+              t.includes('combi') ||
+              (b.tags && b.tags.includes('FUNBET'));
             return !isLuck;
           });
         }
@@ -1199,22 +1224,20 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     </div>
                   </div>
                   <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-xl">
-                    <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-400 uppercase tracking-wider"><TrendingDown size={16} className="text-red-500" /> Curva de Pérdidas (Acumulado)</h3>
+                    <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-400 uppercase tracking-wider"><BarChart2 size={16} /> Evolución Semanal</h3>
                     <div className="h-[250px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={financialStats.lossChartData}>
-                          <defs>
-                            <linearGradient id="colorLoss" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.5} />
-                              <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
+                        <BarChart data={financialStats.weeklyChartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                           <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                           <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}€`} />
-                          <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}€`, 'Pérdida Acumulada']} />
-                          <Area type="monotone" dataKey="loss" stroke="#ef4444" fill="url(#colorLoss)" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#ef4444' }} />
-                        </AreaChart>
+                          <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}€`, 'Profit Semanal']} />
+                          <Bar dataKey="profit" radius={[4, 4, 4, 4]}>
+                            {financialStats.weeklyChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? '#10b981' : '#ef4444'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
