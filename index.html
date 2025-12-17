@@ -1838,45 +1838,40 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 space-y-3">
                         <h4 className="text-xs font-bold text-emerald-400 uppercase flex items-center gap-2"><Layers size={14} /> Líneas de Apuesta</h4>
                         {betLines.map((line, idx) => {
-                          const [t1, t2] = (line.tipster || formTipster).split(' + ');
+                          const currentTipsters = (line.tipster || formTipster).split(' + ');
                           return (
-                            <div key={idx} className="flex gap-2 items-center flex-wrap">
-                              <div className="flex items-center gap-1">
-                                <select className="w-24 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white truncate text-ellipsis" value={t1} onChange={e => updateLine(idx, 'tipster', e.target.value + (t2 ? ' + ' + t2 : ''))}>
-                                  {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
-                                </select>
+                            <div key={idx} className="flex gap-2 items-center flex-wrap bg-slate-900/40 p-2 rounded border border-slate-700/50">
+                              <div className="flex flex-col gap-2">
+                                {currentTipsters.map((tName, tIdx) => (
+                                  <div key={tIdx} className="flex items-center gap-1">
+                                    <select
+                                      className={`w-28 border rounded p-2 text-xs text-white truncate ${tIdx === 0 ? 'bg-slate-950 border-slate-700' : 'bg-indigo-900/30 border-indigo-500/50 text-indigo-200'}`}
+                                      value={tName}
+                                      onChange={e => {
+                                        const newTipsters = [...currentTipsters];
+                                        newTipsters[tIdx] = e.target.value;
+                                        updateLine(idx, 'tipster', newTipsters.filter(t => t.trim() !== '').join(' + '));
+                                      }}
+                                    >
+                                      <option value="">Seleccionar...</option>
+                                      {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                                    </select>
+                                    {tIdx > 0 && (
+                                      <button type="button" onClick={() => {
+                                        const newTipsters = currentTipsters.filter((_, i) => i !== tIdx);
+                                        updateLine(idx, 'tipster', newTipsters.join(' + '));
+                                      }} className="text-red-400 hover:text-red-300"><X size={12} /></button>
+                                    )}
+                                  </div>
+                                ))}
                                 <button type="button" onClick={() => {
-                                  if (line.isJoint) {
-                                    // Remove joint
-                                    updateLine(idx, 'tipster', t1); // Keep only main
-                                    // We need to update isJoint manualy or via updateLine? updateLine only updates one field.
-                                    // We need to update line object. 
-                                    // Current updateLine only does: newLines[index][field] = value.
-                                    // To update isJoint, we call updateLine(idx, 'isJoint', false).
-                                    // But we need to do TWO updates. updateLine doesn't support batch.
-                                    // Hack: Just toggle isJoint. If false, clear t2.
-                                    // Let's assume updateLine is fast enough or use a custom handler inline here.
-                                    const newLines = [...betLines];
-                                    newLines[idx].isJoint = !newLines[idx].isJoint;
-                                    if (!newLines[idx].isJoint) newLines[idx].tipster = t1; // Clear 2nd
-                                    setBetLines(newLines);
-                                  } else {
-                                    const newLines = [...betLines];
-                                    newLines[idx].isJoint = true;
-                                    setBetLines(newLines);
-                                  }
-                                }} className={`p-1 rounded ${line.isJoint ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-indigo-400'}`} title="Añadir Co-Tipster"><UserPlus size={14} /></button>
+                                  updateLine(idx, 'tipster', (line.tipster || formTipster) + ' + ');
+                                }} className="text-[10px] mx-auto text-indigo-400 hover:text-white flex items-center gap-1 bg-indigo-900/20 px-2 py-1 rounded border border-indigo-500/30"><UserPlus size={10} /> Co-Tipster</button>
                               </div>
 
-                              {line.isJoint && (
-                                <select className="w-24 bg-indigo-900/30 border border-indigo-500/50 rounded p-2 text-xs text-indigo-200 truncate" value={t2 || ''} onChange={e => updateLine(idx, 'tipster', t1 + ' + ' + e.target.value)}>
-                                  <option value="">Co-Tipster...</option>
-                                  {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
-                                </select>
-                              )}
-                              <input type="text" placeholder="Descripción línea..." className="flex-1 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" value={line.description} onChange={e => updateLine(idx, 'description', e.target.value)} />
-                              <input type="number" placeholder="Cuota" step="0.01" className="w-16 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" value={line.odds} onChange={e => updateLine(idx, 'odds', e.target.value)} />
-                              <button type="button" onClick={() => removeLine(idx)} className="text-red-400 hover:text-red-300"><X size={16} /></button>
+                              <input type="text" placeholder="Descripción línea..." className="flex-1 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white self-start" value={line.description} onChange={e => updateLine(idx, 'description', e.target.value)} />
+                              <input type="number" placeholder="Cuota" step="0.01" className="w-16 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white self-start" value={line.odds} onChange={e => updateLine(idx, 'odds', e.target.value)} />
+                              <button type="button" onClick={() => removeLine(idx)} className="text-red-400 hover:text-red-300 self-start mt-2"><Trash2 size={16} /></button>
                             </div>
                           );
                         })}
