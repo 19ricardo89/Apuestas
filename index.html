@@ -87,10 +87,9 @@
 
     // --- GEMINI AI CONFIG (V4) ---
     const GEMINI_API_KEY = "AIzaSyCUVnkzykwI8XhQsqRweZlJ2vEG5zSwOJ4";
-    // Mapeamos la solicitud del usuario "2.5" al modelo real disponible públicamente para evitar errores 404.
-    // Si realmente existe 2.5 en el futuro, se cambiaría aquí. Actualmente 2.0-flash-exp es el SOTA experimental.
-    const GEMINI_MODEL = "gemini-2.0-flash-exp";
-
+    // Si realmente existe 2.5 en el futuro, se cambiaría aquí. Usamos 1.5-flash por estabilidad.
+    const GEMINI_MODEL = "gemini-2.5-flash";
+    2
     const analyzeImageWithGemini = async (base64Image, prompt) => {
       try {
         const payload = {
@@ -108,7 +107,10 @@
           body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error(`Error API: ${response.statusText}`);
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(`Error API ${response.status}: ${errData.error?.message || response.statusText}`);
+        }
 
         const data = await response.json();
         const text = data.candidates[0].content.parts[0].text;
@@ -130,7 +132,10 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        if (!response.ok) throw new Error(`Error API: ${response.statusText}`);
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(`Error API ${response.status}: ${errData.error?.message || response.statusText}`);
+        }
         const data = await response.json();
         return data.candidates[0].content.parts[0].text;
       } catch (error) {
