@@ -1069,7 +1069,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       };
 
       const addLine = () => {
-        setBetLines([...betLines, { odds: '', description: '', tipster: formTipster, isJoint: false }]);
+        setBetLines([...betLines, { odds: '', description: '', tipster: formTipster === 'Mezcla-Tips' ? '' : formTipster, isJoint: false }]);
       };
 
       const updateLine = (index, field, value) => {
@@ -1840,7 +1840,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     {/* LOGICA LINEAS MULTIPLES */}
                     {isMultiLine && (
                       <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 space-y-3">
-                        <h4 className="text-xs font-bold text-emerald-400 uppercase flex items-center gap-2"><Layers size={14} /> Líneas de Apuesta</h4>
+                        <h4 className={`text-xs font-bold uppercase flex items-center gap-2 ${formTipster === 'Mezcla-Tips' ? 'text-blue-400' : 'text-emerald-400'}`}>
+                          {formTipster === 'Mezcla-Tips' ? <><Zap size={14} /> Constructor de Mezcla</> : <><Layers size={14} /> Líneas de Apuesta</>}
+                        </h4>
                         {betLines.map((line, idx) => {
                           const safeTipsterStr = (line.tipster !== undefined && line.tipster !== null) ? line.tipster : (formTipster || '');
                           const currentTipsters = safeTipsterStr.split(' + ');
@@ -1859,7 +1861,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                       }}
                                     >
                                       <option value="">Seleccionar...</option>
-                                      {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                                      {tipsters.filter(t => t.name !== 'Mezcla-Tips').map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
                                     </select>
                                     {tIdx > 0 && (
                                       <button type="button" onClick={() => {
