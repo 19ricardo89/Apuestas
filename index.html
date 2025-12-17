@@ -3,8 +3,16 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestor de Portafolio v29</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BetManager</title>
+
+  <!-- ICONS: Favicon SVG (Data URI) y Apple Touch Icon -->
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230f172a%22/><path d=%22M20 70 L40 50 L60 60 L80 30%22 stroke=%22%2310b981%22 stroke-width=%228%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><circle cx=%2280%22 cy=%2230%22 r=%226%22 fill=%22%2310b981%22/></svg>">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2622/2622312.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BetManager">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -745,14 +753,11 @@
                             </div>
                             <p className="text-sm text-slate-300">{bet.description}</p>
                           </div>
-                          {!bet.subPicks || bet.subPicks.length === 0 ? (
-                            <div className="flex gap-2 w-full mt-3">
-                              <button onClick={() => updateSimpleStatus(bet.id, 'win')} className="flex-1 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 rounded hover:bg-emerald-600 hover:text-white font-bold text-sm">Ganada</button>
-                              <button onClick={() => updateSimpleStatus(bet.id, 'loss')} className="flex-1 py-2 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600 hover:text-white font-bold text-sm">Perdida</button>
-                            </div>
-                          ) : (
-                            <div className="mt-3 text-xs bg-blue-900/20 text-blue-400 p-2 rounded text-center border border-blue-900/50">Combinada Mixta: Resolver en sección Historial o detalle</div>
-                          )}
+                          <div className="flex gap-2 w-full mt-3">
+                            <button onClick={() => updateSimpleStatus(bet.id, 'win')} className="flex-1 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 rounded hover:bg-emerald-600 hover:text-white font-bold text-sm">Ganada</button>
+                            <button onClick={() => updateSimpleStatus(bet.id, 'void')} className="w-10 py-2 bg-slate-700/50 text-slate-400 border border-slate-600/50 rounded hover:bg-slate-600 hover:text-slate-200 font-bold text-sm" title="Anulada">A</button>
+                            <button onClick={() => updateSimpleStatus(bet.id, 'loss')} className="flex-1 py-2 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600 hover:text-white font-bold text-sm">Perdida</button>
+                          </div>
                         </div>
                       ))}
                     </div>
