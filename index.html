@@ -491,13 +491,37 @@
               profit: 0
             };
             const updatedHistory = [newBet, ...c.history];
-            // No cambia el banco al añadir pending, pero mantenemos consistencia
             return { ...c, history: updatedHistory };
           }
           return c;
         });
         setChallenges(updatedChallenges);
         setChallengeForm({ id: null, stake: '', odds: '', desc: '' });
+      };
+
+      const addFunds = (challengeId) => {
+        const amount = prompt("¿Cantidad a reingresar (€)?");
+        if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
+
+        const updatedChallenges = challenges.map(c => {
+          if (c.id === challengeId) {
+            const deposit = {
+              id: Date.now(),
+              date: new Date().toISOString().split('T')[0],
+              stake: 0,
+              odds: 1,
+              description: 'Reingreso Saldo 🔄',
+              result: 'deposit',
+              profit: parseFloat(amount)
+            };
+            const updatedHistory = [deposit, ...c.history];
+            const newChallenge = { ...c, history: updatedHistory };
+            newChallenge.currentBank = recalculateChallengeBank(newChallenge);
+            return newChallenge;
+          }
+          return c;
+        });
+        setChallenges(updatedChallenges);
       };
 
       const resolveChallengeBet = (challengeId, betId, result) => {
@@ -1286,6 +1310,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             <div>
                               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                                 {challenge.title}
+                                <button onClick={() => addFunds(challenge.id)} title="Reingresar Saldo (Another Bullet)" className="text-xs bg-slate-800 hover:bg-emerald-600/30 text-slate-400 hover:text-emerald-400 p-1.5 rounded border border-slate-700 transition-colors">
+                                  <RefreshCw size={12} />
+                                </button>
                               </h3>
                               <div className="text-slate-400 text-sm mt-1">{challenge.subtitle}</div>
                             </div>
@@ -1308,7 +1335,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             <h4 className="text-sm font-bold text-emerald-400 mb-3 uppercase">Registrar paso del reto</h4>
                             <form onSubmit={(e) => addChallengeBet(e, challenge.id)} className="space-y-3">
                               <div className="grid grid-cols-2 gap-3">
-                                <input type="number" placeholder="Stake" step="0.01" value={challengeForm.stake} onChange={e => setChallengeForm({ ...challengeForm, stake: e.target.value })} className="bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" required />
+                                <div className="relative">
+                                  <input type="number" placeholder="Stake" step="0.01" value={challengeForm.stake} onChange={e => setChallengeForm({ ...challengeForm, stake: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm pr-8" required />
+                                  <button type="button" onClick={() => setChallengeForm({ ...challengeForm, stake: challenge.currentBank })} className="absolute right-1 top-1 bottom-1 text-[10px] font-bold text-emerald-500 hover:bg-emerald-900/30 px-2 rounded">MAX</button>
+                                </div>
                                 <input type="number" placeholder="Cuota" step="0.01" value={challengeForm.odds} onChange={e => setChallengeForm({ ...challengeForm, odds: e.target.value })} className="bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" required />
                               </div>
                               <input type="text" placeholder="Descripción (ej: Paso 1 - Madrid)" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" required />
