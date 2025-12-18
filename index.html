@@ -1125,7 +1125,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
       const handleAddBet = (e) => {
         e.preventDefault();
-        if (formTipster === 'Mezcla-Tips' && subPicks.length === 0) { alert("¡Añade al menos una línea!"); return; }
+        if ((formTipster === 'Mezcla-Tips' || isMultiLine) && betLines.length === 0) { alert("¡Añade al menos una línea!"); return; }
 
         let calculatedProfit = 0; // Se calculará al resolver, pero si hay manual profit lo guardamos en description o similar?
         // En v29 el profit se calcula al cerrar. Pero si el usuario QUIERE fijar la ganancia potencial visualmente
