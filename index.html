@@ -2329,8 +2329,12 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               if (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear()) return false;
                             }
 
-                            // Tipster Filter
-                            if (historyFilters.tipster !== 'ALL' && b.tipster !== historyFilters.tipster) return false;
+                            // Tipster Filter (Improved: checks lines too)
+                            if (historyFilters.tipster !== 'ALL') {
+                              const matchMain = b.tipster === historyFilters.tipster;
+                              const matchLine = b.betLines?.some(l => l.tipster?.includes(historyFilters.tipster)) || b.subPicks?.some(s => s.tipster === historyFilters.tipster);
+                              if (!matchMain && !matchLine) return false;
+                            }
 
                             // Odds Filter
                             if (historyFilters.odds !== 'ALL') {
