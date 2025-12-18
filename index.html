@@ -212,19 +212,43 @@
       const [activeSection, setActiveSection] = useState('dashboard');
       const [sidebarOpen, setSidebarOpen] = useState(false);
 
-      // CONFIGURACIÓN DE TIPSTERS
-      const [tipsters] = useState([
-        { name: 'Zona Tipster (Alta)', defaultStake: 50 },
-        { name: 'Club Vip (Media)', defaultStake: 10 },
-        { name: 'Club Remates (Media)', defaultStake: 10 },
-        { name: 'Elitebets', defaultStake: 5 },
-        { name: 'Stakazo', defaultStake: 5 },
-        { name: 'Copete', defaultStake: 5 },
-        { name: 'Torete', defaultStake: 5 },
-        { name: 'Zona Tenis', defaultStake: 5 },
-        { name: 'Mezcla-Tips', defaultStake: 5 },
-        { name: 'Combis (Apuesta D)', defaultStake: 5 }
-      ]);
+      // CONFIGURACIÓN DE TIPSTERS (DINÁMICA V11)
+      const [tipsters, setTipsters] = useState(() => {
+        const saved = localStorage.getItem('betPortfolioV29_tipsters');
+        return saved ? JSON.parse(saved) : [
+          { name: 'Zona Tipster (Alta)', defaultStake: 50 },
+          { name: 'Club Vip (Media)', defaultStake: 10 },
+          { name: 'Club Remates (Media)', defaultStake: 10 },
+          { name: 'Elitebets', defaultStake: 5 },
+          { name: 'Stakazo', defaultStake: 5 },
+          { name: 'Copete', defaultStake: 5 },
+          { name: 'Torete', defaultStake: 5 },
+          { name: 'Zona Tenis', defaultStake: 5 },
+          { name: 'Mezcla-Tips', defaultStake: 5 },
+          { name: 'Combis (Apuesta D)', defaultStake: 5 }
+        ];
+      });
+
+      // PERSISTENCIA TIPSTERS
+      useEffect(() => {
+        localStorage.setItem('betPortfolioV29_tipsters', JSON.stringify(tipsters));
+      }, [tipsters]);
+
+      const handleAddTipster = () => {
+        const name = prompt("Nombre del Nuevo Tipster:");
+        if (!name) return;
+        const stakeStr = prompt(`Stake base para ${name} (€):`, "10");
+        const defaultStake = parseFloat(stakeStr) || 10;
+
+        if (tipsters.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+          alert("¡Este Tipster ya existe!");
+          return;
+        }
+
+        setTipsters([...tipsters, { name, defaultStake }]);
+        setFormTipster(name); // Auto-select
+        setFormStake(defaultStake); // Auto-set stake
+      };
 
       // HISTORIAL DE APUESTAS (BASE DE DATOS COMPLETA - CORREGIDA V29)
       const fullHistory = [
@@ -1957,13 +1981,23 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     )}
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Tipster</label><select value={formTipster} onChange={e => {
-                        const val = e.target.value;
-                        setFormTipster(val);
-                        if (val === 'Mezcla-Tips') setIsMultiLine(true); // Force V7
-                        const t = tipsters.find(ti => ti.name === val);
-                        if (t) setFormStake(t.defaultStake)
-                      }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500">{tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}</select></div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Tipster</label>
+                        <div className="flex gap-2">
+                          <select value={formTipster} onChange={e => {
+                            const val = e.target.value;
+                            setFormTipster(val);
+                            if (val === 'Mezcla-Tips') setIsMultiLine(true); // Force V7
+                            const t = tipsters.find(ti => ti.name === val);
+                            if (t) setFormStake(t.defaultStake)
+                          }} className="flex-1 bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500">
+                            {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                          </select>
+                          <button type="button" onClick={handleAddTipster} className="bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 p-3 rounded-lg hover:bg-emerald-600 hover:text-white transition-colors" title="Añadir Nuevo Tipster">
+                            <Plus size={20} />
+                          </button>
+                        </div>
+                      </div>
                       <div><label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Stake Total (€)</label><input type="number" step="0.01" value={formStake} onChange={e => setFormStake(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500" /></div>
                     </div>
 
