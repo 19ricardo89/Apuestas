@@ -759,7 +759,9 @@
             });
           }
           // V7 Granular Support (New) with Joint Tipster Support
-          if (bet.betLines && bet.betLines.length > 0) {
+          // FIX: Only count lines if it is a Mixed/Combi bet. 
+          // If it is a Single Tipster with multiple lines, we only want the Main Result (counted above), not each line individually.
+          if ((bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && bet.betLines && bet.betLines.length > 0) {
             bet.betLines.forEach(line => {
               const tName = line.tipster || bet.tipster;
               if (!tName) return;
