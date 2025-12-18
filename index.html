@@ -2263,7 +2263,27 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         {bets.sort((a, b) => b.id - a.id).map((bet) => (
                           <tr key={bet.id} className="hover:bg-slate-800/50">
                             <td className="p-4 text-slate-400 text-xs">{bet.date}</td>
-                            <td className="p-4"><div className="font-bold text-white">{bet.tipster}</div><div className="text-xs text-slate-500 truncate max-w-[200px]">{bet.description}</div>{bet.subPicks && bet.subPicks.length > 0 && (<div className="mt-2 text-[10px] space-y-1">{bet.subPicks.map((s, i) => (<div key={i} className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${s.status === 'win' ? 'bg-emerald-500' : s.status === 'loss' ? 'bg-red-500' : 'bg-slate-500'}`}></span><span className="text-slate-300">{s.tipster}</span></div>))}</div>)}</td>
+                            <td className="p-4">
+                              <div className="font-bold text-white">{bet.tipster}</div>
+                              <div className="text-xs text-slate-500 truncate max-w-[200px]">{bet.description}</div>
+                              {((bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0)) && (
+                                <div className="mt-2 text-[10px] space-y-1">
+                                  {(bet.betLines || bet.subPicks).map((line, i) => {
+                                    const s = line.result || line.status || 'pending';
+                                    let color = 'bg-slate-500';
+                                    if (s === 'win') color = 'bg-emerald-500';
+                                    if (s === 'loss') color = 'bg-red-500';
+                                    if (s === 'void') color = 'bg-slate-400';
+                                    return (
+                                      <div key={i} className="flex items-center gap-2">
+                                        <span className={`w-2 h-2 rounded-full ${color}`}></span>
+                                        <span className="text-slate-300 truncate max-w-[150px]">{line.tipster || line.description}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </td>
                             <td className={`p-4 text-right font-bold font-mono ${bet.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{bet.result === 'pending' ? '...' : (bet.profit >= 0 ? '+' : '') + bet.profit.toFixed(2) + '€'}</td>
                             <td className="p-4 text-center"><button onClick={() => deleteBet(bet.id)} className="text-slate-600 hover:text-red-400 p-2"><Trash2 size={18} /></button></td>
                           </tr>
