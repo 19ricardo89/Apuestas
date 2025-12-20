@@ -428,9 +428,10 @@
       const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
       const [newChallengeData, setNewChallengeData] = useState({ title: '', target: '', bank: '', color: 'emerald' });
       const [activeChallengeId, setActiveChallengeId] = useState(null); // ID del reto donde estamos añadiendo un paso
+      const [challengeStatsFilter, setChallengeStatsFilter] = useState('ALL');
 
-      // ESTADO FORMULARIO APUESTA RETO (V13: Pro)
-      const [challengeForm, setChallengeForm] = useState({ id: null, stake: '', odds: '', profit: '', desc: '', lines: [] });
+      // ESTADO FORMULARIO APUESTA RETO (V14: Tipster Support)
+      const [challengeForm, setChallengeForm] = useState({ id: null, stake: '', odds: '', profit: '', desc: '', tipster: '', lines: [] });
       const [isChallengeMulti, setIsChallengeMulti] = useState(false);
 
       const addChallengeLine = () => setChallengeForm({ ...challengeForm, lines: [...challengeForm.lines, { desc: '', odds: '' }] });
@@ -634,11 +635,12 @@
               id: Date.now(),
               date: new Date().toISOString().split('T')[0],
               stake: stake,
-              odds: parseFloat(odds.toFixed(2)), // Normalize
+              odds: parseFloat(odds.toFixed(2)),
               description: challengeForm.desc,
+              tipster: challengeForm.tipster || 'Personal', // V14 Default
               result: 'pending',
               profit: 0,
-              betLines: isChallengeMulti ? challengeForm.lines : [] // V13 Support
+              betLines: isChallengeMulti ? challengeForm.lines : []
             };
             const updatedHistory = [newBet, ...c.history];
             return { ...c, history: updatedHistory };
@@ -827,6 +829,41 @@
       }, [filteredBets]);
 
       // --- DEEP ANALYTICS ENGINE (SIA-Pro) ---
+
+      // Phase 14: Rescue without Reset
+      const resumeChallenge = (challenge) => {
+        if (!window.confirm("¿Reactivar el reto manteniendo el historial y saldo actual?")) return;
+        setChallenges(challenges.map(c => c.id === challenge.id ? { ...c, status: 'active' } : c));
+      };
+
+      // Phase 14: Global Challenge Stats
+      const challengesGlobalStats = useMemo(() => {
+        const totalChallenges = challenges.length;
+        const active = challenges.filter(c => c.status === 'active').length;
+        const completed = challenges.filter(c => c.status === 'won').length;
+        const failed = challenges.filter(c => c.status === 'lost').length;
+
+        let totalInvested = 0;
+        let totalCurrentValue = 0;
+        let allSteps = [];
+
+        challenges.forEach(c => {
+          // Initial Bank is investment
+          let cInvested = c.initialBank;
+          // Add deposits
+          c.history.forEach(h => {
+            if (h.result === 'deposit') cInvested += h.profit;
+            else if (h.result !== 'deposit') allSteps.push({ ...h, challengeTitle: c.title, challengeId: c.id });
+          });
+          totalInvested += cInvested;
+          totalCurrentValue += (c.status === 'lost' ? 0 : c.currentBank); // If lost, value is 0? Or residal? Usually 0.
+        });
+
+        const totalNetProfit = totalCurrentValue - totalInvested;
+        const totalRoi = totalInvested > 0 ? ((totalNetProfit / totalInvested) * 100).toFixed(2) : 0;
+
+        return { totalChallenges, active, completed, failed, totalInvested, totalCurrentValue, totalNetProfit, totalRoi, allSteps };
+      }, [challenges]);
 
       // 1. Drawdown Chart Data
       const drawdownStats = useMemo(() => {
@@ -1476,6 +1513,75 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   </div>
                 </header>
 
+                {/* CHALLENGES GLOBAL ANALYTICS DASHBOARD (V14) */}
+                <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-8 shadow-2xl relative overflow-hidden">
+                  <div className="flex justify-between items-start mb-6 z-10 relative">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-indigo-500/20 rounded-lg border border-indigo-500/30 text-indigo-400"><Trophy size={24} /></div>
+                      <div>
+                        <h2 className="text-xl font-bold text-white tracking-tight">Challenge Center Pro</h2>
+                        <p className="text-xs text-slate-400">Panel de Control de Retos</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Filter size={14} className="text-slate-500" />
+                      <select className="bg-slate-950 border border-slate-700 text-xs rounded px-2 py-1 text-slate-300 outline-none focus:border-indigo-500" value={challengeStatsFilter} onChange={e => setChallengeStatsFilter(e.target.value)}>
+                        <option value="ALL">Todos los Tipsters</option>
+                        {tipsters.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                        <option value="Personal">Personal</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* CALCULATE FILTERED STATS ON THE FLY */}
+                  {(() => {
+                    const allSteps = challengesGlobalStats.allSteps.filter(s => challengeStatsFilter === 'ALL' || s.tipster === challengeStatsFilter);
+
+                    // For "Total Invested" and "Current Value", filtering by Tipster is tricky because challenges are mixed.
+                    // PROPOSAL: If Filter is active, Show "Contribution" of that Tipster (Profit generated by his steps).
+                    // If Filter is ALL, show Global Bank stats.
+
+                    const stepsWon = allSteps.filter(s => s.result === 'win').length;
+                    const stepsTotal = allSteps.filter(s => s.result !== 'void' && s.result !== 'pending' && s.result !== 'deposit').length;
+                    const winRate = stepsTotal > 0 ? ((stepsWon / stepsTotal) * 100).toFixed(1) : 0;
+                    const stepsProfit = allSteps.reduce((sum, s) => sum + (s.profit || 0), 0);
+
+                    return (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 relative">
+                        {challengeStatsFilter === 'ALL' ? (
+                          <>
+                            <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                              <div className="text-xs text-slate-500 uppercase font-bold mb-1">Total Invertido</div>
+                              <div className="text-2xl font-mono text-white font-bold">{challengesGlobalStats.totalInvested.toFixed(2)}€</div>
+                            </div>
+                            <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                              <div className="text-xs text-slate-500 uppercase font-bold mb-1">Valor Actual</div>
+                              <div className={`text-2xl font-mono font-bold ${challengesGlobalStats.totalCurrentValue >= challengesGlobalStats.totalInvested ? 'text-emerald-400' : 'text-red-400'}`}>{challengesGlobalStats.totalCurrentValue.toFixed(2)}€</div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 col-span-2">
+                            <div className="text-xs text-slate-500 uppercase font-bold mb-1">Profit Generado ({challengeStatsFilter})</div>
+                            <div className={`text-2xl font-mono font-bold ${stepsProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{stepsProfit > 0 ? '+' : ''}{stepsProfit.toFixed(2)}€</div>
+                          </div>
+                        )}
+
+                        <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                          <div className="text-xs text-slate-500 uppercase font-bold mb-1">Pasos Ganados</div>
+                          <div className="text-2xl font-mono text-indigo-400 font-bold">{stepsWon}/{stepsTotal} <span className="text-sm text-slate-500">({winRate}%)</span></div>
+                        </div>
+                        <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                          <div className="text-xs text-slate-500 uppercase font-bold mb-1">Retos Activos</div>
+                          <div className="text-2xl font-mono text-white font-bold">{challengesGlobalStats.active} <span className="text-sm text-slate-500">/ {challengesGlobalStats.totalChallenges}</span></div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Background Decor */}
+                  <div className="absolute top-0 right-0 -mr-10 -mt-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                </div>
+
                 {/* MODAL CREAR RETO */}
                 {isCreatingChallenge && (
                   <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={() => setIsCreatingChallenge(false)}>
@@ -1540,7 +1646,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   <>
                                     <span className={`px-2 py-1 rounded text-[10px] font-bold border ${isWon ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>{isWon ? 'RETO COMPLETADO' : 'RETO FALLIDO'}</span>
                                     {isLost && (
-                                      <button onClick={() => rescueChallenge(challenge)} className="px-2 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-[10px] font-bold flex items-center gap-1 transition-colors"><RefreshCw size={10} /> RESCATAR Y REINICIAR</button>
+                                      <>
+                                        <button onClick={() => resumeChallenge(challenge)} className="px-2 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded text-[10px] font-bold flex items-center gap-1 transition-colors"><Activity size={10} /> CONTINUAR</button>
+                                        <button onClick={() => rescueChallenge(challenge)} className="px-2 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-[10px] font-bold flex items-center gap-1 transition-colors"><RefreshCw size={10} /> REINICIAR</button>
+                                      </>
                                     )}
                                   </>
                                 )}
@@ -1603,7 +1712,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   </div>
                                 )}
 
-                                {!isChallengeMulti && <input type="text" placeholder="Descripción (ej: Paso 1 - Madrid)" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm focus:border-emerald-500" required />}
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div className="col-span-1">
+                                    <select value={challengeForm.tipster} onChange={e => setChallengeForm({ ...challengeForm, tipster: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-xs outline-none focus:border-emerald-500">
+                                      <option value="">Personal</option>
+                                      {tipsters.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                                    </select>
+                                  </div>
+                                  <div className="col-span-2">
+                                    {!isChallengeMulti && <input type="text" placeholder="Descripción (ej: Paso 1 - Madrid)" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm focus:border-emerald-500" required />}
+                                  </div>
+                                </div>
 
                                 <div className="flex gap-2 pt-2">
                                   <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 rounded font-bold text-sm hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transform active:scale-95 transition-all">Guardar Paso</button>
@@ -2626,7 +2745,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       const lines = isV7 ? resolutionBet.tempLines : resolutionBet.tempSubPicks;
 
                       let parentResult = 'win';
-                      let parentProfit = (resolutionBet.stake * resolutionBet.odds) - resolutionBet.stake;
+                      let finalOdds = resolutionBet.odds;
+                      let parentProfit = 0;
 
                       const anyLoss = isV7 ? lines.some(l => l.result === 'loss') : lines.some(l => l.status === 'loss');
                       const allVoid = isV7 ? lines.every(l => l.result === 'void') : false;
@@ -2637,6 +2757,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       } else if (allVoid) {
                         parentResult = 'void';
                         parentProfit = 0;
+                      } else {
+                        // WIN CASE (Check for Voids in V7)
+                        if (isV7) {
+                          // Recalculate Odds excluding Voids
+                          const winningLines = lines.filter(l => l.result !== 'void');
+                          if (winningLines.length > 0) {
+                            const recalculatedOdds = winningLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+                            finalOdds = parseFloat(recalculatedOdds.toFixed(2));
+                          }
+                        }
+                        parentProfit = (resolutionBet.stake * finalOdds) - resolutionBet.stake;
                       }
 
                       const updatedBets = bets.map(b => {
@@ -2645,6 +2776,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             ...b,
                             result: parentResult,
                             profit: parseFloat(parentProfit.toFixed(2)),
+                            odds: finalOdds, // Update Odds with Recalculated Value
                             betLines: isV7 ? resolutionBet.tempLines : undefined,
                             subPicks: !isV7 ? resolutionBet.tempSubPicks : undefined
                           };
