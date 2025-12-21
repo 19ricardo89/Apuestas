@@ -182,7 +182,7 @@
       Plus, Trash2, Users, Save, History, PieChart, TrendingUp,
       CheckCircle, XCircle, Clock, Activity, Target, Zap,
       BarChart2, Menu, ChevronRight, AlertCircle, RefreshCw, Check, X, Calendar, Layers, Trophy, Flame,
-      Filter, Tag, Camera, Sparkles, Brain, Upload, Scan, TrendingDown, UserPlus, Edit
+      Filter, Tag, Camera, Sparkles, Brain, Upload, Scan, TrendingDown, UserPlus, Edit, Calculator
     } = Icons;
     const {
       LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip: RechartsTooltip, ResponsiveContainer,
@@ -429,10 +429,13 @@
       const [newChallengeData, setNewChallengeData] = useState({ title: '', target: '', bank: '', color: 'emerald' });
       const [activeChallengeId, setActiveChallengeId] = useState(null); // ID del reto donde estamos añadiendo un paso
       const [challengeStatsFilter, setChallengeStatsFilter] = useState('ALL');
+      const [showCalculator, setShowCalculator] = useState(false);
+      const [calculatorData, setCalculatorData] = useState({ mode: 'simple', stake: '10', odds: '', profit: '', targetProfit: '', lines: [{ odds: '', desc: '', void: false }] });
 
       // ESTADO FORMULARIO APUESTA RETO (V14: Tipster Support)
       const [challengeForm, setChallengeForm] = useState({ id: null, stake: '', odds: '', profit: '', desc: '', tipster: '', lines: [] });
       const [isChallengeMulti, setIsChallengeMulti] = useState(false);
+      const [resolutionChallengeBet, setResolutionChallengeBet] = useState(null); // V17: Granular Challenge Resolution
 
       const addChallengeLine = () => setChallengeForm({ ...challengeForm, lines: [...challengeForm.lines, { desc: '', odds: '' }] });
       const updateChallengeLine = (idx, field, val) => {
@@ -678,6 +681,16 @@
       };
 
       const resolveChallengeBet = (challengeId, betId, result) => {
+        // V17: Granular Resolution Check
+        if (result === 'win') {
+          const targetChallenge = challenges.find(c => c.id === challengeId);
+          const targetBet = targetChallenge?.history.find(b => b.id === betId);
+          if (targetBet && targetBet.lines && targetBet.lines.length > 0) {
+            setResolutionChallengeBet({ ...targetBet, challengeId, tempLines: targetBet.lines });
+            return;
+          }
+        }
+
         const updatedChallenges = challenges.map(c => {
           if (c.id === challengeId) {
             const updatedHistory = c.history.map(b => {
@@ -1365,12 +1378,15 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-wider">Navegación</div>
-              <NavItem id="dashboard" icon={Activity} label="Dashboard" />
-              <NavItem id="add" icon={Plus} label="Añadir Apuesta" />
-              <NavItem id="challenges" icon={Trophy} label="Retos" />
-              <NavItem id="stats" icon={BarChart2} label="Estadísticas" />
-              <NavItem id="simulador" icon={TrendingUp} label="Sim. Ganancias" />
-              <NavItem id="history" icon={History} label="Historial" />
+              <nav className="flex-1 px-2 py-4 space-y-2">
+                <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
+                <NavItem id="challenges" icon={Trophy} label="Retos" />
+                <NavItem id="history" icon={History} label="Historial" />
+                <button onClick={() => setShowCalculator(true)} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-slate-400 hover:bg-slate-800">
+                  <Calculator size={24} />
+                  <span className="font-medium text-lg">Calculadora</span>
+                </button>
+              </nav>
             </div>
             <div className="p-6 border-t border-slate-800">
               <div className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-wider">Gestión de Datos (V3)</div>
@@ -2689,6 +2705,51 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     <p className="text-sm text-slate-400">Define el resultado de cada línea para el Scout.</p>
                   </div>
                   <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                    {/* LIVE PREVIEW (Phase 16) */}
+                    {(() => {
+                      const isV7 = resolutionBet.tempLines && resolutionBet.tempLines.length > 0;
+                      const lines = isV7 ? resolutionBet.tempLines : resolutionBet.tempSubPicks;
+
+                      let effOdds = resolutionBet.odds;
+                      let estProfit = (resolutionBet.stake * effOdds) - resolutionBet.stake;
+                      let status = 'WIN';
+                      let statusColor = 'text-emerald-400';
+
+                      const anyLoss = isV7 ? lines.some(l => l.result === 'loss') : lines.some(l => l.status === 'loss');
+                      const allVoid = isV7 ? lines.every(l => l.result === 'void') : false;
+
+                      if (anyLoss) { status = 'LOSS'; estProfit = -resolutionBet.stake; statusColor = 'text-red-400'; effOdds = 0; }
+                      else if (allVoid) { status = 'VOID'; estProfit = 0; statusColor = 'text-slate-400'; effOdds = 1.00; }
+                      else if (isV7) {
+                        const winningLines = lines.filter(l => l.result !== 'void');
+                        if (winningLines.length > 0) {
+                          effOdds = winningLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+                          estProfit = (resolutionBet.stake * effOdds) - resolutionBet.stake;
+                        } else {
+                          // Should be void if no winning lines and no loss? Handled by allVoid check mostly.
+                          // Covers edge case of just one line remaining valid?
+                          // Actually winningLines logic handles it. 
+                        }
+                      }
+
+                      return (
+                        <div className="bg-slate-950/50 rounded-lg border border-slate-700 p-4 mb-4 flex justify-between items-center animate-pulse-slow">
+                          <div>
+                            <div className="text-[10px] uppercase font-bold text-slate-500">Resultado Estimado</div>
+                            <div className={`text-xl font-bold font-mono ${statusColor}`}>{status}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[10px] uppercase font-bold text-slate-500">Cuota Efectiva</div>
+                            <div className="text-sm font-mono text-white">@{effOdds.toFixed(2)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[10px] uppercase font-bold text-slate-500">Beneficio</div>
+                            <div className={`text-xl font-bold font-mono ${estProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{estProfit > 0 ? '+' : ''}{estProfit.toFixed(2)}€</div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Support V7 Lines */}
                     {resolutionBet.tempLines && resolutionBet.tempLines.length > 0 && resolutionBet.tempLines.map((line, idx) => (
                       <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
@@ -2785,6 +2846,127 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       });
                       setBets(updatedBets);
                       setResolutionBet(null);
+                    }} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 transition-all transform active:scale-95">
+                      Confirmar Resolución
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* RESOLUTION CHALLENGE MODAL (V17) */}
+            {resolutionChallengeBet && (
+              <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
+                <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in">
+                  <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-900/20 border-b border-slate-800">
+                    <h3 className="text-xl font-bold text-white mb-1">Resolución Detallada (Reto)</h3>
+                    <p className="text-sm text-slate-400">Define el resultado de cada línea del reto.</p>
+                  </div>
+
+                  {/* LIVE PREVIEW (V17) */}
+                  <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                    {(() => {
+                      const lines = resolutionChallengeBet.tempLines || [];
+                      let effOdds = resolutionChallengeBet.odds;
+                      let estProfit = (resolutionChallengeBet.stake * effOdds) - resolutionChallengeBet.stake;
+                      let status = 'WIN';
+                      let statusColor = 'text-emerald-400';
+
+                      const anyLoss = lines.some(l => l.result === 'loss');
+                      const allVoid = lines.every(l => l.result === 'void');
+
+                      if (anyLoss) { status = 'LOSS'; estProfit = -resolutionChallengeBet.stake; statusColor = 'text-red-400'; effOdds = 0; }
+                      else if (allVoid) { status = 'VOID'; estProfit = 0; statusColor = 'text-slate-400'; effOdds = 1.00; }
+                      else {
+                        const winningLines = lines.filter(l => l.result !== 'void');
+                        if (winningLines.length > 0) {
+                          effOdds = winningLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+                          estProfit = (resolutionChallengeBet.stake * effOdds) - resolutionChallengeBet.stake;
+                        }
+                      }
+
+                      return (
+                        <div className="bg-slate-950/50 rounded-lg border border-slate-700 p-4 mb-4 flex justify-between items-center animate-pulse-slow">
+                          <div>
+                            <div className="text-[10px] uppercase font-bold text-slate-500">Resultado Estimado</div>
+                            <div className={`text-xl font-bold font-mono ${statusColor}`}>{status}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[10px] uppercase font-bold text-slate-500">Cuota Efectiva</div>
+                            <div className="text-sm font-mono text-white">@{effOdds.toFixed(2)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[10px] uppercase font-bold text-slate-500">Beneficio</div>
+                            <div className={`text-xl font-bold font-mono ${estProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{estProfit > 0 ? '+' : ''}{estProfit.toFixed(2)}€</div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {resolutionChallengeBet.tempLines.map((line, idx) => (
+                      <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
+                        <div className="flex justify-between">
+                          <span className="font-bold text-indigo-400 text-sm">Línea #{idx + 1}</span>
+                          <span className="text-slate-500 text-xs text-right">@{line.odds}</span>
+                        </div>
+                        <div className="text-sm text-slate-300">{line.desc}</div>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          <button onClick={() => {
+                            const newLines = [...resolutionChallengeBet.tempLines]; newLines[idx].result = 'win';
+                            setResolutionChallengeBet({ ...resolutionChallengeBet, tempLines: newLines });
+                          }} className={`p-2 rounded text-xs font-bold border transition-all ${line.result === 'win' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-emerald-500'}`}>GANADA</button>
+                          <button onClick={() => {
+                            const newLines = [...resolutionChallengeBet.tempLines]; newLines[idx].result = 'void';
+                            setResolutionChallengeBet({ ...resolutionChallengeBet, tempLines: newLines });
+                          }} className={`p-2 rounded text-xs font-bold border transition-all ${line.result === 'void' ? 'bg-slate-500 text-white border-slate-500' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500'}`}>NULA</button>
+                          <button onClick={() => {
+                            const newLines = [...resolutionChallengeBet.tempLines]; newLines[idx].result = 'loss';
+                            setResolutionChallengeBet({ ...resolutionChallengeBet, tempLines: newLines });
+                          }} className={`p-2 rounded text-xs font-bold border transition-all ${line.result === 'loss' ? 'bg-red-500 text-white border-red-500' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-red-500'}`}>PERDIDA</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-6 border-t border-slate-800 flex justify-end gap-3 bg-slate-900">
+                    <button onClick={() => setResolutionChallengeBet(null)} className="px-4 py-2 text-slate-400 hover:text-white font-bold transition-colors">Cancelar</button>
+                    <button onClick={() => {
+                      // APPLY LOGIC TO CHALLENGES
+                      const lines = resolutionChallengeBet.tempLines;
+                      let parentResult = 'win';
+                      let finalOdds = resolutionChallengeBet.odds;
+                      let parentProfit = 0;
+
+                      const anyLoss = lines.some(l => l.result === 'loss');
+                      const allVoid = lines.every(l => l.result === 'void');
+
+                      if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.stake; }
+                      else if (allVoid) { parentResult = 'void'; parentProfit = 0; }
+                      else {
+                        const winningLines = lines.filter(l => l.result !== 'void');
+                        if (winningLines.length > 0) {
+                          const recalculatedOdds = winningLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+                          finalOdds = parseFloat(recalculatedOdds.toFixed(2));
+                        }
+                        parentProfit = (resolutionChallengeBet.stake * finalOdds) - resolutionChallengeBet.stake;
+                      }
+
+                      const updatedChallenges = challenges.map(c => {
+                        if (c.id === resolutionChallengeBet.challengeId) {
+                          const newHistory = c.history.map(h => {
+                            if (h.id === resolutionChallengeBet.id) {
+                              return { ...h, result: parentResult, profit: parseFloat(parentProfit.toFixed(2)), odds: finalOdds, lines: resolutionChallengeBet.tempLines };
+                            }
+                            return h;
+                          });
+                          const newChallenge = { ...c, history: newHistory };
+                          newChallenge.currentBank = recalculateChallengeBank(newChallenge);
+                          return newChallenge;
+                        }
+                        return c;
+                      });
+                      setChallenges(updatedChallenges);
+                      setResolutionChallengeBet(null);
                     }} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 transition-all transform active:scale-95">
                       Confirmar Resolución
                     </button>
