@@ -437,6 +437,10 @@
       const [isChallengeMulti, setIsChallengeMulti] = useState(false);
       const [resolutionChallengeBet, setResolutionChallengeBet] = useState(null); // V17: Granular Challenge Resolution
 
+      // V18: GLOBAL BANK MANAGEMENT
+      const [bankTransactions, setBankTransactions] = useState([]);
+      const [showBankManager, setShowBankManager] = useState(false);
+
       const addChallengeLine = () => setChallengeForm({ ...challengeForm, lines: [...challengeForm.lines, { desc: '', odds: '' }] });
       const updateChallengeLine = (idx, field, val) => {
         const newLines = [...challengeForm.lines];
@@ -771,6 +775,18 @@
           avgOdds: s.validOddsCount > 0 ? (s.oddsSum / s.validOddsCount).toFixed(2) : '0.00'
         })).sort((a, b) => b.profit - a.profit);
       }, [filteredBets, tipsters]);
+
+      // V18: GLOBAL BANK CALCULATION
+      const currentGlobalBank = useMemo(() => {
+        const initial = bankTransactions.filter(t => t.type === 'initial').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+        const deposits = bankTransactions.filter(t => t.type === 'deposit').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+        const withdrawals = bankTransactions.filter(t => t.type === 'withdraw').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+        const bettingProfit = financialStats.profit || 0;
+
+        if (bankTransactions.length === 0) return 0; // If unset, show 0 or handle in UI
+
+        return initial + deposits - withdrawals + bettingProfit;
+      }, [bankTransactions, financialStats.profit]);
 
       const scoutStats = useMemo(() => {
         const stats = {};
@@ -1295,16 +1311,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           version: 'v29.1',
           timestamp: new Date().toISOString(),
           bets: bets,
-          challenges: challenges
+          challenges: challenges,
+          bankTransactions: bankTransactions // V18
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `betmanager_backup_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `betmanager_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       };
 
       const importData = (e) => {
@@ -1317,12 +1334,14 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             if (imported.bets && Array.isArray(imported.bets)) {
               setBets(imported.bets);
               if (imported.challenges) setChallenges(imported.challenges);
+              if (imported.bankTransactions) setBankTransactions(imported.bankTransactions); // V18
               alert('¡Datos restaurados con éxito! (' + imported.bets.length + ' apuestas)');
             } else {
-              alert('Error: Formato de archivo inválido.');
+              alert('Formato de archivo inválido');
             }
           } catch (err) {
-            alert('Error al leer el archivo.');
+            alert('Error al leer el archivo');
+            console.error(err);
           }
         };
         reader.readAsText(file);
@@ -1372,8 +1391,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
           {/* SIDEBAR */}
           <div className={`fixed inset-0 bg-slate-950/95 z-40 transform transition-transform duration-300 md:relative md:translate-x-0 md:w-72 md:bg-slate-900 md:border-r md:border-slate-800 flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            {/* HEADING PRO (V18: Bank Badge) */}
             <div className="hidden md:flex p-6 border-b border-slate-800 items-center justify-between">
               <h1 className="font-bold text-2xl text-emerald-400 tracking-tight">BET<span className="text-white">MANAGER</span></h1>
+              <button onClick={() => setShowBankManager(true)} className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 hover:border-emerald-500 transition-colors group">
+                <div className="text-[10px] uppercase font-bold text-slate-400 group-hover:text-emerald-400">BANK ACTUAL</div>
+                <div className="text-lg font-bold font-mono text-white group-hover:text-emerald-300">{currentGlobalBank.toFixed(2)}€</div>
+              </button>
             </div>
 
             <div className="flex-1 p-6 overflow-y-auto">
@@ -3031,6 +3055,82 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     <Save size={16} /> Guardar Cambios
                   </button>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* BANK MANAGER MODAL (V18) */}
+          {showBankManager && (
+            <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowBankManager(false)}>
+              <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
+                <div className="p-6 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2"><PieChart className="text-emerald-500" /> Gestión de Fondos</h3>
+                  <button onClick={() => setShowBankManager(false)} className="text-slate-500 hover:text-white"><X size={20} /></button>
+                </div>
+                <div className="p-6 space-y-6">
+                  <div className="bg-slate-800/50 p-4 rounded-lg flex justify-between items-center border border-slate-700">
+                    <div>
+                      <div className="text-xs font-bold text-slate-400 uppercase">Bank Actual (Calculado)</div>
+                      <div className="text-3xl font-bold font-mono text-white">{currentGlobalBank.toFixed(2)}€</div>
+                    </div>
+                    <div className="text-right text-xs text-slate-500">
+                      <div>Inversión: {bankTransactions.filter(t => t.type !== 'withdraw').reduce((a, b) => a + parseFloat(b.amount || 0), 0).toFixed(2)}€</div>
+                      <div>Retiros: {bankTransactions.filter(t => t.type === 'withdraw').reduce((a, b) => a + parseFloat(b.amount || 0), 0).toFixed(2)}€</div>
+                      <div className={financialStats.profit >= 0 ? "text-emerald-500" : "text-red-500"}>Beneficio: {financialStats.profit >= 0 ? '+' : ''}{financialStats.profit.toFixed(2)}€</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => {
+                      const amount = prompt("Introduce Bank Inicial (€):");
+                      if (amount && !isNaN(amount)) {
+                        const newTrans = { id: Date.now(), date: new Date().toISOString(), type: 'initial', amount: parseFloat(amount), note: 'Bank Inicial' };
+                        // Filter out old initial if exists? Usually one initial.
+                        setBankTransactions([...bankTransactions.filter(t => t.type !== 'initial'), newTrans]);
+                      }
+                    }} className="p-3 bg-slate-800 hover:bg-slate-700 rounded border border-slate-600 text-sm font-bold text-slate-300 flex items-center justify-center gap-2 transition-colors">
+                      <Target size={16} /> FIJAR INICIAL
+                    </button>
+                    <button onClick={() => {
+                      const amount = prompt("Cantidad a Ingresar (€):");
+                      if (amount && !isNaN(amount)) {
+                        setBankTransactions([...bankTransactions, { id: Date.now(), date: new Date().toISOString(), type: 'deposit', amount: parseFloat(amount), note: 'Depósito' }]);
+                      }
+                    }} className="p-3 bg-emerald-600/20 hover:bg-emerald-600/30 rounded border border-emerald-500/50 text-sm font-bold text-emerald-400 flex items-center justify-center gap-2 transition-colors">
+                      <TrendingUp size={16} /> INGRESAR
+                    </button>
+                    <button onClick={() => {
+                      const amount = prompt("Cantidad a Retirar (€):");
+                      if (amount && !isNaN(amount)) {
+                        setBankTransactions([...bankTransactions, { id: Date.now(), date: new Date().toISOString(), type: 'withdraw', amount: parseFloat(amount), note: 'Retiro' }]);
+                      }
+                    }} className="p-3 bg-red-600/20 hover:bg-red-600/30 rounded border border-red-500/50 text-sm font-bold text-red-400 flex items-center justify-center gap-2 transition-colors">
+                      <TrendingDown size={16} /> RETIRAR
+                    </button>
+                    <button onClick={() => {
+                      if (confirm("¿Borrar historial de transacciones?")) setBankTransactions([]);
+                    }} className="p-3 bg-slate-900 hover:bg-red-900/20 rounded border border-slate-700 hover:border-red-500/30 text-sm font-bold text-slate-500 hover:text-red-400 flex items-center justify-center gap-2 transition-colors">
+                      <Trash2 size={16} /> RESET
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-500 uppercase">Historial de Movimientos</h4>
+                    <div className="max-h-[150px] overflow-y-auto space-y-1 pr-1">
+                      {bankTransactions.sort((a, b) => b.id - a.id).map(t => (
+                        <div key={t.id} className="flex justify-between items-center p-2 bg-slate-950 rounded border border-slate-800 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${t.type === 'initial' ? 'bg-blue-500' : (t.type === 'deposit' ? 'bg-emerald-500' : 'bg-red-500')}`}></span>
+                            <span className="text-slate-300 font-bold uppercase">{t.type}</span>
+                            <span className="text-slate-500">{new Date(t.date).toLocaleDateString()}</span>
+                          </div>
+                          <div className="font-mono font-bold text-white">{t.amount.toFixed(2)}€</div>
+                        </div>
+                      ))}
+                      {bankTransactions.length === 0 && <div className="text-center text-slate-600 italic py-2">Sin movimientos registrados.</div>}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
