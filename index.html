@@ -785,6 +785,7 @@
       const availableTags = useMemo(() => {
         const tags = new Set();
         bets.forEach(b => {
+          if (b.tag && b.tag !== 'ALL') tags.add(b.tag); // Legacy singular support
           if (b.tags && Array.isArray(b.tags)) b.tags.forEach(t => tags.add(t));
         });
         return ['ALL', ...Array.from(tags).sort()];
@@ -1265,6 +1266,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       const [subPicks, setSubPicks] = useState([]);
       const [subTipster, setSubTipster] = useState('');
       const [subDetail, setSubDetail] = useState('');
+
+      // (Removed duplicate availableTags definition)
 
       // Efecto para calcular cuota total si hay lineas
       useEffect(() => {
