@@ -1278,9 +1278,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       useEffect(() => {
         if (isMultiLine && betLines.length > 0) {
           const totalOdds = betLines.reduce((acc, line) => acc * (parseFloat(line.odds) || 1), 1);
-          setFormOdds(totalOdds.toFixed(2));
+          const finalOdds = parseFloat(totalOdds.toFixed(2));
+          setFormOdds(finalOdds);
+
+          // Auto-calc profit if stake exists
+          const s = parseFloat(formStake);
+          if (s > 0) {
+            const potentialProfit = (s * finalOdds) - s;
+            setManualProfit(potentialProfit.toFixed(2));
+          }
         }
-      }, [betLines, isMultiLine]);
+      }, [betLines, isMultiLine, formStake]);
 
       const handleSaveBet = (e) => {
         e.preventDefault();
@@ -1424,13 +1432,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         </button>
       );
 
-      // Auto-update odds if manual profit changes
-      useEffect(() => {
-        if (manualProfit) {
-          const newOdds = calculateOddsFromProfit(manualProfit);
-          if (newOdds > 0 && newOdds !== Infinity) setFormOdds(newOdds);
-        }
-      }, [manualProfit, formStake]);
+
 
       return (
         <div className="h-screen bg-slate-950 text-slate-100 font-sans flex flex-col md:flex-row overflow-hidden">
@@ -3328,7 +3330,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       </div>
                       <div>
                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake Total (€)</label>
-                        <input type="number" step="0.01" value={formStake} onChange={e => setFormStake(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white font-mono text-lg focus:border-emerald-500" />
+                        <input type="number" step="0.01" value={formStake} onChange={e => {
+                          const newStake = e.target.value;
+                          setFormStake(newStake);
+                          // Auto-calc profit if odds exist
+                          const o = parseFloat(formOdds);
+                          if (o > 1 && newStake) {
+                            const s = parseFloat(newStake);
+                            setManualProfit(((s * o) - s).toFixed(2));
+                          }
+                        }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white font-mono text-lg focus:border-emerald-500" />
                       </div>
                     </div>
 
@@ -3405,8 +3416,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       <div>
                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Cuota Final (@)</label>
                         <input type="number" step="0.01" value={formOdds} onChange={e => {
-                          setFormOdds(e.target.value);
-                          setManualProfit(''); // Clear profit if odds change manually
+                          const val = e.target.value;
+                          setFormOdds(val);
+                          // Auto-calc profit
+                          const s = parseFloat(formStake);
+                          const o = parseFloat(val);
+                          if (s > 0 && o > 1) {
+                            setManualProfit(((s * o) - s).toFixed(2));
+                          } else {
+                            if (!val) setManualProfit('');
+                          }
                         }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-xl font-bold font-mono focus:border-emerald-500" placeholder="1.00" />
                       </div>
                       <div>
