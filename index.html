@@ -1177,6 +1177,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       // Deep Analytics State
       const [selectedDay, setSelectedDay] = useState(null); // For Heatmap Modal
       const [resolutionBet, setResolutionBet] = useState(null); // For Multi-line Resolution Modal (V7)
+      const [showAddBetModal, setShowAddBetModal] = useState(false); // Modal Añadir Apuesta
 
       // Goal Seeker State
       const [goalProfit, setGoalProfit] = useState(1000);
@@ -1330,6 +1331,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         setBetLines([]);
         setIsMultiLine(false);
         setManualProfit('');
+        setShowAddBetModal(false);
         setActiveSection('dashboard');
       };
 
@@ -1461,7 +1463,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-wider">Navegación</div>
               <nav className="flex-1 px-2 py-4 space-y-2">
                 <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
-                <button onClick={() => { setActiveSection('dashboard'); setSidebarOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-emerald-400 hover:bg-slate-800 border border-transparent hover:border-emerald-500/30">
+                <button onClick={() => { setShowAddBetModal(true); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-emerald-400 hover:bg-slate-800 border border-transparent hover:border-emerald-500/30">
                   <Plus size={24} />
                   <span className="font-bold text-lg">Nueva Apuesta</span>
                 </button>
@@ -1516,105 +1518,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
 
                 {/* 0. ADD BET FORM (RESTORED V20) */}
-                <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 shadow-2xl mb-8 relative overflow-hidden group hover:border-emerald-500/50 transition-all duration-500">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-
-                  <form onSubmit={handleSaveBet} className="space-y-4 relative z-10">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-bold text-white text-lg flex items-center gap-2"><Plus className="text-emerald-500" /> Registrar Nueva Apuesta</h3>
-                      <div className="flex bg-slate-800 rounded p-1">
-                        <button type="button" onClick={() => setIsMulti(false)} className={`px-3 py-1 text-xs font-bold rounded transition-all ${!isMulti ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>SIMPLE</button>
-                        <button type="button" onClick={() => setIsMulti(true)} className={`px-3 py-1 text-xs font-bold rounded transition-all ${isMulti ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>COMBINADA</button>
-                      </div>
-                    </div>
-
-                    {/* ROW 1: DESC & STAKE */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="md:col-span-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción / Partido</label>
-                        <input type="text" value={formDescription} onChange={e => setFormDescription(e.target.value)} placeholder={isMulti ? "Resumen de la combinada..." : "Ej: Real Madrid vs Barcelona"} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white focus:border-emerald-500 transition-colors" disabled={isMulti} required={!isMulti} />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake (€)</label>
-                        <input type="number" step="0.01" value={formStake} onChange={e => {
-                          const val = e.target.value;
-                          setFormStake(val);
-                          // Auto-calc profit if profit mode
-                        }} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white font-mono focus:border-emerald-500 transition-colors" required />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">{manualProfit ? 'Beneficio Neto (€)' : 'Cuota Total (@)'}</label>
-                        <input type="number" step="0.01" value={manualProfit ? manualProfit : formOdds} onChange={e => {
-                          if (manualProfit) {
-                            setManualProfit(e.target.value);
-                            // Reverse calc odds
-                            const prof = parseFloat(e.target.value);
-                            const st = parseFloat(formStake);
-                            if (st > 0 && prof > 0) setFormOdds(((prof + st) / st).toFixed(2));
-                          } else {
-                            setFormOdds(e.target.value);
-                          }
-                        }} placeholder="1.90" className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white font-mono font-bold text-emerald-400 focus:border-emerald-500 transition-colors" disabled={isMulti && !manualProfit} required />
-                        <div className="text-[10px] text-right text-slate-500 mt-1 cursor-pointer hover:text-emerald-400 underline" onClick={() => {
-                          if (manualProfit) { setManualProfit(''); } else { setManualProfit(true); setFormOdds(''); }
-                        }}>{manualProfit ? 'Cambiar a modo Cuota' : 'Introducir Beneficio directo'}</div>
-                      </div>
-                    </div>
-
-                    {/* V7 MULTI-LINE BUILDER */}
-                    {isMulti && (
-                      <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800 space-y-3 animate-fade-in">
-                        <div className="flex justify-between items-center">
-                          <div className="text-xs font-bold text-indigo-400 uppercase flex items-center gap-2"><Layers size={12} /> Constructor de Combinada</div>
-                        </div>
-                        {betLines.map((line, idx) => (
-                          <div key={idx} className="flex gap-2 items-center animate-slide-in">
-                            <span className="text-slate-500 font-mono text-xs w-4">{idx + 1}.</span>
-                            <input type="text" placeholder="Selección..." value={line.description} onChange={e => { const n = [...betLines]; n[idx].description = e.target.value; setBetLines(n); }} className="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" required />
-                            <input type="text" placeholder="Tipster" value={line.tipster} onChange={e => { const n = [...betLines]; n[idx].tipster = e.target.value; setBetLines(n); }} className="w-24 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-300" list="tipsterOptions" />
-                            <input type="number" placeholder="@" value={line.odds} onChange={e => {
-                              const n = [...betLines]; n[idx].odds = e.target.value; setBetLines(n);
-                              // Auto-update total odds
-                              const valid = n.filter(l => l.odds && !isNaN(l.odds));
-                              if (valid.length > 0) setFormOdds(valid.reduce((acc, l) => acc * parseFloat(l.odds), 1).toFixed(2));
-                            }} className="w-16 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-emerald-400 font-bold text-right" required />
-                            <button type="button" onClick={() => removeBetLine(idx)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button>
-                          </div>
-                        ))}
-                        <button type="button" onClick={addBetLine} className="w-full py-2 border border-dashed border-slate-700 text-slate-500 text-xs rounded hover:bg-slate-800 hover:text-indigo-400 transition-colors flex justify-center items-center gap-2"><Plus size={12} /> Añadir Línea</button>
-                      </div>
-                    )}
-
-                    {/* ROW 2: DETAILS */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Tipster</label>
-                        <div className="relative">
-                          <input type="text" list="tipsterOptions" value={formTipster} onChange={e => setFormTipster(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm focus:border-emerald-500" />
-                          <datalist id="tipsterOptions">
-                            {tipsters.map(t => <option key={t.id} value={t.name} />)}
-                          </datalist>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Fecha</label>
-                        <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm focus:border-emerald-500" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Etiqueta</label>
-                        <select value={formTag} onChange={e => setFormTag(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm focus:border-emerald-500">
-                          {availableTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">&nbsp;</label>
-                        <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded shadow-lg shadow-emerald-900/20 transition-all transform active:scale-95 flex justify-center items-center gap-2">
-                          <Save size={18} /> REGISTRAR
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                </div>
+                {/* 0. ADD BET FORM MOVED TO MODAL */}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatCard title="Beneficio Neto" value={`${financialStats.profit >= 0 ? '+' : ''}${financialStats.profit.toFixed(2)}€`} icon={PieChart} colorClass="text-emerald-500" />
@@ -3390,6 +3294,114 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       {bankTransactions.length === 0 && <div className="text-center text-slate-600 italic py-2">Sin movimientos registrados.</div>}
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ADD BET MODAL */}
+          {showAddBetModal && (
+            <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowAddBetModal(false)}>
+              <div className="bg-slate-900 w-full max-w-4xl rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center shrink-0">
+                  <h3 className="font-bold text-white uppercase text-lg flex items-center gap-2"><Plus size={20} className="text-emerald-500" /> Registrar Nueva Apuesta</h3>
+                  <button onClick={() => setShowAddBetModal(false)} className="text-slate-500 hover:text-white transition-colors"><X size={24} /></button>
+                </div>
+
+                <div className="p-6 overflow-y-auto">
+                  <form onSubmit={handleSaveBet} className="space-y-4 relative z-10">
+                    {/* FORM CONTENT MOVED */}
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex bg-slate-800 rounded p-1">
+                        <button type="button" onClick={() => setIsMulti(false)} className={`px-3 py-1 text-xs font-bold rounded transition-all ${!isMulti ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>SIMPLE</button>
+                        <button type="button" onClick={() => setIsMulti(true)} className={`px-3 py-1 text-xs font-bold rounded transition-all ${isMulti ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>COMBINADA</button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción / Partido</label>
+                        <input type="text" value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder={isMulti ? "Resumen de la combinada..." : "Ej: Real Madrid vs Barcelona"} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white focus:border-emerald-500 transition-colors" disabled={isMulti} required={!isMulti} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake (€)</label>
+                        <input type="number" step="0.01" value={formStake} onChange={e => {
+                          const val = e.target.value;
+                          setFormStake(val);
+                          // Auto-calc profit if profit mode
+                        }} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white font-mono focus:border-emerald-500 transition-colors" required />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">{manualProfit ? 'Beneficio Neto (€)' : 'Cuota Total (@)'}</label>
+                        <input type="number" step="0.01" value={manualProfit ? manualProfit : formOdds} onChange={e => {
+                          if (manualProfit) {
+                            setManualProfit(e.target.value);
+                            // Reverse calc odds
+                            const prof = parseFloat(e.target.value);
+                            const st = parseFloat(formStake);
+                            if (st > 0 && prof > 0) setFormOdds(((prof + st) / st).toFixed(2));
+                          } else {
+                            setFormOdds(e.target.value);
+                          }
+                        }} placeholder="1.90" className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white font-mono font-bold text-emerald-400 focus:border-emerald-500 transition-colors" disabled={isMulti && !manualProfit} required />
+                        <div className="text-[10px] text-right text-slate-500 mt-1 cursor-pointer hover:text-emerald-400 underline" onClick={() => {
+                          if (manualProfit) { setManualProfit(''); } else { setManualProfit(true); setFormOdds(''); }
+                        }}>{manualProfit ? 'Cambiar a modo Cuota' : 'Introducir Beneficio directo'}</div>
+                      </div>
+                    </div>
+
+                    {isMulti && (
+                      <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800 space-y-3 animate-fade-in">
+                        <div className="flex justify-between items-center">
+                          <div className="text-xs font-bold text-indigo-400 uppercase flex items-center gap-2"><Layers size={12} /> Constructor de Combinada</div>
+                        </div>
+                        {betLines.map((line, idx) => (
+                          <div key={idx} className="flex gap-2 items-center animate-slide-in">
+                            <span className="text-slate-500 font-mono text-xs w-4">{idx + 1}.</span>
+                            <input type="text" placeholder="Selección..." value={line.description} onChange={e => { const n = [...betLines]; n[idx].description = e.target.value; setBetLines(n); }} className="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" required />
+                            <input type="text" placeholder="Tipster" value={line.tipster} onChange={e => { const n = [...betLines]; n[idx].tipster = e.target.value; setBetLines(n); }} className="w-24 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-300" list="tipsterOptions" />
+                            <input type="number" placeholder="@" value={line.odds} onChange={e => {
+                              const n = [...betLines]; n[idx].odds = e.target.value; setBetLines(n);
+                              // Auto-update total odds
+                              const valid = n.filter(l => l.odds && !isNaN(l.odds));
+                              if (valid.length > 0) setFormOdds(valid.reduce((acc, l) => acc * parseFloat(l.odds), 1).toFixed(2));
+                            }} className="w-16 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-emerald-400 font-bold text-right" required />
+                            <button type="button" onClick={() => removeBetLine(idx)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={addBetLine} className="w-full py-2 border border-dashed border-slate-700 text-slate-500 text-xs rounded hover:bg-slate-800 hover:text-indigo-400 transition-colors flex justify-center items-center gap-2"><Plus size={12} /> Añadir Línea</button>
+                      </div>
+                    )}
+
+                    {/* ROW 2: DETAILS */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Tipster</label>
+                        <div className="relative">
+                          <input type="text" list="tipsterOptions" value={formTipster} onChange={e => setFormTipster(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm focus:border-emerald-500" />
+                          <datalist id="tipsterOptions">
+                            {tipsters.map(t => <option key={t.id} value={t.name} />)}
+                          </datalist>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Fecha</label>
+                        <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm focus:border-emerald-500" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Etiqueta</label>
+                        <select value={formTag} onChange={e => setFormTag(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm focus:border-emerald-500">
+                          {availableTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">&nbsp;</label>
+                        <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded shadow-lg shadow-emerald-900/20 transition-all transform active:scale-95 flex justify-center items-center gap-2">
+                          <Save size={18} /> REGISTRAR
+                        </button>
+                      </div>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
