@@ -212,6 +212,10 @@
       const [activeSection, setActiveSection] = useState('dashboard');
       const [sidebarOpen, setSidebarOpen] = useState(false);
 
+      // V18: GLOBAL BANK MANAGEMENT (Moved to top to fix ReferenceError)
+      const [bankTransactions, setBankTransactions] = useState([]);
+      const [showBankManager, setShowBankManager] = useState(false);
+
       // CONFIGURACIÓN DE TIPSTERS (DINÁMICA V11 - Refactor V30)
       const [tipsters, setTipsters] = useState(() => {
         const saved = localStorage.getItem('betPortfolioV29_tipsters');
@@ -482,9 +486,7 @@
       const [formDesc, setFormDesc] = useState('');
       const [formTags, setFormTags] = useState('');
 
-      // V18: GLOBAL BANK MANAGEMENT
-      const [bankTransactions, setBankTransactions] = useState([]);
-      const [showBankManager, setShowBankManager] = useState(false);
+
 
       const addChallengeLine = () => setChallengeForm({ ...challengeForm, lines: [...challengeForm.lines, { desc: '', odds: '' }] });
       const updateChallengeLine = (idx, field, val) => {
