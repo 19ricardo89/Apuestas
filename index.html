@@ -1403,6 +1403,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-wider">Navegación</div>
               <nav className="flex-1 px-2 py-4 space-y-2">
                 <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
+                <button onClick={() => { setActiveSection('dashboard'); setSidebarOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-emerald-400 hover:bg-slate-800 border border-transparent hover:border-emerald-500/30">
+                  <Plus size={24} />
+                  <span className="font-bold text-lg">Nueva Apuesta</span>
+                </button>
                 <NavItem id="challenges" icon={Trophy} label="Retos" />
                 <NavItem id="stats" icon={BarChart2} label="Estadísticas" />
                 <NavItem id="history" icon={History} label="Historial" />
