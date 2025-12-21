@@ -353,7 +353,7 @@
       const [bets, setBets] = useState([]);
 
       // ESTADO RETOS
-      const [challenges, setChallenges] = useState([
+      const initialChallenges = [
         {
           id: 1,
           title: 'Escalera iPhone (Copete)',
@@ -362,6 +362,7 @@
           currentBank: 54.00,
           targetBank: 1000,
           color: 'emerald',
+          status: 'active',
           history: [
             {
               id: 1001,
@@ -445,7 +446,9 @@
             }
           ]
         }
-      ]);
+      ];
+
+      const [challenges, setChallenges] = useState(initialChallenges);
 
       // ESTADO UI RETOS (V9)
       const [challengeTab, setChallengeTab] = useState('active');
