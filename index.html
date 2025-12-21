@@ -1410,11 +1410,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 <NavItem id="challenges" icon={Trophy} label="Retos" />
                 <NavItem id="stats" icon={BarChart2} label="Estadísticas" />
                 <NavItem id="history" icon={History} label="Historial" />
-                <button onClick={() => setShowBankManager(true)} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-slate-400 hover:bg-slate-800">
+                <button onClick={() => { setShowBankManager(true); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-slate-400 hover:bg-slate-800">
                   <PieChart size={24} />
                   <span className="font-medium text-lg">Gestión de Bank</span>
                 </button>
-                <button onClick={() => setShowCalculator(true)} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-slate-400 hover:bg-slate-800">
+                <button onClick={() => { setShowCalculator(true); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-slate-400 hover:bg-slate-800">
                   <Calculator size={24} />
                   <span className="font-medium text-lg">Calculadora</span>
                 </button>
@@ -3008,6 +3008,98 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             )}
 
           </div>
+
+
+          {/* CALCULATOR MODAL (V18 - RECOVERED) */}
+          {showCalculator && (
+            <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowCalculator(false)}>
+              <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
+                <div className="p-6 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2"><Calculator className="text-indigo-500" /> Calculadora Rápida</h3>
+                  <button onClick={() => setShowCalculator(false)} className="text-slate-500 hover:text-white"><X size={20} /></button>
+                </div>
+                <div className="p-6 space-y-4">
+
+                  {/* TABS */}
+                  <div className="flex p-1 bg-slate-800 rounded-lg mb-4">
+                    <button onClick={() => setCalculatorData({ ...calculatorData, mode: 'simple' })} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${calculatorData.mode === 'simple' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>Simple</button>
+                    <button onClick={() => setCalculatorData({ ...calculatorData, mode: 'combo' })} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${calculatorData.mode === 'combo' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>Combinada</button>
+                  </div>
+
+                  {calculatorData.mode === 'simple' ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake (€)</label>
+                          <input type="number" value={calculatorData.stake} onChange={e => {
+                            const stake = parseFloat(e.target.value) || 0;
+                            const odds = parseFloat(calculatorData.odds) || 0;
+                            setCalculatorData({ ...calculatorData, stake: e.target.value, profit: ((stake * odds) - stake).toFixed(2) });
+                          }} className="w-full bg-slate-800 border border-slate-700 rounded p-3 text-white focus:border-indigo-500" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Cuota (@)</label>
+                          <input type="number" value={calculatorData.odds} onChange={e => {
+                            const odds = parseFloat(e.target.value) || 0;
+                            const stake = parseFloat(calculatorData.stake) || 0;
+                            setCalculatorData({ ...calculatorData, odds: e.target.value, profit: ((stake * odds) - stake).toFixed(2) });
+                          }} className="w-full bg-slate-800 border border-slate-700 rounded p-3 text-white focus:border-indigo-500" />
+                        </div>
+                      </div>
+                      <div className="bg-slate-950 p-4 rounded border border-slate-800 text-center">
+                        <div className="text-xs font-bold text-slate-500 uppercase mb-1">Beneficio Neto</div>
+                        <div className="text-3xl font-mono font-bold text-emerald-400">{calculatorData.profit || '0.00'}€</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* COMBO LINES */}
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                        {calculatorData.lines.map((line, idx) => (
+                          <div key={idx} className="flex gap-2 items-end">
+                            <div className="flex-1">
+                              {idx === 0 && <label className="text-xs font-bold text-slate-400 mb-1 block">Cuota @</label>}
+                              <input type="number" value={line.odds} placeholder="1.50" onChange={e => {
+                                const newLines = [...calculatorData.lines];
+                                newLines[idx].odds = e.target.value;
+                                setCalculatorData({ ...calculatorData, lines: newLines });
+                              }} className={`w-full bg-slate-800 border-slate-700 rounded p-2 text-white text-sm ${line.void ? 'opacity-50 line-through' : ''}`} disabled={line.void} />
+                            </div>
+
+                            <button onClick={() => {
+                              const newLines = [...calculatorData.lines];
+                              newLines[idx].void = !newLines[idx].void;
+                              setCalculatorData({ ...calculatorData, lines: newLines });
+                            }} className={`p-2 mb-0.5 rounded border ${line.void ? 'bg-slate-600 text-white border-slate-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'}`} title="Marcar Nula">VOID</button>
+
+                            <button onClick={() => {
+                              const newLines = calculatorData.lines.filter((_, i) => i !== idx);
+                              setCalculatorData({ ...calculatorData, lines: newLines });
+                            }} className="p-2 mb-0.5 rounded bg-red-900/20 text-red-400 border border-red-900/30 hover:bg-red-900/40"><Trash2 size={16} /></button>
+                          </div>
+                        ))}
+                      </div>
+                      <button onClick={() => setCalculatorData({ ...calculatorData, lines: [...calculatorData.lines, { odds: '', desc: '', void: false }] })} className="w-full py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded hover:bg-slate-700 flex items-center justify-center gap-2"><Plus size={14} /> AÑADIR LÍNEA</button>
+
+                      {/* STATS */}
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+                        <div className="bg-slate-950 p-3 rounded border border-slate-800">
+                          <div className="text-[10px] font-bold text-slate-500 uppercase">Cuota Total</div>
+                          <div className="text-xl font-mono font-bold text-white">
+                            @{calculatorData.lines.filter(l => !l.void).reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1).toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="bg-slate-950 p-3 rounded border border-slate-800">
+                          <input type="number" value={calculatorData.stake} onChange={e => setCalculatorData({ ...calculatorData, stake: e.target.value })} className="w-full bg-transparent text-right text-white font-mono font-bold focus:outline-none mb-1 border-b border-slate-700 pb-1" placeholder="Stake" />
+                          <div className="text-[10px] font-bold text-slate-500 uppercase text-right">Benef: {((parseFloat(calculatorData.stake) || 0) * (calculatorData.lines.filter(l => !l.void).reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1) - 1)).toFixed(2)}€</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* MODAL EDICIÓN EN VIVO (V10) */}
           {editingBet && (
