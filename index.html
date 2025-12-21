@@ -208,6 +208,20 @@
 
     // --- APP PRINCIPAL ---
 
+    // CONSTANTS
+    const DEFAULT_TIPSTERS = [
+      { id: 't1', name: 'Zona Tipster (Alta)', defaultStake: 50 },
+      { id: 't2', name: 'Club Vip (Media)', defaultStake: 10 },
+      { id: 't3', name: 'Club Remates (Media)', defaultStake: 10 },
+      { id: 't4', name: 'Elitebets', defaultStake: 5 },
+      { id: 't5', name: 'Stakazo', defaultStake: 5 },
+      { id: 't6', name: 'Copete', defaultStake: 5 },
+      { id: 't7', name: 'Torete', defaultStake: 5 },
+      { id: 't8', name: 'Zona Tenis', defaultStake: 5 },
+      { id: 't9', name: 'Mezcla-Tips', defaultStake: 5 },
+      { id: 't10', name: 'Combis (Apuesta D)', defaultStake: 5 }
+    ];
+
     function PortfolioManager() {
       const [activeSection, setActiveSection] = useState('dashboard');
       const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -219,23 +233,19 @@
       // CONFIGURACIÓN DE TIPSTERS (DINÁMICA V11 - Refactor V30)
       const [tipsters, setTipsters] = useState(() => {
         const saved = localStorage.getItem('betPortfolioV29_tipsters');
-        const defaultTipsters = [
-          { id: 't1', name: 'Zona Tipster (Alta)', defaultStake: 50 },
-          { id: 't2', name: 'Club Vip (Media)', defaultStake: 10 },
-          { id: 't3', name: 'Club Remates (Media)', defaultStake: 10 },
-          { id: 't4', name: 'Elitebets', defaultStake: 5 },
-          { id: 't5', name: 'Stakazo', defaultStake: 5 },
-          { id: 't6', name: 'Copete', defaultStake: 5 },
-          { id: 't7', name: 'Torete', defaultStake: 5 },
-          { id: 't8', name: 'Zona Tenis', defaultStake: 5 },
-          { id: 't9', name: 'Mezcla-Tips', defaultStake: 5 },
-          { id: 't10', name: 'Combis (Apuesta D)', defaultStake: 5 }
-        ];
         try {
-          return saved ? JSON.parse(saved) : defaultTipsters;
+          let loaded = saved ? JSON.parse(saved) : DEFAULT_TIPSTERS;
+          // FIX: Ensure all tipsters have IDs (Migration for legacy data)
+          if (Array.isArray(loaded)) {
+            loaded = loaded.map((t, i) => ({
+              ...t,
+              id: t.id || `legacy_${Date.now()}_${i}`
+            }));
+          }
+          return loaded;
         } catch (e) {
           console.error("Error loading tipsters", e);
-          return defaultTipsters;
+          return DEFAULT_TIPSTERS;
         }
       });
 
@@ -1338,13 +1348,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       };
 
       const addLine = () => {
-        setBetLines([...betLines, { odds: '', description: '', tipster: formTipster, isJoint: false }]);
+        setBetLines([...betLines, { odds: '', description: '', tipster: '', isJoint: false }]);
       };
 
       const updateLine = (index, field, value) => {
-        const newLines = [...betLines];
-        newLines[index][field] = value;
-        setBetLines(newLines);
+        setBetLines(prev => prev.map((line, i) => i === index ? { ...line, [field]: value } : line));
       };
 
       const removeLine = (index) => {
@@ -3432,10 +3440,37 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">O Ganancia Neta (€)</label>
                         <div className="relative">
                           <input type="number" step="0.01" value={manualProfit} onChange={e => {
-                            const p = parseFloat(e.target.value);
-                            setManualProfit(e.target.value);
+                            const val = e.target.value;
+                            setManualProfit(val);
+
                             const s = parseFloat(formStake);
-                            if (p > 0 && s > 0) setFormOdds(((p + s) / s).toFixed(2));
+                            const p = parseFloat(val);
+
+                            if (s > 0 && p > 0) {
+                              const targetTotalOdds = (p + s) / s;
+
+                              // 1. Update Global Odds Display
+                              setFormOdds(targetTotalOdds.toFixed(2));
+
+                              // 2. Prop-Odds Scaling for Multi-Line
+                              if (isMultiLine && betLines.length > 0) {
+                                const currentTotalProduct = betLines.reduce((acc, line) => acc * (parseFloat(line.odds) || 1), 1);
+                                if (currentTotalProduct > 0) {
+                                  // Math: NewLine = OldLine * (TargetTotal / CurrentTotal)^(1/n)
+                                  const ratio = targetTotalOdds / currentTotalProduct;
+                                  const n = betLines.length;
+                                  const multiplier = Math.pow(ratio, 1 / n);
+
+                                  const newLines = betLines.map(line => ({
+                                    ...line,
+                                    odds: ((parseFloat(line.odds) || 1) * multiplier).toFixed(2)
+                                  }));
+                                  setBetLines(newLines);
+                                }
+                              }
+                            } else {
+                              if (!val) setFormOdds(''); // Optional: clear odds if profit cleared? Or keep last.
+                            }
                           }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-emerald-400 font-bold font-mono text-xl focus:border-emerald-500" placeholder="0.00" />
                           <span className="absolute right-3 top-4 text-xs text-slate-600">AUTO-CALC</span>
                         </div>
@@ -3486,13 +3521,19 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         </div>
                         <div className="flex items-center gap-2">
                           <button onClick={() => {
-                            const newName = prompt("Nuevo nombre:", t.name);
-                            if (newName) handleEditTipster(t.id, newName, t.defaultStake);
-                          }} className="p-2 text-slate-400 hover:text-white bg-slate-900 rounded"><Edit size={14} /></button>
-                          <button onClick={() => {
-                            const newStake = prompt("Nuevo Stake base:", t.defaultStake);
-                            if (newStake) handleEditTipster(t.id, t.name, newStake);
-                          }} className="p-2 text-emerald-400 hover:text-white bg-emerald-900/20 rounded font-mono text-xs">€</button>
+                            const original = DEFAULT_TIPSTERS.find(dt => dt.id === t.id);
+                            const label = original
+                              ? `Editar Nombre (Original: ${original.name}):`
+                              : "Editar Nombre del Tipster:";
+
+                            const newName = prompt(label, t.name);
+                            if (newName !== null) {
+                              const newStake = prompt("Editar Stake Base (€):", t.defaultStake);
+                              if (newStake !== null) {
+                                handleEditTipster(t.id, newName || t.name, newStake || t.defaultStake);
+                              }
+                            }
+                          }} className="p-2 text-slate-400 hover:text-white bg-slate-900 rounded border border-slate-700 hover:border-emerald-500 transition-colors"><Edit size={14} /></button>
                           <button onClick={() => handleDeleteTipster(t.id)} className="p-2 text-red-400 hover:text-red-300 bg-red-900/20 rounded"><Trash2 size={14} /></button>
                         </div>
                       </div>
