@@ -1658,6 +1658,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           }
 
                           // 2. Calculate Gradient Offset
+                          if (!displayData || displayData.length === 0) return <div className="h-full flex items-center justify-center text-slate-500 text-xs">Sin datos para mostrar</div>;
+
                           const dataMax = Math.max(...displayData.map((i) => i.profit));
                           const dataMin = Math.min(...displayData.map((i) => i.profit));
                           const gradientOffset = () => {
