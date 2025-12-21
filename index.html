@@ -776,18 +776,6 @@
         })).sort((a, b) => b.profit - a.profit);
       }, [filteredBets, tipsters]);
 
-      // V18: GLOBAL BANK CALCULATION
-      const currentGlobalBank = useMemo(() => {
-        const initial = bankTransactions.filter(t => t.type === 'initial').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
-        const deposits = bankTransactions.filter(t => t.type === 'deposit').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
-        const withdrawals = bankTransactions.filter(t => t.type === 'withdraw').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
-        const bettingProfit = financialStats.profit || 0;
-
-        if (bankTransactions.length === 0) return 0; // If unset, show 0 or handle in UI
-
-        return initial + deposits - withdrawals + bettingProfit;
-      }, [bankTransactions, financialStats.profit]);
-
       const scoutStats = useMemo(() => {
         const stats = {};
         tipsters.forEach(t => {
@@ -1002,6 +990,17 @@
 
         return { staked, profit, yield_val, chartData, weeklyChartData };
       }, [filteredBets]);
+
+      // V18: GLOBAL BANK CALCULATION (Must be after financialStats)
+      const currentGlobalBank = useMemo(() => {
+        const initial = bankTransactions.filter(t => t.type === 'initial').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+        const deposits = bankTransactions.filter(t => t.type === 'deposit').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+        const withdrawals = bankTransactions.filter(t => t.type === 'withdraw').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+        const bettingProfit = financialStats.profit || 0; // financialStats is now available
+
+        if (bankTransactions.length === 0) return 0;
+        return initial + deposits - withdrawals + bettingProfit;
+      }, [bankTransactions, financialStats.profit]);
 
       // 4. Heatmap Data (Calendar)
       const heatmapData = useMemo(() => {
