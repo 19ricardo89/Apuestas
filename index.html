@@ -227,7 +227,12 @@
           { id: 't9', name: 'Mezcla-Tips', defaultStake: 5 },
           { id: 't10', name: 'Combis (Apuesta D)', defaultStake: 5 }
         ];
-        return saved ? JSON.parse(saved) : defaultTipsters;
+        try {
+          return saved ? JSON.parse(saved) : defaultTipsters;
+        } catch (e) {
+          console.error("Error loading tipsters", e);
+          return defaultTipsters;
+        }
       });
 
       const [showTipsterManager, setShowTipsterManager] = useState(false);
@@ -633,45 +638,7 @@
 
 
 
-      // V20: RESTORED ADD BET LOGIC
-      const handleSaveBet = (e) => {
-        e.preventDefault();
-        let finalOdds = parseFloat(formOdds);
-        let finalLines = [];
-        let finalDesc = formDescription;
-
-        if (isMulti) {
-          // Calculate Combined Odds
-          const validLines = betLines.filter(l => l.description && l.odds);
-          if (validLines.length > 0) {
-            finalOdds = validLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
-            finalDesc = `Combinada (${validLines.length}): ${validLines.map(l => l.description).join(' + ')}`;
-            finalLines = validLines;
-          }
-        }
-
-        const newBet = {
-          id: Date.now(),
-          date: formDate,
-          description: finalDesc,
-          stake: parseFloat(formStake),
-          odds: finalOdds,
-          result: formResult,
-          profit: formResult === 'pending' ? 0 : (formResult === 'win' ? (parseFloat(formStake) * finalOdds) - parseFloat(formStake) : -parseFloat(formStake)),
-          tipster: formTipster,
-          tag: formTag,
-          betLines: isMulti ? finalLines : []
-        };
-
-        setBets([newBet, ...bets]);
-
-        // Reset Form
-        setFormDescription('');
-        setFormOdds('');
-        setManualProfit('');
-        setBetLines([{ tipster: '', description: '', odds: '' }]);
-        if (!isMulti) setIsMulti(false);
-      };
+      // (Deleted legacy handleSaveBet to fix conflict)
 
       const addBetLine = () => setBetLines([...betLines, { tipster: formTipster, description: '', odds: '' }]);
       const removeBetLine = (idx) => setBetLines(betLines.filter((_, i) => i !== idx));
@@ -1307,7 +1274,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         }
       }, [betLines, isMultiLine]);
 
-      const handleAddBet = (e) => {
+      const handleSaveBet = (e) => {
         e.preventDefault();
         if ((formTipster === 'Mezcla-Tips' || isMultiLine) && betLines.length === 0) { alert("¡Añade al menos una línea!"); return; }
 
