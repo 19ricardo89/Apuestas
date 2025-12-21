@@ -223,6 +223,14 @@
     ];
 
     function PortfolioManager() {
+      // AUTO-CALC ODDS for Challenge Form (Live)
+      useEffect(() => {
+        if (isChallengeMulti && challengeForm.lines.length > 0) {
+          const calc = challengeForm.lines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+          if (calc > 1) setChallengeForm(prev => ({ ...prev, odds: calc.toFixed(2) }));
+        }
+      }, [challengeForm.lines, isChallengeMulti]);
+
       const [activeSection, setActiveSection] = useState('dashboard');
       const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -502,7 +510,7 @@
 
 
 
-      const addChallengeLine = () => setChallengeForm({ ...challengeForm, lines: [...challengeForm.lines, { desc: '', odds: '' }] });
+      const addChallengeLine = () => setChallengeForm({ ...challengeForm, lines: [...challengeForm.lines, { desc: '', odds: '', tipster: challengeForm.tipster || '' }] });
       const updateChallengeLine = (idx, field, val) => {
         const newLines = [...challengeForm.lines];
         newLines[idx][field] = val;
@@ -523,6 +531,13 @@
         } else {
           setExpandedBets([...expandedBets, id]);
         }
+      };
+
+      // EXPANSION FOR CHALLENGE HISTORY
+      const [expandedChallengeSteps, setExpandedChallengeSteps] = useState([]);
+      const toggleChallengeExpansion = (id) => {
+        if (expandedChallengeSteps.includes(id)) setExpandedChallengeSteps(expandedChallengeSteps.filter(i => i !== id));
+        else setExpandedChallengeSteps([...expandedChallengeSteps, id]);
       };
 
       const handleSaveEditedBet = (e) => {
@@ -1373,7 +1388,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           result: 'pending',
           description: finalDesc,
           profit: 0,
-          betLines: isMultiLine ? betLines : [], // FIX: Save V7 lines
+          betLines: betLines.length > 0 ? betLines : [], // FIX: Save V7 lines regardless of toggle if lines exist
           subPicks: formTipster === 'Mezcla-Tips' ? subPicks : [],
           tags: tagsArray // V3
         };
@@ -1596,7 +1611,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 <div className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1"><Layers size={10} /> Líneas</div>
                                 {(bet.betLines || bet.subPicks).map((line, i) => (
                                   <div key={i} className="flex justify-between items-center text-xs">
-                                    <span className="text-slate-400 truncate max-w-[150px]">{line.description || line.detail}</span>
+                                    <span className="text-slate-400 truncate max-w-[150px]">
+                                      <span className="font-bold text-indigo-400">{line.tipster || bet.tipster}</span>: {line.description || line.detail}
+                                    </span>
                                     <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
                                   </div>
                                 ))}
@@ -1902,10 +1919,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   <div className="bg-slate-900 rounded p-3 border border-slate-800 space-y-2">
                                     <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold"><span>Líneas ({challengeForm.lines.length})</span> <span>Cuota Total: {challengeForm.lines.reduce((a, b) => a * (parseFloat(b.odds) || 1), 1).toFixed(2)}</span></div>
                                     {challengeForm.lines.map((line, idx) => (
-                                      <div key={idx} className="flex gap-2">
-                                        <input type="text" placeholder="Descripción..." value={line.desc} onChange={e => updateChallengeLine(idx, 'desc', e.target.value)} className="flex-1 bg-slate-950 border border-slate-700 rounded p-1 text-xs text-white" />
-                                        <input type="number" placeholder="@" step="0.01" value={line.odds} onChange={e => updateChallengeLine(idx, 'odds', e.target.value)} className="w-16 bg-slate-950 border border-slate-700 rounded p-1 text-xs text-white text-center" />
-                                        <button type="button" onClick={() => removeChallengeLine(idx)} className="text-red-500 hover:bg-red-900/20 p-1 rounded"><Trash2 size={12} /></button>
+                                      <div key={idx} className="flex flex-col gap-1 bg-slate-950/50 p-2 rounded border border-slate-700/50">
+                                        <div className="flex gap-2">
+                                          <select value={line.tipster} onChange={e => updateChallengeLine(idx, 'tipster', e.target.value)} className="w-[120px] bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white">
+                                            <option value="">Personal</option>
+                                            {tipsters.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                                          </select>
+                                          <input type="number" placeholder="@" step="0.01" value={line.odds} onChange={e => updateChallengeLine(idx, 'odds', e.target.value)} className="w-16 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white text-center font-mono" />
+                                          <button type="button" onClick={() => removeChallengeLine(idx)} className="text-red-500 hover:bg-red-900/20 p-1 rounded ml-auto"><Trash2 size={12} /></button>
+                                        </div>
+                                        <input type="text" placeholder="Descripción línea..." value={line.desc} onChange={e => updateChallengeLine(idx, 'desc', e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-slate-300" />
                                       </div>
                                     ))}
                                     <button type="button" onClick={addChallengeLine} className="w-full py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold transition-colors">+ Añadir Línea</button>
@@ -2029,23 +2052,51 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               {challenge.history.length === 0 ? (
                                 <tr><td colSpan="4" className="p-6 text-center text-slate-500 text-xs italic">Aún no hay movimientos en este reto.</td></tr>
                               ) : (
-                                challenge.history.map(bet => (
-                                  <tr key={bet.id} className="hover:bg-slate-800/50">
-                                    <td className="p-3"><div className="font-bold text-white text-xs">{bet.description}</div><div className="text-[10px] text-slate-500">{bet.date}</div></td>
-                                    <td className="p-3 text-center text-xs text-slate-300"><div>{bet.stake}€</div><div className="text-slate-500">@{bet.odds}</div></td>
-                                    <td className="p-3 text-right">
-                                      {bet.result === 'pending' ? (
-                                        <div className="flex justify-end gap-1">
-                                          <button onClick={() => resolveChallengeBet(challenge.id, bet.id, 'win')} className="p-1 bg-emerald-600/20 text-emerald-400 rounded"><Check size={14} /></button>
-                                          <button onClick={() => resolveChallengeBet(challenge.id, bet.id, 'loss')} className="p-1 bg-red-600/20 text-red-400 rounded"><X size={14} /></button>
-                                        </div>
-                                      ) : (
-                                        <span className={`font-bold text-xs ${bet.result === 'win' ? 'text-emerald-400' : 'text-red-400'}`}>{bet.result === 'win' ? `+${bet.profit.toFixed(2)}€` : `-${bet.stake}€`}</span>
+                                challenge.history.map(bet => {
+                                  const isMulti = bet.betLines && bet.betLines.length > 0;
+                                  const isExpanded = expandedChallengeSteps.includes(bet.id);
+
+                                  return (
+                                    <React.Fragment key={bet.id}>
+                                      <tr className={`hover:bg-slate-800/50 ${isExpanded ? 'bg-slate-800/30' : ''}`}>
+                                        <td className="p-3 cursor-pointer" onClick={() => isMulti && toggleChallengeExpansion(bet.id)}>
+                                          <div className="font-bold text-white text-xs flex items-center gap-2">
+                                            {isMulti && <Layers size={10} className="text-indigo-400" />}
+                                            {bet.description}
+                                          </div>
+                                          <div className="text-[10px] text-slate-500">{bet.date}</div>
+                                          {isMulti && <div className="text-[9px] text-indigo-400 mt-0.5">{isExpanded ? 'Ocultar líneas' : 'Ver líneas'}</div>}
+                                        </td>
+                                        <td className="p-3 text-center text-xs text-slate-300"><div>{bet.stake}€</div><div className="text-slate-500">@{bet.odds}</div></td>
+                                        <td className="p-3 text-right">
+                                          {bet.result === 'pending' ? (
+                                            <div className="flex justify-end gap-1">
+                                              <button onClick={() => resolveChallengeBet(challenge.id, bet.id, 'win')} className="p-1 bg-emerald-600/20 text-emerald-400 rounded"><Check size={14} /></button>
+                                              <button onClick={() => resolveChallengeBet(challenge.id, bet.id, 'loss')} className="p-1 bg-red-600/20 text-red-400 rounded"><X size={14} /></button>
+                                            </div>
+                                          ) : (
+                                            <span className={`font-bold text-xs ${bet.result === 'win' ? 'text-emerald-400' : 'text-red-400'}`}>{bet.result === 'win' ? `+${bet.profit.toFixed(2)}€` : `-${bet.stake}€`}</span>
+                                          )}
+                                        </td>
+                                        <td className="p-3 text-center"><button onClick={() => deleteChallengeBet(challenge.id, bet.id)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button></td>
+                                      </tr>
+                                      {isMulti && isExpanded && (
+                                        <tr className="bg-slate-900/50">
+                                          <td colSpan="4" className="p-2 pl-4">
+                                            <div className="space-y-1 border-l-2 border-indigo-500/30 pl-2">
+                                              {bet.betLines.map((l, i) => (
+                                                <div key={i} className="flex justify-between items-center text-xs text-slate-400 bg-slate-950/30 p-1 rounded">
+                                                  <span><span className="font-bold text-indigo-300">{l.tipster || 'Personal'}</span>: {l.desc}</span>
+                                                  <span className="font-mono">@{l.odds}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </td>
+                                        </tr>
                                       )}
-                                    </td>
-                                    <td className="p-3 text-center"><button onClick={() => deleteChallengeBet(challenge.id, bet.id)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button></td>
-                                  </tr>
-                                ))
+                                    </React.Fragment>
+                                  )
+                                })
                               )}
                             </tbody>
                           </table>
@@ -2493,7 +2544,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           const currentTipsters = safeTipsterStr.split(' + ');
                           return (
                             <div key={idx} className="flex gap-2 items-center flex-wrap bg-slate-900/40 p-2 rounded border border-slate-700/50">
-                              {formTipster === 'Mezcla-Tips' && (
+                              {formTipster === 'Mezcla-Tips' ? (
                                 <div className="flex flex-col gap-2">
                                   {currentTipsters.map((tName, tIdx) => (
                                     <div key={tIdx} className="flex items-center gap-1">
@@ -2521,6 +2572,14 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                     updateLine(idx, 'tipster', (line.tipster || formTipster) + ' + ');
                                   }} className="text-[10px] mx-auto text-indigo-400 hover:text-white flex items-center gap-1 bg-indigo-900/20 px-2 py-1 rounded border border-indigo-500/30"><UserPlus size={10} /> Co-Tipster</button>
                                 </div>
+                              ) : (
+                                <select
+                                  value={line.tipster || formTipster}
+                                  onChange={e => updateLine(idx, 'tipster', e.target.value)}
+                                  className="w-[120px] bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white truncate"
+                                >
+                                  {tipsters.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                                </select>
                               )}
 
                               <input type="text" placeholder="Descripción línea..." className="flex-1 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white self-start" value={line.description} onChange={e => updateLine(idx, 'description', e.target.value)} />
