@@ -1563,7 +1563,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         // Pero lo más útil es ajustar la CUOTA si el usuario mete la ganancia.
         // Odds = (Profit + Stake) / Stake.
 
-        const finalDesc = isMulti ? (formDesc + ' | ' + betLines.map(l => l.description).join(' + ')) : formDesc;
+        const finalDesc = isMulti ? (formDescription + ' | ' + betLines.map(l => l.description).join(' + ')) : formDescription;
         let tagsArray = formTags.split(',').map(t => t.trim().toUpperCase()).filter(t => t); // V3 Tags
 
         // 6. DYNAMIC TAGS AUTO-ADD (V33)
@@ -3636,7 +3636,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción General</label>
-                        <input type="text" value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Ej: Real Madrid vs Barcelona" className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-emerald-500" />
+                        <input type="text" value={formDescription} onChange={e => setFormDescription(e.target.value)} placeholder="Ej: Real Madrid vs Barcelona" className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-emerald-500" />
                       </div>
                       <div>
                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Etiqueta Principal (Selector Dinámico)</label>
