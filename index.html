@@ -1736,22 +1736,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             <div className="p-6 border-t border-slate-800">
               <div className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-wider">Gestión de Datos (V3)</div>
               <div className="flex flex-col gap-2">
-                <button onClick={scanStorage} className="flex items-center gap-2 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 font-bold p-3 rounded mb-2 transition-colors border border-red-500/30 animate-pulse">
-                  <Activity size={16} /> <span>🚑 RESCATAR DATOS (EMERGENCIA)</span>
+                <button onClick={() => setShowCloudModal(true)} className="flex items-center gap-2 text-xs bg-indigo-900/30 hover:bg-indigo-600/30 text-indigo-400 font-bold p-3 rounded mb-2 transition-colors border border-indigo-500/30">
+                  <Cloud size={16} /> <span>☁️ CONFIGURAR NUBE & BACKUPS</span>
                 </button>
-                <button onClick={exportData} className="flex items-center gap-2 text-xs bg-slate-800/50 hover:bg-emerald-600/20 hover:text-emerald-400 text-slate-400 p-2 rounded transition-colors border border-transparent hover:border-emerald-500/30">
-                  <Save size={14} /> <span>Exportar Backup (JSON)</span>
-                </button>
-                <label className="flex items-center gap-2 text-xs bg-slate-800/50 hover:bg-blue-600/20 hover:text-blue-400 text-slate-400 p-2 rounded transition-colors border border-transparent hover:border-blue-500/30 cursor-pointer">
-                  <RefreshCw size={14} /> <span>Importar Backup</span>
-                  <input type="file" onChange={importData} accept=".json" className="hidden" />
-                </label>
-                <button onClick={factoryReset} className="flex items-center gap-2 text-xs bg-slate-800/50 hover:bg-red-600/20 hover:text-red-400 text-slate-400 p-2 rounded transition-colors border border-transparent hover:border-red-500/30">
-                  <Trash2 size={14} /> <span>Factory Reset</span>
-                </button>
-                <button onClick={() => setShowCloudModal(true)} className="flex items-center gap-2 text-xs bg-indigo-900/30 hover:bg-indigo-600/30 text-indigo-400 font-bold p-3 rounded mt-2 transition-colors border border-indigo-500/30">
-                  <Cloud size={16} /> <span>☁️ CONFIGURAR NUBE</span>
-                </button>
+
               </div>
               <div className="mt-4 text-center text-[10px] text-slate-600">v29.1 PRO - Local Storage</div>
             </div>
@@ -3954,57 +3942,82 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     </div>
                   </div>
 
+                  {/* LOCAL MEMORY SECTION (Moved from Sidebar V35) */}
+                  <div className="border-t border-slate-800 pt-4">
+                    <div className="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2"><Save size={12} /> Memoria Local & Respaldo</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button onClick={exportData} className="bg-slate-950 p-3 rounded border border-slate-700 hover:border-emerald-500 transition-colors text-xs text-slate-300 hover:text-emerald-400 flex items-center gap-2 justify-center">
+                        <Save size={14} /> Exportar JSON
+                      </button>
+                      <label className="bg-slate-950 p-3 rounded border border-slate-700 hover:border-blue-500 transition-colors text-xs text-slate-300 hover:text-blue-400 flex items-center gap-2 justify-center cursor-pointer">
+                        <RefreshCw size={14} /> Importar JSON
+                        <input type="file" onChange={importData} accept=".json" className="hidden" />
+                      </label>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={scanStorage} className="flex-1 bg-red-900/10 border border-red-900/30 hover:bg-red-900/20 text-red-400 p-2 rounded text-[10px] font-bold flex items-center justify-center gap-2">
+                        <Activity size={12} /> Rescatar Memoria
+                      </button>
+                      <button onClick={factoryReset} className="flex-1 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-400 hover:text-red-400 p-2 rounded text-[10px] font-bold flex items-center justify-center gap-2">
+                        <Trash2 size={12} /> Reset Fábrica
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
-          )}
+          )
+          }
           {/* RECOVERY MODAL */}
-          {showRecoveryModal && (
-            <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setShowRecoveryModal(false)}>
-              <div className="bg-slate-900 w-full max-w-2xl rounded-xl border border-red-900/50 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="p-4 bg-red-950/30 border-b border-red-900/30 flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">🚑 Recuperación de Datos (Storage)</h3>
-                  <button onClick={() => setShowRecoveryModal(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
-                </div>
-                <div className="p-6">
-                  <div className="bg-blue-900/20 border border-blue-900/40 p-3 rounded mb-4 text-xs text-blue-300">
-                    <p className="font-bold mb-1">ℹ️ Instrucciones:</p>
-                    <p>Busca en la lista una clave con un tamaño grande. Si perdiste "Retos", busca claves antiguas o backups. Pulsa "Restaurar" para cargar esos datos.</p>
+          {
+            showRecoveryModal && (
+              <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setShowRecoveryModal(false)}>
+                <div className="bg-slate-900 w-full max-w-2xl rounded-xl border border-red-900/50 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                  <div className="p-4 bg-red-950/30 border-b border-red-900/30 flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">🚑 Recuperación de Datos (Storage)</h3>
+                    <button onClick={() => setShowRecoveryModal(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
                   </div>
-                  <div className="max-h-[50vh] overflow-y-auto space-y-2">
-                    {recoveryKeys.length === 0 ? (
-                      <div className="text-center text-slate-500 py-8">No se encontraron copias en este navegador.</div>
-                    ) : (
-                      recoveryKeys.map((item, idx) => (
-                        <div key={idx} className="bg-slate-950 p-3 rounded border border-slate-800 flex flex-col md:flex-row gap-3 justify-between items-center">
-                          <div className="overflow-hidden w-full md:w-auto">
-                            <div className="font-mono text-xs font-bold text-yellow-500 break-all">{item.key}</div>
-                            <div className="text-[10px] text-slate-500 mt-1">Tamaño: {item.size} chars | {item.preview}</div>
+                  <div className="p-6">
+                    <div className="bg-blue-900/20 border border-blue-900/40 p-3 rounded mb-4 text-xs text-blue-300">
+                      <p className="font-bold mb-1">ℹ️ Instrucciones:</p>
+                      <p>Busca en la lista una clave con un tamaño grande. Si perdiste "Retos", busca claves antiguas o backups. Pulsa "Restaurar" para cargar esos datos.</p>
+                    </div>
+                    <div className="max-h-[50vh] overflow-y-auto space-y-2">
+                      {recoveryKeys.length === 0 ? (
+                        <div className="text-center text-slate-500 py-8">No se encontraron copias en este navegador.</div>
+                      ) : (
+                        recoveryKeys.map((item, idx) => (
+                          <div key={idx} className="bg-slate-950 p-3 rounded border border-slate-800 flex flex-col md:flex-row gap-3 justify-between items-center">
+                            <div className="overflow-hidden w-full md:w-auto">
+                              <div className="font-mono text-xs font-bold text-yellow-500 break-all">{item.key}</div>
+                              <div className="text-[10px] text-slate-500 mt-1">Tamaño: {item.size} chars | {item.preview}</div>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(localStorage.getItem(item.key));
+                                  alert("Datos copiados al portapapeles");
+                                }}
+                                className="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded hover:bg-slate-700"
+                              >Copiar Raw</button>
+                              <button
+                                onClick={() => restoreBackup(item.key)}
+                                className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
+                              >
+                                RESTAURAR
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex gap-2 shrink-0">
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(localStorage.getItem(item.key));
-                                alert("Datos copiados al portapapeles");
-                              }}
-                              className="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded hover:bg-slate-700"
-                            >Copiar Raw</button>
-                            <button
-                              onClick={() => restoreBackup(item.key)}
-                              className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
-                            >
-                              RESTAURAR
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )
+          }
+        </div >
       );
     }
 
