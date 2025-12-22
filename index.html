@@ -529,6 +529,45 @@
       const [historyFilters, setHistoryFilters] = useState({ range: 'today', customDate: '', tipster: 'ALL', odds: 'ALL' });
       const [expandedBets, setExpandedBets] = useState([]); // Array of IDs
 
+      // RECOVERY TOOL STATE
+      const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+      const [recoveryKeys, setRecoveryKeys] = useState([]);
+
+      const scanStorage = () => {
+        const keys = Object.keys(localStorage).filter(k => k.includes('betPortfolio'));
+        const data = keys.map(k => {
+          const content = localStorage.getItem(k);
+          return {
+            key: k,
+            size: content.length,
+            preview: content.substring(0, 50) + '...',
+            isCurrent: k === 'betPortfolioV29_challenges'
+          };
+        });
+        setRecoveryKeys(data);
+        setShowRecoveryModal(true);
+      };
+
+      const restoreBackup = (key) => {
+        if (!confirm(`¿Estás seguro de REEMPLAZAR los datos actuales con la copia "${key}"? Esta acción reiniciará la página.`)) return;
+        try {
+          const raw = localStorage.getItem(key);
+          // Auto-detect target (bets vs challenges based on key name or content?)
+          // For safety, we ask the user what this is, or we deduce it.
+          // Fallback: If key contains 'challenges', restore to challenges key.
+
+          let targetKey = 'betPortfolioV29_challenges'; // Default target for this crisis
+          if (key.includes('bets')) targetKey = 'betPortfolioV29_bets';
+
+          // CRITICAL: Copy content to ACTIVE key
+          localStorage.setItem(targetKey, raw);
+          alert("Datos restaurados correctamente. Recargando...");
+          window.location.reload();
+        } catch (e) {
+          alert("Error al restaurar: " + e.message);
+        }
+      };
+
       const toggleHistoryExpansion = (id) => {
         if (expandedBets.includes(id)) {
           setExpandedBets(expandedBets.filter(bid => bid !== id));
@@ -1079,16 +1118,17 @@
         return { staked, profit, yield_val, chartData, weeklyChartData };
       }, [filteredBets]);
 
-      // V18: GLOBAL BANK CALCULATION (Must be after financialStats)
+      // V18: GLOBAL BANK CALCULATION (Moved here to fix ReferenceError)
       const currentGlobalBank = useMemo(() => {
         const initial = bankTransactions.filter(t => t.type === 'initial').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
         const deposits = bankTransactions.filter(t => t.type === 'deposit').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
         const withdrawals = bankTransactions.filter(t => t.type === 'withdraw').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
-        const bettingProfit = financialStats.profit || 0; // financialStats is now available
-
+        const bettingProfit = financialStats.profit || 0;
         if (bankTransactions.length === 0) return 0;
         return initial + deposits - withdrawals + bettingProfit;
       }, [bankTransactions, financialStats.profit]);
+
+
 
       // 4. Heatmap Data (Calendar)
       const heatmapData = useMemo(() => {
@@ -1447,6 +1487,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           timestamp: new Date().toISOString(),
           bets: bets,
           challenges: challenges,
+          tipsters: tipsters, // V31: Save Tipsters
           bankTransactions: bankTransactions // V18
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1469,6 +1510,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             if (imported.bets && Array.isArray(imported.bets)) {
               setBets(imported.bets);
               if (imported.challenges) setChallenges(imported.challenges);
+              if (imported.tipsters) setTipsters(imported.tipsters); // V31: Load Tipsters
               if (imported.bankTransactions) setBankTransactions(imported.bankTransactions); // V18
               alert('¡Datos restaurados con éxito! (' + imported.bets.length + ' apuestas)');
             } else {
@@ -1553,6 +1595,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             <div className="p-6 border-t border-slate-800">
               <div className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-wider">Gestión de Datos (V3)</div>
               <div className="flex flex-col gap-2">
+                <button onClick={scanStorage} className="flex items-center gap-2 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 font-bold p-3 rounded mb-2 transition-colors border border-red-500/30 animate-pulse">
+                  <Activity size={16} /> <span>🚑 RESCATAR DATOS (EMERGENCIA)</span>
+                </button>
                 <button onClick={exportData} className="flex items-center gap-2 text-xs bg-slate-800/50 hover:bg-emerald-600/20 hover:text-emerald-400 text-slate-400 p-2 rounded transition-colors border border-transparent hover:border-emerald-500/30">
                   <Save size={14} /> <span>Exportar Backup (JSON)</span>
                 </button>
@@ -3692,9 +3737,57 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               </div>
             </div>
           )}
+          {/* RECOVERY MODAL */}
+          {showRecoveryModal && (
+            <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setShowRecoveryModal(false)}>
+              <div className="bg-slate-900 w-full max-w-2xl rounded-xl border border-red-900/50 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-4 bg-red-950/30 border-b border-red-900/30 flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">🚑 Recuperación de Datos (Storage)</h3>
+                  <button onClick={() => setShowRecoveryModal(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
+                </div>
+                <div className="p-6">
+                  <div className="bg-blue-900/20 border border-blue-900/40 p-3 rounded mb-4 text-xs text-blue-300">
+                    <p className="font-bold mb-1">ℹ️ Instrucciones:</p>
+                    <p>Busca en la lista una clave con un tamaño grande. Si perdiste "Retos", busca claves antiguas o backups. Pulsa "Restaurar" para cargar esos datos.</p>
+                  </div>
+                  <div className="max-h-[50vh] overflow-y-auto space-y-2">
+                    {recoveryKeys.length === 0 ? (
+                      <div className="text-center text-slate-500 py-8">No se encontraron copias en este navegador.</div>
+                    ) : (
+                      recoveryKeys.map((item, idx) => (
+                        <div key={idx} className="bg-slate-950 p-3 rounded border border-slate-800 flex flex-col md:flex-row gap-3 justify-between items-center">
+                          <div className="overflow-hidden w-full md:w-auto">
+                            <div className="font-mono text-xs font-bold text-yellow-500 break-all">{item.key}</div>
+                            <div className="text-[10px] text-slate-500 mt-1">Tamaño: {item.size} chars | {item.preview}</div>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(localStorage.getItem(item.key));
+                                alert("Datos copiados al portapapeles");
+                              }}
+                              className="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded hover:bg-slate-700"
+                            >Copiar Raw</button>
+                            <button
+                              onClick={() => restoreBackup(item.key)}
+                              className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
+                            >
+                              RESTAURAR
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
+
+
 
     // --- RENDERIZADO ---
     const root = ReactDOM.createRoot(document.getElementById('root'));
