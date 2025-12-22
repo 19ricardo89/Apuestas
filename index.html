@@ -1610,18 +1610,35 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             </div>
                             <p className="text-sm text-slate-300">{bet.description}</p>
 
-                            {/* MULTI-LINE PREVIEW IN DASHBOARD (RESTORED V30.4) */}
+                            {/* MULTI-LINE PREVIEW COLLAPSIBLE (DASHBOARD) */}
                             {((bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0)) && (
-                              <div className="mt-2 space-y-1 bg-slate-900/50 p-2 rounded border border-slate-800">
-                                <div className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1"><Layers size={10} /> Líneas</div>
-                                {(bet.betLines || bet.subPicks).map((line, i) => (
-                                  <div key={i} className="flex justify-between items-center text-xs">
-                                    <span className="text-slate-400 truncate max-w-[150px]">
-                                      <span className="font-bold text-indigo-400">{line.tipster || bet.tipster}</span>: {line.description || line.detail}
-                                    </span>
-                                    <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
+                              <div className="mt-2">
+                                <button
+                                  onClick={() => toggleHistoryExpansion(bet.id)}
+                                  className="text-xs font-bold text-slate-500 hover:text-indigo-400 flex items-center gap-1 transition-colors mb-1"
+                                >
+                                  {expandedBets.includes(bet.id) ? (
+                                    <><ChevronUp size={12} /> Ocultar Desglose</>
+                                  ) : (
+                                    <><ChevronDown size={12} /> Ver {(bet.betLines || bet.subPicks).length} Líneas</>
+                                  )}
+                                </button>
+
+                                {expandedBets.includes(bet.id) && (
+                                  <div className="space-y-1 bg-slate-900/50 p-2 rounded border border-slate-800 animate-fade-in">
+                                    {(bet.betLines || bet.subPicks).map((line, i) => (
+                                      <div key={i} className="flex justify-between items-center text-xs">
+                                        <span className="text-slate-400 truncate max-w-[200px]">
+                                          {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && (
+                                            <span className="font-bold text-indigo-400 mr-1">{line.tipster}:</span>
+                                          )}
+                                          {line.description || line.detail}
+                                        </span>
+                                        <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
+                                )}
                               </div>
                             )}
                           </div>
