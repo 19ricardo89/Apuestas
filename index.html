@@ -3716,17 +3716,45 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   <button onClick={() => setActiveChallengeId(null)} className="text-slate-500 hover:text-white"><X size={20} /></button>
                 </div>
                 <form onSubmit={(e) => { addChallengeBet(e, activeChallengeId); setActiveChallengeId(null); }} className="p-6 space-y-4">
-                  <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción</label>
-                    <input type="text" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white focus:border-yellow-500" required placeholder="Ej: Paso 1" />
+                  {/* HEADER FORM */}
+                  <div className="flex justify-end mb-2">
+                    <button type="button" onClick={() => setIsChallengeMulti(!isChallengeMulti)} className={`text-xs font-bold px-3 py-1 rounded border transition-colors ${isChallengeMulti ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                      {isChallengeMulti ? 'Modo Combinada ACTIVADO' : 'Activar Modo Combinada'}
+                    </button>
                   </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción del Paso</label>
+                    <input type="text" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white focus:border-yellow-500" required placeholder="Ej: Paso 1 - Real Madrid vs..." />
+                  </div>
+
+                  {/* CHALLENGE MULTI-LINE BUILDER */}
+                  {isChallengeMulti && (
+                    <div className="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50 space-y-2">
+                      <div className="text-[10px] font-bold text-indigo-400 uppercase flex items-center gap-2"><Layers size={12} /> Líneas del Reto</div>
+                      {challengeForm.lines.map((line, idx) => (
+                        <div key={idx} className="flex flex-col gap-2 bg-slate-900/50 p-2 rounded border border-slate-700">
+                          <input type="text" placeholder="Tipster..." value={line.tipster} onChange={e => updateChallengeLine(idx, 'tipster', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" />
+                          <input type="text" placeholder="Descripción..." value={line.desc} onChange={e => updateChallengeLine(idx, 'desc', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" />
+                          <div className="flex gap-2">
+                            <input type="number" placeholder="@" step="0.01" value={line.odds} onChange={e => updateChallengeLine(idx, 'odds', e.target.value)} className="w-20 bg-slate-950 border border-slate-700 rounded p-2 text-xs font-bold text-center text-white" />
+                            <button type="button" onClick={() => removeChallengeLine(idx)} className="p-2 text-red-400 hover:bg-red-900/20 rounded"><Trash2 size={14} /></button>
+                          </div>
+                        </div>
+                      ))}
+                      <button type="button" onClick={addChallengeLine} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 text-xs rounded hover:bg-slate-800 hover:text-indigo-400 flex justify-center items-center gap-2">
+                        <Plus size={12} /> Añadir Línea
+                      </button>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake (€)</label>
                       <input type="number" step="0.01" value={challengeForm.stake} onChange={e => setChallengeForm({ ...challengeForm, stake: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white font-mono focus:border-yellow-500" required />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Cuota (@)</label>
+                      <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Cuota Total (@)</label>
                       <input type="number" step="0.01" value={challengeForm.odds} onChange={e => setChallengeForm({ ...challengeForm, odds: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white font-mono focus:border-yellow-500" required />
                     </div>
                   </div>
