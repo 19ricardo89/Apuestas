@@ -1514,7 +1514,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
       const handleAddBet = (e) => {
         e.preventDefault();
-        if ((formTipster === 'Mezcla-Tips' || isMultiLine) && betLines.length === 0) { alert("¡Añade al menos una línea!"); return; }
+        const isMulti = isMultiLine || formTipster === 'Mezcla-Tips';
+        if (isMulti && betLines.length === 0) { alert("¡Añade al menos una línea!"); return; }
 
         let calculatedProfit = 0; // Se calculará al resolver, pero si hay manual profit lo guardamos en descripción o similar?
         // En v29 el profit se calcula al cerrar. Pero si el usuario QUIERE fijar la ganancia potencial visualmente
@@ -1529,7 +1530,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         // Pero lo más útil es ajustar la CUOTA si el usuario mete la ganancia.
         // Odds = (Profit + Stake) / Stake.
 
-        const finalDesc = isMultiLine ? (formDesc + ' | ' + betLines.map(l => l.description).join(' + ')) : formDesc;
+        const finalDesc = isMulti ? (formDesc + ' | ' + betLines.map(l => l.description).join(' + ')) : formDesc;
         let tagsArray = formTags.split(',').map(t => t.trim().toUpperCase()).filter(t => t); // V3 Tags
 
         // 6. DYNAMIC TAGS AUTO-ADD (V33)
@@ -1584,6 +1585,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       };
 
       const addLine = () => {
+        setIsMultiLine(true);
         const defaultTipster = (formTipster === 'Mezcla-Tips' || formTipster === 'Combis (Apuesta D)') ? '' : formTipster;
         setBetLines([...betLines, { odds: '', description: '', tipster: defaultTipster || '', isJoint: false }]);
       };
