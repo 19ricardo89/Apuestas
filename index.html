@@ -1614,13 +1614,14 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             {((bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0)) && (
                               <div className="mt-2">
                                 <button
+                                  type="button"
                                   onClick={() => toggleHistoryExpansion(bet.id)}
                                   className="text-xs font-bold text-slate-500 hover:text-indigo-400 flex items-center gap-1 transition-colors mb-1"
                                 >
                                   {expandedBets.includes(bet.id) ? (
-                                    <><ChevronUp size={12} /> Ocultar Desglose</>
+                                    <span className="flex items-center gap-1"><ChevronUp size={12} /> Ocultar Desglose</span>
                                   ) : (
-                                    <><ChevronDown size={12} /> Ver {(bet.betLines || bet.subPicks).length} Líneas</>
+                                    <span className="flex items-center gap-1"><ChevronDown size={12} /> Ver {(bet.betLines || bet.subPicks).length} Líneas</span>
                                   )}
                                 </button>
 
