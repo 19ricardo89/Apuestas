@@ -3803,6 +3803,25 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       </div>
                     </div>
 
+                    {/* EDICIÓN: BOTONES RESULTADO GENERAL (V35 - Refined) */}
+                    {editingBet && (
+                      <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 flex flex-col gap-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase text-center">Estado Final de la Apuesta</label>
+                        <div className="grid grid-cols-4 gap-2">
+                          <button type="button" onClick={() => setFormResult('pending')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'pending' ? 'bg-blue-900/40 text-blue-400 border-blue-500' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-blue-500/50'}`}>PENDIENTE ⏳</button>
+                          <button type="button" onClick={() => setFormResult('win')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'win' ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-emerald-500/50'}`}>GANADA ✅</button>
+                          <button type="button" onClick={() => setFormResult('loss')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'loss' ? 'bg-red-900/40 text-red-400 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-red-500/50'}`}>PERDIDA ❌</button>
+                          <button type="button" onClick={() => setFormResult('void')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'void' ? 'bg-slate-700 text-slate-300 border-slate-500' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-500/50'}`}>ANULADA 🚫</button>
+                        </div>
+                        <p className="text-[10px] text-slate-500 text-center italic">
+                          {formResult === 'win' && `Ganancia: +${((parseFloat(formStake) * parseFloat(formOdds)) - parseFloat(formStake)).toFixed(2)}€ (Aprox)`}
+                          {formResult === 'loss' && `Pérdida: -${parseFloat(formStake).toFixed(2)}€`}
+                          {formResult === 'void' && `Reembolso: 0.00€`}
+                          {formResult === 'pending' && `Esperando resultado...`}
+                        </p>
+                      </div>
+                    )}
+
                     <button type="submit" className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 py-4 rounded-xl font-bold text-white shadow-lg shadow-emerald-900/20 text-lg transition-all transform active:scale-95 flex items-center justify-center gap-3">
                       <Save size={20} /> REGISTRAR APUESTA
                     </button>
