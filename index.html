@@ -1390,7 +1390,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           result: 'pending',
           description: finalDesc,
           profit: 0,
-          betLines: betLines.length > 0 ? betLines : [], // FIX: Save V7 lines regardless of toggle if lines exist
+          description: finalDesc,
+          profit: 0,
+          betLines: betLines.length > 0 ? (formTipster === 'Mezcla-Tips' || formTipster === 'Combis (Apuesta D)' ? betLines : betLines.map(l => ({ ...l, tipster: formTipster }))) : [], // FIX: Enforce Main Tipster for non-Mezcla
           subPicks: formTipster === 'Mezcla-Tips' ? subPicks : [],
           tags: tagsArray // V3
         };
@@ -2090,7 +2092,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             <div className="space-y-1 border-l-2 border-indigo-500/30 pl-2">
                                               {bet.betLines.map((l, i) => (
                                                 <div key={i} className="flex justify-between items-center text-xs text-slate-400 bg-slate-950/30 p-1 rounded">
-                                                  <span><span className="font-bold text-indigo-300">{l.tipster || 'Personal'}</span>: {l.desc}</span>
+                                                  <span>
+                                                    {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') ? <span className="font-bold text-indigo-300">{l.tipster || 'Personal'}</span> : null}
+                                                    {l.desc}
+                                                  </span>
                                                   <span className="font-mono">@{l.odds}</span>
                                                 </div>
                                               ))}
@@ -2577,13 +2582,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   }} className="text-[10px] mx-auto text-indigo-400 hover:text-white flex items-center gap-1 bg-indigo-900/20 px-2 py-1 rounded border border-indigo-500/30"><UserPlus size={10} /> Co-Tipster</button>
                                 </div>
                               ) : (
-                                <select
-                                  value={line.tipster || formTipster}
-                                  onChange={e => updateLine(idx, 'tipster', e.target.value)}
-                                  className="w-[120px] bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white truncate"
-                                >
-                                  {tipsters.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
-                                </select>
+                                <div className="w-[120px] bg-slate-950 border border-slate-700 rounded p-2 text-xs text-slate-400 truncate flex items-center font-bold">
+                                  {formTipster}
+                                </div>
                               )}
 
                               <input type="text" placeholder="Descripción línea..." className="flex-1 bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white self-start" value={line.description} onChange={e => updateLine(idx, 'description', e.target.value)} />
@@ -2609,8 +2610,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <input type="number" step="0.01" value={formOdds} onChange={e => setFormOdds(e.target.value)} className={`w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-lg font-mono focus:outline-none focus:border-emerald-500 ${isMultiLine ? 'text-emerald-400 font-bold' : ''}`} readOnly={isMultiLine && betLines.length > 0} />
                       </div>
                       <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-2 block flex items-center gap-1">Ganancia Posible <span className="text-[10px] text-slate-500 lowercase">(opcional)</span></label>
-                        <input type="number" step="0.01" placeholder="Auto" value={manualProfit} onChange={handleManualProfitChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-lg font-mono focus:outline-none focus:border-emerald-500 placeholder-slate-600" />
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-2 block flex items-center gap-1">Ganancia Posible</label>
+                        <input type="number" step="0.01" value={manualProfit} onChange={handleManualProfitChange} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-lg font-mono focus:outline-none focus:border-emerald-500 placeholder-slate-600" />
                       </div>
                     </div>
 
@@ -2932,7 +2933,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             <div key={i} className="flex items-center justify-between bg-slate-900 border border-slate-800 p-2 rounded text-xs hover:border-slate-700 transition-colors">
                                               <div className="flex items-center gap-3">
                                                 <div className={`w-1.5 h-1.5 rounded-full ${s === 'win' ? 'bg-emerald-500' : (s === 'loss' ? 'bg-red-500' : 'bg-slate-600')}`}></div>
-                                                <span className="font-bold text-slate-300">{line.tipster || bet.tipster}</span>
+                                                {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && <span className="font-bold text-slate-300">{line.tipster || bet.tipster}</span>}
                                                 <span className={`${colorClass} truncate max-w-[200px]`}>{line.description}</span>
                                               </div>
                                               <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
@@ -3012,7 +3013,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     {resolutionBet.tempLines && resolutionBet.tempLines.length > 0 && resolutionBet.tempLines.map((line, idx) => (
                       <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
                         <div className="flex justify-between">
-                          <span className="font-bold text-indigo-400 text-sm">{line.tipster || resolutionBet.tipster}</span>
+                          {(resolutionBet.tipster === 'Mezcla-Tips' || resolutionBet.tipster === 'Combis (Apuesta D)') && <span className="font-bold text-indigo-400 text-sm">{line.tipster || resolutionBet.tipster}</span>}
                           <span className="text-slate-500 text-xs text-right">@{line.odds}</span>
                         </div>
                         <div className="text-sm text-slate-300">{line.description}</div>
