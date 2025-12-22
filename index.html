@@ -1567,14 +1567,18 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           const st = parseFloat(formStake);
           const od = parseFloat(formOdds);
 
-          if (manualProfit) {
-            finalProfit = parseFloat(manualProfit);
-            // If manual profit is positive, assume win? No, trust user Result selector.
+          if (formResult === 'loss') {
+            finalProfit = -st;
+          } else if (formResult === 'void') {
+            finalProfit = 0;
           } else {
-            if (formResult === 'win') finalProfit = (st * od) - st;
-            else if (formResult === 'loss') finalProfit = -st;
-            else if (formResult === 'void') finalProfit = 0;
-            else finalProfit = 0; // pending
+            // Win or Pending - Allow Manual Profit override
+            if (manualProfit) {
+              finalProfit = parseFloat(manualProfit);
+            } else {
+              if (formResult === 'win') finalProfit = (st * od) - st;
+              else finalProfit = 0; // pending
+            }
           }
         } else {
           finalProfit = 0; // New bets always pending profit until resolved
