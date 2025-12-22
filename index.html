@@ -29,6 +29,8 @@
 
   <!-- Recharts (CDNjs) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+  <!-- SUPABASE JS (V32) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Lucide -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -171,7 +173,7 @@
       'CheckCircle', 'XCircle', 'Clock', 'Activity', 'Target', 'Zap',
       'BarChart2', 'Menu', 'ChevronRight', 'AlertCircle', 'RefreshCw', 'Check', 'X', 'Calendar', 'Layers', 'Trophy', 'Flame',
       'Filter', 'Tag', 'Camera', 'Sparkles', 'Brain', 'Upload', 'Scan', 'TrendingDown', 'UserPlus', 'Edit', 'Calculator', 'LayoutDashboard', 'Copy',
-      'ChevronUp', 'ChevronDown'
+      'ChevronUp', 'ChevronDown', 'Cloud', 'UploadCloud', 'DownloadCloud'
     ];
 
     const Icons = IconList.reduce((acc, name) => {
@@ -248,12 +250,17 @@
             }));
           }
           return loaded;
-        } catch (e) {
-          console.error("Error loading tipsters", e);
-          return DEFAULT_TIPSTERS;
-        }
+        } catch (e) { return DEFAULT_TIPSTERS; }
       });
+      useEffect(() => { localStorage.setItem('betPortfolioV29_tipsters', JSON.stringify(tipsters)); }, [tipsters]);
 
+      // ETIQUETAS DINÁMICAS (V33)
+      const DEFAULT_TAGS = ['ALL', 'FUNBET', 'LIVE', 'PREMATCH', 'STAKE ALTO', 'RETOS'];
+      const [userTags, setUserTags] = useState(() => {
+        const saved = localStorage.getItem('betPortfolioV33_tags');
+        return saved ? JSON.parse(saved) : DEFAULT_TAGS;
+      });
+      useEffect(() => { localStorage.setItem('betPortfolioV33_tags', JSON.stringify(userTags)); }, [userTags]);
       const [showTipsterManager, setShowTipsterManager] = useState(false);
 
       // PERSISTENCIA TIPSTERS
@@ -534,18 +541,120 @@
       const [recoveryKeys, setRecoveryKeys] = useState([]);
 
       const scanStorage = () => {
-        const keys = Object.keys(localStorage).filter(k => k.includes('betPortfolio'));
+        const keys = Object.keys(localStorage);
         const data = keys.map(k => {
           const content = localStorage.getItem(k);
           return {
             key: k,
-            size: content.length,
-            preview: content.substring(0, 50) + '...',
+            size: content ? content.length : 0,
+            preview: content ? (content.substring(0, 50) + '...') : '(vacío)',
             isCurrent: k === 'betPortfolioV29_challenges'
           };
-        });
+        }).sort((a, b) => b.size - a.size); // Sort by size to find big data chunks
         setRecoveryKeys(data);
         setShowRecoveryModal(true);
+      };
+
+      // --- SUPABASE CLOUD SYNC (V32) ---
+      const defaultCloudConfig = {
+        url: 'https://ceplypympnznkwkfmoto.supabase.co',
+        key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlcGx5cHltcG56bmt3a2Ztb3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzOTE0MTUsImV4cCI6MjA4MTk2NzQxNX0.IiRuMj4rOeGtMB4042r1DMDT7CVK_m6hP-cJrcJ-S8I',
+        key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlcGx5cHltcG56bmt3a2Ztb3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzOTE0MTUsImV4cCI6MjA4MTk2NzQxNX0.IiRuMj4rOeGtMB4042r1DMDT7CVK_m6hP-cJrcJ-S8I',
+        syncId: 'mi_cartera_v1', // ID por defecto, el usuario puede cambiarlo
+        autoSync: true // V34: Auto-Sync Default ON
+      };
+
+      const [cloudConfig, setCloudConfig] = useState(() => {
+        const saved = localStorage.getItem('betPortfolioV32_cloudConfig');
+        return saved ? JSON.parse(saved) : defaultCloudConfig;
+      });
+      const [showCloudModal, setShowCloudModal] = useState(false);
+      const [cloudStatus, setCloudStatus] = useState('idle'); // idle, uploading, downloading, success, error
+
+      useEffect(() => {
+        localStorage.setItem('betPortfolioV32_cloudConfig', JSON.stringify(cloudConfig));
+      }, [cloudConfig]);
+
+      const getSupabase = () => {
+        if (!cloudConfig.url || !cloudConfig.key) return null;
+        return window.supabase.createClient(cloudConfig.url, cloudConfig.key);
+      };
+
+      const handleCloudUpload = async (silent = false) => {
+        const supabase = getSupabase();
+        if (!supabase) return !silent && alert("Faltan credenciales de Supabase");
+        if (!silent) setCloudStatus('uploading');
+
+        const payload = {
+          bets,
+          challenges,
+          tipsters,
+          bankTransactions,
+          tags: userTags, // V33: Upload Tags
+          lastUpdated: new Date().toISOString()
+        };
+
+        try {
+          const { error } = await supabase
+            .from('portfolios')
+            .upsert({ id: cloudConfig.syncId, data: payload });
+
+          if (error) throw error;
+
+          if (!silent) {
+            setCloudStatus('success');
+            alert("✅ ¡Datos subidos a la Nube correctamente!");
+            setTimeout(() => setCloudStatus('idle'), 2000);
+          } else {
+            console.log("Auto-Sync Complete");
+          }
+        } catch (err) {
+          console.error("Upload error:", err);
+          if (!silent) {
+            setCloudStatus('error');
+            alert("Error al subir a la nube: " + err.message);
+          }
+        }
+      };
+
+      // AUTO-SYNC HOOK (V34)
+      useEffect(() => {
+        if (!cloudConfig.autoSync) return;
+        const timer = setTimeout(() => { handleCloudUpload(true); }, 3000);
+        return () => clearTimeout(timer);
+      }, [bets, challenges, tipsters, bankTransactions, userTags, cloudConfig.autoSync]);
+
+      const handleCloudDownload = async () => {
+        const supabase = getSupabase();
+        if (!supabase) return alert("Faltan credenciales de Supabase");
+        setCloudStatus('downloading');
+
+        try {
+          const { data, error } = await supabase
+            .from('portfolios')
+            .select('data')
+            .eq('id', cloudConfig.syncId)
+            .single();
+
+          if (error) throw error;
+          if (!data || !data.data) throw new Error("No se encontraron datos para este ID de Sincronización.");
+
+          const imported = data.data;
+          if (imported.bets) setBets(imported.bets);
+          if (imported.challenges) setChallenges(imported.challenges);
+          if (imported.tipsters) setTipsters(imported.tipsters);
+          if (imported.bankTransactions) setBankTransactions(imported.bankTransactions);
+          if (imported.tags) setUserTags(imported.tags); // V33: Download Tags
+
+          setCloudStatus('success');
+          alert("✅ ¡Datos descargados y sincronizados!");
+          setTimeout(() => setCloudStatus('idle'), 2000);
+          window.location.reload();
+        } catch (err) {
+          console.error("Download error:", err);
+          setCloudStatus('error');
+          alert("Error al descargar de la nube: " + err.message);
+        }
       };
 
       const restoreBackup = (key) => {
@@ -1421,22 +1530,44 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         // Odds = (Profit + Stake) / Stake.
 
         const finalDesc = isMultiLine ? (formDesc + ' | ' + betLines.map(l => l.description).join(' + ')) : formDesc;
-        const tagsArray = formTags.split(',').map(t => t.trim().toUpperCase()).filter(t => t); // V3 Tags
+        let tagsArray = formTags.split(',').map(t => t.trim().toUpperCase()).filter(t => t); // V3 Tags
+
+        // 6. DYNAMIC TAGS AUTO-ADD (V33)
+        // Check if formTag is new and add it
+        let finalTag = formTag === 'ALL' ? '' : formTag;
+
+        // Extract hashtags from description if any
+        const hashtags = formDescription.match(/#[a-z0-9_]+/gi);
+        if (hashtags) {
+          hashtags.forEach(tag => {
+            const cleanTag = tag.substring(1).toUpperCase();
+            if (!userTags.includes(cleanTag)) {
+              setUserTags(prev => [...prev, cleanTag]);
+            }
+            if (!finalTag) finalTag = cleanTag; // Use first hashtag as main tag if none selected
+            if (!tagsArray.includes(cleanTag)) tagsArray.push(cleanTag); // Add to tagsArray as well
+          });
+        }
+
+        // If formTag is manual and not in list, add it
+        if (formTag && formTag !== 'ALL' && !userTags.includes(formTag)) {
+          setUserTags(prev => [...prev, formTag]);
+          if (!tagsArray.includes(formTag)) tagsArray.push(formTag); // Add to tagsArray as well
+        }
 
         const newBet = {
           id: Date.now(),
-          date: new Date().toISOString().split('T')[0],
-          tipster: formTipster,
+          date: formDate,
+          description: formDescription,
           stake: parseFloat(formStake),
           odds: parseFloat(formOdds),
           result: 'pending',
-          description: finalDesc,
-          profit: 0,
-          description: finalDesc,
-          profit: 0,
-          betLines: betLines.length > 0 ? (formTipster === 'Mezcla-Tips' || formTipster === 'Combis (Apuesta D)' ? betLines : betLines.map(l => ({ ...l, tipster: formTipster }))) : [], // FIX: Enforce Main Tipster for non-Mezcla
-          subPicks: formTipster === 'Mezcla-Tips' ? subPicks : [],
-          tags: tagsArray // V3
+          tipster: formTipster,
+          tag: finalTag, // Primary tag (for legacy/single tag display)
+          tags: tagsArray, // All tags (for filtering)
+          betLines: isMulti ? betLines : [],
+          subPicks: (!isMulti && subPicks.length > 0) ? subPicks : [], // Legacy support
+          profit: 0
         };
         setBets([newBet, ...bets]);
 
@@ -1488,7 +1619,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           bets: bets,
           challenges: challenges,
           tipsters: tipsters, // V31: Save Tipsters
-          bankTransactions: bankTransactions // V18
+          bankTransactions: bankTransactions, // V18
+          tags: userTags // V33: Dynamic Tags
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -1510,8 +1642,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             if (imported.bets && Array.isArray(imported.bets)) {
               setBets(imported.bets);
               if (imported.challenges) setChallenges(imported.challenges);
-              if (imported.tipsters) setTipsters(imported.tipsters); // V31: Load Tipsters
-              if (imported.bankTransactions) setBankTransactions(imported.bankTransactions); // V18
+              if (imported.tipsters) setTipsters(imported.tipsters);
+              if (imported.bankTransactions) setBankTransactions(imported.bankTransactions);
+              if (imported.tags) setUserTags(imported.tags); // V33: Load Tags
               alert('¡Datos restaurados con éxito! (' + imported.bets.length + ' apuestas)');
             } else {
               alert('Formato de archivo inválido');
@@ -1557,7 +1690,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           {/* HEADER MOBILE */}
           <div className="md:hidden bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center z-50 sticky top-0 shadow-lg">
             <div className="font-bold text-xl text-emerald-400 tracking-tight">BET<span className="text-white">MANAGER</span></div>
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-white"><Menu size={28} /></button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowCloudModal(true)} className="text-indigo-400"><Cloud size={24} /></button>
+              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-white"><Menu size={28} /></button>
+            </div>
           </div>
 
           {/* SIDEBAR */}
@@ -1568,6 +1704,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <button onClick={() => setShowBankManager(true)} className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 hover:border-emerald-500 transition-colors group">
                 <div className="text-[10px] uppercase font-bold text-slate-400 group-hover:text-emerald-400">BANK ACTUAL</div>
                 <div className="text-lg font-bold font-mono text-white group-hover:text-emerald-300">{currentGlobalBank.toFixed(2)}€</div>
+              </button>
+              {/* CLOUD BUTTON HEADER (PC) */}
+              <button onClick={() => setShowCloudModal(true)} className="flex flex-col items-center justify-center p-2 rounded-lg bg-indigo-900/20 border border-indigo-500/30 hover:bg-indigo-600/20 hover:border-indigo-400 transition-all text-indigo-400 ml-2" title="Sincronización Cloud">
+                <Cloud size={20} />
+                <span className="text-[9px] font-bold">NUBE</span>
               </button>
             </div>
 
@@ -1608,6 +1749,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 <button onClick={factoryReset} className="flex items-center gap-2 text-xs bg-slate-800/50 hover:bg-red-600/20 hover:text-red-400 text-slate-400 p-2 rounded transition-colors border border-transparent hover:border-red-500/30">
                   <Trash2 size={14} /> <span>Factory Reset</span>
                 </button>
+                <button onClick={() => setShowCloudModal(true)} className="flex items-center gap-2 text-xs bg-indigo-900/30 hover:bg-indigo-600/30 text-indigo-400 font-bold p-3 rounded mt-2 transition-colors border border-indigo-500/30">
+                  <Cloud size={16} /> <span>☁️ CONFIGURAR NUBE</span>
+                </button>
               </div>
               <div className="mt-4 text-center text-[10px] text-slate-600">v29.1 PRO - Local Storage</div>
             </div>
@@ -1619,13 +1763,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             {/* 1. DASHBOARD */}
             {activeSection === 'dashboard' && (
               <div className="space-y-6 animate-fade-in">
-                {/* TAG FILTER UI (V3) */}
-                {availableTags.length > 1 && (
+                {/* TAG FILTER UI (V3 - Updated V33) */}
+                {userTags.length > 1 && (
                   <div className="flex justify-end mb-2">
                     <div className="flex items-center gap-2 bg-slate-900 p-2 rounded-lg border border-slate-800">
                       <Filter size={14} className="text-slate-400" />
                       <select value={filterTag} onChange={e => setFilterTag(e.target.value)} className="bg-slate-900 text-xs text-white focus:outline-none uppercase font-bold cursor-pointer">
-                        {availableTags.map(tag => <option key={tag} value={tag}>{tag === 'ALL' ? 'Todas las Etiquetas' : tag}</option>)}
+                        {userTags.map(tag => <option key={tag} value={tag}>{tag === 'ALL' ? 'Todas las Etiquetas' : tag}</option>)}
                       </select>
                     </div>
                   </div>
@@ -1818,9 +1962,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   <div className="flex justify-between items-start mb-6 z-10 relative">
                     <div className="flex items-center gap-3">
                       <div className="p-3 bg-indigo-500/20 rounded-lg border border-indigo-500/30 text-indigo-400"><Trophy size={24} /></div>
-                      <div>
-                        <h2 className="text-xl font-bold text-white tracking-tight">Challenge Center Pro</h2>
-                        <p className="text-xs text-slate-400">Panel de Control de Retos</p>
+                      {/* HEADER PRO (V32: Cloud Button) */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400 truncate">
+                            BETMANAGER <span className="text-[10px] text-slate-500 font-mono align-top ml-1 opacity-50">v32.0 Cloud</span>
+                          </h1>
+                          <button onClick={() => setShowCloudModal(true)} className="px-2 py-1 bg-indigo-600/20 text-indigo-400 border border-indigo-600/40 rounded text-[10px] font-bold hover:bg-indigo-600/40 hover:text-white transition-colors flex items-center gap-1 animate-pulse">
+                            <Cloud size={12} /> NUBE
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -2157,12 +2308,12 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                           <td colSpan="4" className="p-2 pl-4">
                                             <div className="space-y-1 border-l-2 border-indigo-500/30 pl-2">
                                               {bet.betLines.map((l, i) => (
-                                                <div key={i} className="flex justify-between items-center text-xs text-slate-400 bg-slate-950/30 p-1 rounded">
-                                                  <span>
+                                                <div key={i} className="flex justify-between items-center text-xs">
+                                                  <span className="text-slate-400 truncate max-w-[200px]">
                                                     {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') ? <span className="font-bold text-indigo-300">{l.tipster || 'Personal'}</span> : null}
                                                     {l.desc}
                                                   </span>
-                                                  <span className="font-mono">@{l.odds}</span>
+                                                  <span className="font-mono text-slate-500">@{l.odds}</span>
                                                 </div>
                                               ))}
                                             </div>
@@ -2628,7 +2779,6 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 Yield 10% -> Profit = 0.10 * Stake.
                                 Profit = (Stake*(Odds-1)*WR) - (Stake*(1-WR)).
                                 0.10 Stake = Stake [ (Odds-1)WR - (1-WR) ]
-                                0.10 = (Odds-1)WR - 1 + WR
                                 1.10 = WR(Odds-1+1) = WR(Odds)
                                 WR = 1.10 / Odds
                             */}
@@ -3064,9 +3214,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       else {
                         const winningLines = lines.filter(l => l.result !== 'void');
                         if (winningLines.length > 0) {
-                          effOdds = winningLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
-                          estProfit = (resolutionChallengeBet.stake * effOdds) - resolutionChallengeBet.stake;
+                          const recalculatedOdds = winningLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+                          effOdds = parseFloat(recalculatedOdds.toFixed(2));
                         }
+                        estProfit = (resolutionChallengeBet.stake * effOdds) - resolutionChallengeBet.stake;
                       }
 
                       return (
@@ -3442,19 +3593,21 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <input type="text" value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Ej: Real Madrid vs Barcelona" className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-emerald-500" />
                       </div>
                       <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Etiquetas (Autocompletar)</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Etiqueta Principal (Selector Dinámico)</label>
                         <div className="relative group">
-                          <input type="text" value={formTags} onChange={e => setFormTags(e.target.value)} placeholder="Escribe para buscar..." className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-sm focus:border-blue-500" />
+                          <input
+                            list="tags-list"
+                            type="text"
+                            value={formTag}
+                            onChange={e => setFormTag(e.target.value.toUpperCase())}
+                            placeholder="Escribe o selecciona..."
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-sm focus:border-blue-500 uppercase font-bold"
+                            onFocus={e => e.target.select()}
+                          />
+                          <datalist id="tags-list">
+                            {userTags.filter(t => t !== 'ALL').map(tag => <option key={tag} value={tag} />)}
+                          </datalist>
                           <div className="absolute top-0 right-0 h-full flex items-center pr-3 pointer-events-none text-slate-600"><Tag size={14} /></div>
-                          {/* Simple suggestion dropdown could be added here if needed, leveraging availableTags */}
-                          {formTags && (
-                            <div className="absolute top-full left-0 w-full bg-slate-900 border border-slate-700 rounded-lg mt-1 shadow-xl z-50 hidden group-focus-within:block">
-                              <div className="p-2 text-xs text-slate-500 uppercase font-bold">Sugerencias:</div>
-                              {availableTags.filter(t => t.toLowerCase().includes(formTags.toLowerCase()) && !formTags.includes(t)).slice(0, 5).map(t => (
-                                <div key={t} className="p-2 hover:bg-slate-800 text-slate-300 cursor-pointer text-sm" onMouseDown={(e) => { e.preventDefault(); setFormTags(prev => prev ? prev + ', ' + t : t); }}>{t}</div>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -3734,6 +3887,74 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   </div>
                   <button type="submit" className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-3 rounded-lg shadow-lg">REGISTRAR PASO</button>
                 </form>
+              </div>
+            </div>
+          )}
+          {/* CLOUD MODAL (V32) */}
+          {showCloudModal && (
+            <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setShowCloudModal(false)}>
+              <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-indigo-500/50 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-4 bg-indigo-950/30 border-b border-indigo-900/30 flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2"><Cloud className="text-indigo-400" /> Sincronización en la Nube</h3>
+                  <button onClick={() => setShowCloudModal(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  {/* STATUS INDICATOR */}
+                  <div className={`p-3 rounded-lg border text-center font-bold ${cloudStatus === 'error' ? 'bg-red-900/20 border-red-500 text-red-500' :
+                    cloudStatus === 'success' ? 'bg-emerald-900/20 border-emerald-500 text-emerald-500' :
+                      cloudStatus === 'uploading' || cloudStatus === 'downloading' ? 'bg-blue-900/20 border-blue-500 text-blue-400 animate-pulse' :
+                        'bg-slate-800 border-slate-700 text-slate-400'
+                    }`}>
+                    {cloudStatus === 'idle' && 'Listo para sincronizar'}
+                    {cloudStatus === 'uploading' && 'Subiendo datos a la nube...'}
+                    {cloudStatus === 'downloading' && 'Descargando datos de la nube...'}
+                    {cloudStatus === 'success' && '¡Operación Completada!'}
+                    {cloudStatus === 'error' && 'Error en la operación'}
+                  </div>
+
+                  {/* SYNC ACTIONS */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <button onClick={handleCloudUpload} disabled={cloudStatus !== 'idle' && cloudStatus !== 'success' && cloudStatus !== 'error'} className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition-all group">
+                      <UploadCloud size={32} className="text-indigo-400 group-hover:scale-110 transition-transform" />
+                      <span className="font-bold text-sm text-indigo-100">SUBIR DATOS</span>
+                      <span className="text-[10px] text-slate-500">Sobrescribe la nube con tus datos actuales</span>
+                    </button>
+                    <button onClick={handleCloudDownload} disabled={cloudStatus !== 'idle' && cloudStatus !== 'success' && cloudStatus !== 'error'} className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition-all group">
+                      <DownloadCloud size={32} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                      <span className="font-bold text-sm text-emerald-100">BAJAR DATOS</span>
+                      <span className="text-[10px] text-slate-500">Sobrescribe tu dispositivo con datos de la nube</span>
+                    </button>
+                  </div>
+
+                  {/* CONFIGURATION */}
+                  <div className="border-t border-slate-800 pt-4">
+                    <div className="text-xs font-bold text-slate-500 uppercase mb-2">Configuración de Conexión</div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-1">ID Sincronización (Tu Contraseña Secreta)</label>
+                        <input type="text" value={cloudConfig.syncId} onChange={e => setCloudConfig({ ...cloudConfig, syncId: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white font-mono text-xs focus:border-indigo-500" />
+                        <p className="text-[9px] text-slate-500 mt-1">Usa la misma ID en todos tus dispositivos para compartir datos.</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-slate-950 p-2 rounded border border-slate-700">
+                        <input type="checkbox" checked={cloudConfig.autoSync} onChange={e => setCloudConfig({ ...cloudConfig, autoSync: e.target.checked })} className="rounded bg-slate-800 border-slate-600 text-indigo-500 focus:ring-0" />
+                        <div>
+                          <label className="text-xs font-bold text-white block">Auto-Guardado en Nube</label>
+                          <p className="text-[9px] text-slate-400">Sube cambios automáticamente tras 3 segundos de inactividad.</p>
+                        </div>
+                      </div>
+                      <details className="group">
+                        <summary className="text-[10px] cursor-pointer text-slate-500 hover:text-indigo-400 select-none">Opciones Avanzadas (URL & Key)</summary>
+                        <div className="mt-2 space-y-2 pl-2 border-l-2 border-slate-800">
+                          <input type="text" placeholder="Supabase URL" value={cloudConfig.url} onChange={e => setCloudConfig({ ...cloudConfig, url: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-400 text-[10px]" />
+                          <input type="password" placeholder="Supabase Anon Key" value={cloudConfig.key} onChange={e => setCloudConfig({ ...cloudConfig, key: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-400 text-[10px]" />
+                        </div>
+                      </details>
+                    </div>
+                  </div>
+
+                </div>
               </div>
             </div>
           )}
