@@ -504,7 +504,7 @@
       const [formTag, setFormTag] = useState('ALL');
       const [manualProfit, setManualProfit] = useState('');
       const [isMulti, setIsMulti] = useState(false);
-      const [betLines, setBetLines] = useState([{ tipster: '', description: '', odds: '' }]);
+      const [betLines, setBetLines] = useState([]);
 
       // Legacy State (Moved from line ~1087 to prevent ReferenceErrors)
       const [formDesc, setFormDesc] = useState('');
@@ -1309,9 +1309,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       // Efecto para calcular cuota total si hay lineas
       // Efecto para calcular cuota total si hay lineas
       useEffect(() => {
-        // Relaxed check: also trigger if Tipster is Mezcla-Tips even if isMultiLine flaky
-        const activeMulti = isMultiLine || formTipster === 'Mezcla-Tips';
-        if (activeMulti && betLines.length > 0) {
+        // Updated Logic: Always calc if lines exist (Live Calculation)
+        if (betLines.length > 0) {
           const totalOdds = betLines.reduce((acc, line) => acc * (parseFloat(line.odds) || 1), 1);
           const finalOdds = parseFloat(totalOdds.toFixed(2));
           setFormOdds(finalOdds);
@@ -1343,7 +1342,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
         // 2. Distribute to Lines (if Multi)
         // Adjust existing lines proportionally to match new total odds
-        if ((isMultiLine || formTipster === 'Mezcla-Tips') && betLines.length > 0) {
+        // Distribute to Lines if they exist (Live Reverse Calc)
+        if (betLines.length > 0) {
           const currentTotalOdds = betLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
 
           if (currentTotalOdds > 0) {
@@ -3548,17 +3548,26 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               <div className="flex-1 w-full md:w-auto">
                                 <div className="flex gap-1 mb-1">
                                   {/* MULTI TIPSTER LOGIC */}
+                                  {/* MULTI TIPSTER LOGIC - RESTRICTED */}
                                   <div className="flex items-center gap-1 flex-wrap">
-                                    <span className="text-[10px] text-slate-500 uppercase font-bold mr-1">Tipsters:</span>
-                                    {line.tipster && line.tipster.split(' + ').map((tName, tIdx) => (
-                                      <span key={tIdx} className="bg-indigo-900/30 text-indigo-200 border border-indigo-500/30 px-1.5 py-0.5 rounded text-[10px]">{tName}</span>
-                                    ))}
-                                    <button type="button" onClick={() => {
-                                      const current = line.tipster ? line.tipster.split(' + ') : [];
-                                      const nextTipster = prompt("Añadir Co-Tipster (Nombre):");
-                                      /* A better UI would be a mini dropdown, but prompt is fast for now as fallback */
-                                      if (nextTipster) updateLine(idx, 'tipster', [...current, nextTipster].join(' + '));
-                                    }} className="text-emerald-400 hover:text-white bg-emerald-900/20 p-0.5 rounded border border-emerald-500/30"><Plus size={10} /></button>
+                                    {(formTipster === 'Mezcla-Tips' || formTipster === 'Combis (Apuesta D)') ? (
+                                      <>
+                                        <span className="text-[10px] text-slate-500 uppercase font-bold mr-1">Tipsters:</span>
+                                        {line.tipster && line.tipster.split(' + ').map((tName, tIdx) => (
+                                          <span key={tIdx} className="bg-indigo-900/30 text-indigo-200 border border-indigo-500/30 px-1.5 py-0.5 rounded text-[10px]">{tName}</span>
+                                        ))}
+                                        <button type="button" onClick={() => {
+                                          const current = line.tipster ? line.tipster.split(' + ') : [];
+                                          const nextTipster = prompt("Añadir Co-Tipster (Nombre):");
+                                          if (nextTipster) updateLine(idx, 'tipster', [...current, nextTipster].join(' + '));
+                                        }} className="text-emerald-400 hover:text-white bg-emerald-900/20 p-0.5 rounded border border-emerald-500/30"><Plus size={10} /></button>
+                                      </>
+                                    ) : (
+                                      /* FIXED TIPSTER DISPLAY */
+                                      <div className="bg-slate-950/50 border border-slate-700/50 px-2 py-1 rounded text-xs font-bold text-slate-400">
+                                        {formTipster}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                                 <input type="text" placeholder="Descripción selección..." value={line.description} onChange={e => updateLine(idx, 'description', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-indigo-500" />
@@ -3632,7 +3641,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               if (!val) setFormOdds(''); // Optional: clear odds if profit cleared? Or keep last.
                             }
                           }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-emerald-400 font-bold font-mono text-xl focus:border-emerald-500" placeholder="0.00" />
-                          <span className="absolute right-3 top-4 text-xs text-slate-600">AUTO-CALC</span>
+                          {/* Removed AUTO-CALC label as requested */}
                         </div>
                       </div>
                     </div>
