@@ -1458,7 +1458,6 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       // (Removed duplicate availableTags definition)
 
       // Efecto para calcular cuota total si hay lineas
-      // Efecto para calcular cuota total si hay lineas
       useEffect(() => {
         // Updated Logic: Always calc if lines exist (Live Calculation)
         if (betLines.length > 0) {
@@ -1474,6 +1473,40 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           }
         }
       }, [betLines, isMultiLine, formTipster, formStake]);
+
+      // --- EDIT MODE EFFECT ---
+      useEffect(() => {
+        if (editingBet) {
+          // Populate form with existing bet data
+          setFormTipster(editingBet.tipster);
+          setFormStake(editingBet.stake);
+          setFormOdds(editingBet.odds);
+          setFormDescription(editingBet.description);
+          setFormDesc(editingBet.description); // Sync legacy
+          setFormDate(editingBet.date);
+
+          if (editingBet.tag) setFormTag(editingBet.tag);
+          if (editingBet.tags) setUserTags(prev => [...new Set([...prev, ...editingBet.tags])]); // Ensure tags exist
+
+          // Handle Multi-Line
+          if (editingBet.betLines && editingBet.betLines.length > 0) {
+            setIsMultiLine(true);
+            setBetLines(editingBet.betLines);
+          } else {
+            // Handle Legacy SubPicks if any
+            if (editingBet.subPicks && editingBet.subPicks.length > 0) {
+              // Convert simple subpicks to lines? Or just load them
+              setIsMultiLine(false);
+              setSubPicks(editingBet.subPicks);
+            } else {
+              setIsMultiLine(false);
+              setBetLines([]);
+            }
+          }
+
+          setShowAddBetModal(true); // Open modal
+        }
+      }, [editingBet]);
 
       // FIX: Auto-Calc Proportional Change from Profit
       const handleManualProfitChange = (e) => {
@@ -1557,20 +1590,27 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         }
 
         const newBet = {
-          id: Date.now(),
+          id: editingBet ? editingBet.id : Date.now(), // Preserve ID if editing
           date: formDate,
           description: formDescription,
           stake: parseFloat(formStake),
           odds: parseFloat(formOdds),
-          result: 'pending',
+          result: editingBet ? editingBet.result : 'pending', // Preserve result status if editing
           tipster: formTipster,
           tag: finalTag, // Primary tag (for legacy/single tag display)
           tags: tagsArray, // All tags (for filtering)
           betLines: isMulti ? betLines : [],
           subPicks: (!isMulti && subPicks.length > 0) ? subPicks : [], // Legacy support
-          profit: 0
+          profit: editingBet ? editingBet.profit : 0 // Preserve profit (or recalc if logic added later)
         };
-        setBets([newBet, ...bets]);
+
+        if (editingBet) {
+          setBets(bets.map(b => b.id === editingBet.id ? newBet : b));
+          setEditingBet(null); // Clear edit mode
+          alert("Apuesta actualizada correctamente.");
+        } else {
+          setBets([newBet, ...bets]);
+        }
 
         // Reset
         setFormDesc('');
@@ -1581,7 +1621,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         setIsMultiLine(false);
         setManualProfit('');
         setShowAddBetModal(false);
-        setActiveSection('dashboard');
+        // Only switch section if not editing (stay in history if editing? or go dashboard?)
+        // If editing from history, stay in history usually better.
+        if (!editingBet) setActiveSection('dashboard');
       };
 
       const addLine = () => {
@@ -1788,8 +1830,19 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <span className="font-bold text-emerald-400">{bet.tipster}</span>
                               <span className="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400 border border-slate-700">@{bet.odds.toFixed(2)}</span>
+                              {bet.tag && bet.tag !== 'ALL' && <span className="text-[10px] bg-blue-900/30 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30 uppercase font-bold"><Tag size={10} className="inline mr-1" />{bet.tag}</span>}
                             </div>
-                            <p className="text-sm text-slate-300">{bet.description}</p>
+                            <p className="text-sm font-medium text-slate-200 mb-1">{bet.description}</p>
+
+                            {/* TAGS / HASHTAGS ROW */}
+                            {((bet.tags && bet.tags.length > 0) || (bet.description.match(/#[a-z0-9_]+/gi))) && (
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {(bet.tags || []).filter(t => t !== bet.tag && t !== 'ALL').map((t, idx) => (
+                                  <span key={idx} className="text-[10px] text-slate-500 bg-slate-900 px-1.5 rounded">#{t}</span>
+                                ))}
+                                {/* Render hashtags from description if not in tags array? Logic handles it usually but visual backup */}
+                              </div>
+                            )}
 
                             {/* MULTI-LINE PREVIEW COLLAPSIBLE (DASHBOARD) */}
                             {((bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0)) && (
@@ -3530,15 +3583,18 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
           {/* ADD BET MODAL - REFACTORED V30 */}
           {showAddBetModal && (
-            <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowAddBetModal(false)}>
+            <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => { setShowAddBetModal(false); setEditingBet(null); }}>
               <div className="bg-slate-900 w-full max-w-4xl rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center shrink-0">
-                  <h3 className="font-bold text-white uppercase text-lg flex items-center gap-2"><Plus size={20} className="text-emerald-500" /> Registrar Nueva Apuesta</h3>
+                  <h3 className="font-bold text-white uppercase text-lg flex items-center gap-2">
+                    {editingBet ? <Edit size={20} className="text-blue-500" /> : <Plus size={20} className="text-emerald-500" />}
+                    {editingBet ? 'Editar Apuesta' : 'Registrar Nueva Apuesta'}
+                  </h3>
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={() => setShowTipsterManager(true)} className="text-xs flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded transition-colors border border-slate-700">
                       <Users size={14} /> Gestionar Tipsters
                     </button>
-                    <button onClick={() => setShowAddBetModal(false)} className="text-slate-500 hover:text-white transition-colors"><X size={24} /></button>
+                    <button onClick={() => { setShowAddBetModal(false); setEditingBet(null); }} className="text-slate-500 hover:text-white transition-colors"><X size={24} /></button>
                   </div>
                 </div>
 
