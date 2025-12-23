@@ -1393,6 +1393,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       // V41 New: Realistic Portfolio Simulation
       const [simAlgo, setSimAlgo] = useState('SIMPLE'); // SIMPLE | REALISTIC
       const [simPortfolioConfig, setSimPortfolioConfig] = useState([]); // [{ name, weight, winRate, avgOdds, avgStake, enabled }]
+      const [simChartTab, setSimChartTab] = useState('evolution'); // evolution | drawdown | distribution
 
       // Deep Analytics State
       const [selectedDay, setSelectedDay] = useState(null);
@@ -1492,14 +1493,19 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       const runSimulation = () => {
         const iterations = 1000;
         const finals = [];
-        const bankruptcies = 0;
+        let bankruptcies = 0;
 
         let minResult = Infinity;
         let maxResult = -Infinity;
         let totalResult = 0;
 
-        // Visual Paths (We only keep 5 distinct paths for the chart to avoid clutter)
+        // Visual Paths
         const visualPaths = [];
+
+        // V2: Stats for new charts
+        const allDrawdowns = []; // Store Max Drawdown % of EACH iteration
+        let medianRunPath = []; // To store the path of the median result for "Underwater" chart
+        let worstRunPath = [];
 
         // PREPARE REALISTIC CONFIG (Optimization)
         let activePortfolio = [];
@@ -1512,6 +1518,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
         for (let i = 0; i < iterations; i++) {
           let currentBank = parseFloat(simBank);
+          let peakBank = currentBank;
+          let maxDD = 0; // Max Drawdown % for this run
+
           const path = [];
           if (i < 5) path.push({ x: 0, y: currentBank }); // Only store full path for first 5
 
@@ -1535,8 +1544,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               }
               betWinRate = parseFloat(selected.winRate);
               betOdds = parseFloat(selected.avgOdds);
-              if (simStakingMode === 'FLAT') betStakeBase = parseFloat(selected.avgStake); // In Realistic Mode + Flat, use their AVG STAKE
-              // Note: If compound, we usually use % of bank, which overrides the specific avg stake amount
+              if (simStakingMode === 'FLAT') betStakeBase = parseFloat(selected.avgStake);
             }
 
             // --- SIMULATION STEP ---
@@ -1552,7 +1560,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             }
 
             if (currentBank <= 0 && !bankrupted) {
-              bankrupted = true; // Count as bankruptcy if hits 0 or less
+              bankrupted = true;
             }
 
             if (currentBank > 0) {
@@ -1563,38 +1571,77 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               }
             }
 
-            if (i < 5 && b % 10 === 0) { // Optimize points: 1 point every 10 bets
+            // Track Peak & Drawdown
+            if (currentBank > peakBank) peakBank = currentBank;
+            const dd = peakBank > 0 ? (peakBank - currentBank) / peakBank : 0;
+            if (dd > maxDD) maxDD = dd;
+
+            if (i < 5 && b % 10 === 0) {
               path.push({ x: b, y: Number(currentBank.toFixed(2)) });
             }
-          }
+          } // End Bet Loop
 
           if (i < 5) visualPaths.push({ name: `Sim ${i + 1}`, data: path });
 
-          finals.push(currentBank);
+          finals.push({ val: currentBank, mdd: maxDD, pathFragment: path }); // Store rich obj temporarily
           if (currentBank <= 0) bankruptcies++;
 
           totalResult += currentBank;
           if (currentBank < minResult) minResult = currentBank;
           if (currentBank > maxResult) maxResult = currentBank;
-        }
+        } // End Iteration Loop
 
-        // Calculate Percentiles
-        finals.sort((a, b) => a - b);
-        const p10 = finals[Math.floor(iterations * 0.10)];
-        const p50 = finals[Math.floor(iterations * 0.50)]; // Median
-        const p90 = finals[Math.floor(iterations * 0.90)];
+        // --- POST PROCESSING ---
+        // 1. Sort by Final Bankroll
+        finals.sort((a, b) => a.val - b.val);
+
+        const p10Index = Math.floor(iterations * 0.10);
+        const p50Index = Math.floor(iterations * 0.50);
+        const p90Index = Math.floor(iterations * 0.90);
+
+        const p10 = finals[p10Index].val;
+        const p50 = finals[p50Index].val;
+        const p90 = finals[p90Index].val;
         const avg = totalResult / iterations;
 
+        // 2. Histogram Data (Distribution)
+        const bucketCount = 20;
+        const range = maxResult - minResult;
+        const step = range / bucketCount;
+        const histogramData = Array.from({ length: bucketCount }, (_, i) => {
+          const start = minResult + (i * step);
+          const end = start + step;
+          return { range: `${(start / 1000).toFixed(1)}k-${(end / 1000).toFixed(1)}k`, count: 0, sortKey: start };
+        });
+
+        finals.forEach(f => {
+          let bIdx = Math.floor((f.val - minResult) / step);
+          if (bIdx >= bucketCount) bIdx = bucketCount - 1;
+          histogramData[bIdx].count++;
+        });
+
+        // 3. Drawdown Stats (Underwater)
+        // We will visualize the "Underwater Chart" of the MEDIAN run (P50) to show a "Representative Experience".
+        // Re-construct full path for P50 is expensive if we didn't store it. 
+        // We stored bits in 'pathFragment' only for i < 5.
+        // Let's generate a FRESH representative run for P50 visual or just use Sim 0 if it's close?
+        // Better: Just use the Average MDD statistics for the card.
+        const avgMDD = finals.reduce((acc, f) => acc + (f.mdd * 100), 0) / iterations;
+        const worstMDD = finals.reduce((acc, f) => Math.max(acc, f.mdd * 100), 0);
+
         setSimResults({
-          best: p90, // UI maps "Best (Top 10%)" -> P90
-          worst: p10, // UI maps "Worst (10%)" -> P10
+          best: p90,
+          worst: p10,
           avg: avg,
           min: minResult,
           max: maxResult,
           p10: p10,
           p90: p90,
           riskOfRuin: ((bankruptcies / iterations) * 100).toFixed(1),
-          paths: visualPaths,
+          avgMDD: avgMDD.toFixed(1),
+          worstMDD: worstMDD.toFixed(1),
+          paths: visualPaths, // For Evolution Chart
+          histogram: histogramData,
           mode: simAlgo
         });
       };
@@ -3310,185 +3357,267 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             )}
 
 
-            {/* SUPER SIMULATOR (V40 - Advanced) */}
+            {/* SUPER SIMULATOR V2 (Premium Redesign) */}
             {activeSection === 'simulador' && (
-              <div className="space-y-8 animate-fade-in pb-10">
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="space-y-6 animate-fade-in pb-20">
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
                   <div>
-                    <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center gap-3">
-                      <TrendingUp size={32} /> Proyección Futura
+                    <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-400 flex items-center gap-3">
+                      <Zap size={36} className="text-emerald-400" /> Laboratorio de Futuros
                     </h2>
-                    <p className="text-slate-400 mt-1">Simulación Monte Carlo Avanzada, Riesgo y Escenarios.</p>
+                    <p className="text-slate-400 mt-2 font-light text-lg">Proyecta tu destino con Monte Carlo y Analítica Avanzada.</p>
                   </div>
-                  <div className="flex gap-2 bg-slate-900 p-1 rounded-lg border border-slate-800">
-                    <button onClick={() => setSimMode('GLOBAL')} className={`px-4 py-2 rounded font-bold transition-all ${simMode === 'GLOBAL' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>Global</button>
-                    <button onClick={() => setSimMode('TIPSTER')} className={`px-4 py-2 rounded font-bold transition-all ${simMode === 'TIPSTER' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>Por Tipster</button>
+                  <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/10 backdrop-blur-md">
+                    <button onClick={() => setSimMode('GLOBAL')} className={`px-5 py-2 rounded-lg font-bold transition-all ${simMode === 'GLOBAL' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white'}`}>Global</button>
+                    <button onClick={() => setSimMode('TIPSTER')} className={`px-5 py-2 rounded-lg font-bold transition-all ${simMode === 'TIPSTER' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white'}`}>Por Tipster</button>
                   </div>
                 </header>
 
-                {/* 1. CONTROL PANEL - The "Lab" */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                  {/* INPUTS */}
-                  <div className="lg:col-span-1 space-y-4">
-                    <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-xl space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                      {/* ALGORITHM TOGGLE */}
+                  {/* --- LEFT SIDEBAR: CONTROL STATION (Col 3) --- */}
+                  <div className="lg:col-span-3 space-y-6">
+                    <div className="bg-slate-900/80 backdrop-blur-xl p-6 rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
+
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <Settings size={14} /> Configuración
+                      </h3>
+
+                      {/* ALGORITHM SWITCH */}
                       {simMode === 'GLOBAL' && (
-                        <div className="p-3 bg-slate-950 rounded border border-slate-800 mb-2">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Modo de Simulación</label>
-                          <div className="flex gap-1">
-                            <button onClick={() => setSimAlgo('SIMPLE')} className={`flex-1 py-1 text-[10px] rounded font-bold border transition-colors ${simAlgo === 'SIMPLE' ? 'bg-slate-700 text-white border-slate-600' : 'text-slate-500 border-transparent hover:bg-slate-800'}`}>SIMPLE</button>
-                            <button onClick={() => setSimAlgo('REALISTIC')} className={`flex-1 py-1 text-[10px] rounded font-bold border transition-colors ${simAlgo === 'REALISTIC' ? 'bg-emerald-900 text-emerald-200 border-emerald-700' : 'text-slate-500 border-transparent hover:bg-slate-800'}`}>CARTERA REAL</button>
+                        <div className="mb-6">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Modo de Motor</label>
+                          <div className="grid grid-cols-2 gap-1 p-1 bg-black/40 rounded-lg border border-white/5">
+                            <button onClick={() => setSimAlgo('SIMPLE')} className={`py-2 text-[10px] rounded-md font-bold transition-all ${simAlgo === 'SIMPLE' ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>SIMPLE</button>
+                            <button onClick={() => setSimAlgo('REALISTIC')} className={`py-2 text-[10px] rounded-md font-bold transition-all ${simAlgo === 'REALISTIC' ? 'bg-emerald-600 text-white shadow shadow-emerald-900/50' : 'text-slate-500 hover:text-slate-300'}`}>CARTERA REAL</button>
                           </div>
                         </div>
                       )}
 
-                      <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-2">
-                        <h3 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2"><Settings size={14} /> Parámetros Base</h3>
-                        <button onClick={loadRealStats} className="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-emerald-400 font-bold border border-slate-700 transition-colors">Cargar Reales</button>
-                      </div>
-
                       {simMode === 'TIPSTER' && (
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Tipster</label>
-                          <select value={simSelectedTipster} onChange={e => setSimSelectedTipster(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm focus:border-purple-500">
+                        <div className="mb-6">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Tipster Objetivo</label>
+                          <select value={simSelectedTipster} onChange={e => setSimSelectedTipster(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-3 text-white text-sm focus:border-purple-500 outline-none transition-all">
                             <option value="">Selecciona...</option>
                             {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
                           </select>
                         </div>
                       )}
 
-                      {/* SIMPLE MODE INPUTS */}
-                      {simAlgo === 'SIMPLE' && (
-                        <>
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Bank Inicial</label>
-                            <div className="relative">
-                              <input type="number" value={simBank} onChange={e => setSimBank(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white font-bold pl-6 focus:border-indigo-500 transition-colors" />
-                              <span className="absolute left-2 top-2 text-slate-600">€</span>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Win Rate %</label>
-                              <input type="number" value={simWinRate} onChange={e => setSimWinRate(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-emerald-400 font-bold text-center focus:border-emerald-500" />
-                            </div>
-                            <div>
-                              <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Cuota @</label>
-                              <input type="number" step="0.01" value={simAvgOdds} onChange={e => setSimAvgOdds(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-blue-400 font-bold text-center focus:border-blue-500" />
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {/* REALISTIC MODE INPUTS */}
-                      {simAlgo === 'REALISTIC' && (
-                        <div>
-                          <div className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Bank Inicial</div>
-                          <div className="relative mb-4">
-                            <input type="number" value={simBank} onChange={e => setSimBank(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white font-bold pl-6 focus:border-indigo-500 transition-colors" />
-                            <span className="absolute left-2 top-2 text-slate-600">€</span>
-                          </div>
-                          <div className="text-[10px] text-zinc-500 italic mb-2">
-                            Los parámetros se definen por tipster en la tabla de la derecha.
-                          </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-slate-300">Datos Base</span>
+                          <button onClick={loadRealStats} className="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-full text-emerald-400 font-bold border border-slate-700 transition-colors">⚡ Cargar Reales</button>
                         </div>
-                      )}
 
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Nº Apuestas (Horizonte)</label>
-                        <input type="number" value={simNumBets} onChange={e => setSimNumBets(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white font-mono text-center" />
-                      </div>
+                        {simAlgo === 'REALISTIC' ? (
+                          <div className="p-4 bg-emerald-900/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-200/80 italic">
+                            Los parámetros (Winrate, Cuota, Stake) se extraen de la configuración individual de cada tipster en la tabla de cartera.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase"><span>Bank Inicial</span> <span>€</span></div>
+                              <input type="number" value={simBank} onChange={e => setSimBank(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-2.5 text-white font-bold focus:border-emerald-500 outline-none" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <div className="text-[10px] text-slate-500 font-bold uppercase">Win Rate %</div>
+                                <input type="number" value={simWinRate} onChange={e => setSimWinRate(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-2.5 text-emerald-400 font-bold text-center focus:border-emerald-500 outline-none" />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="text-[10px] text-slate-500 font-bold uppercase">Cuota @</div>
+                                <input type="number" step="0.01" value={simAvgOdds} onChange={e => setSimAvgOdds(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-2.5 text-blue-400 font-bold text-center focus:border-blue-500 outline-none" />
+                              </div>
+                            </div>
+                          </>
+                        )}
 
-                      {/* STAKING MODE SWITCH */}
-                      <div className="p-3 bg-slate-950 rounded border border-slate-800">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Estrategia de Stake</label>
-                        <div className="flex gap-2 mb-2">
-                          <button onClick={() => setSimStakingMode('FLAT')} className={`flex-1 py-1 text-[10px] rounded font-bold border transition-colors ${simStakingMode === 'FLAT' ? 'bg-slate-700 text-white border-slate-600' : 'text-slate-500 border-transparent hover:bg-slate-800'}`}>PLANO (Fijo)</button>
-                          <button onClick={() => setSimStakingMode('COMPOUND')} className={`flex-1 py-1 text-[10px] rounded font-bold border transition-colors ${simStakingMode === 'COMPOUND' ? 'bg-indigo-900 text-indigo-200 border-indigo-700' : 'text-slate-500 border-transparent hover:bg-slate-800'}`}>COMPUESTO (%)</button>
+                        <div className="space-y-1">
+                          <div className="text-[10px] text-slate-500 font-bold uppercase">Horizonte (Apuestas)</div>
+                          <input type="number" value={simNumBets} onChange={e => setSimNumBets(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-2.5 text-white font-mono text-center focus:border-indigo-500 outline-none" />
                         </div>
-                        <div className="relative">
-                          <input type="number" value={simStake} onChange={e => setSimStake(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white font-bold pl-8" />
-                          <span className="absolute left-2 top-2 text-slate-500 font-bold text-xs">{simStakingMode === 'FLAT' ? '€' : '%'}</span>
+
+                        {/* Staking */}
+                        <div className="pt-4 border-t border-white/5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Gestión de Stake</label>
+                          <div className="flex rounded-lg bg-black/40 p-1 border border-white/5 mb-2">
+                            <button onClick={() => setSimStakingMode('FLAT')} className={`flex-1 py-1.5 text-[10px] rounded font-bold transition-all ${simStakingMode === 'FLAT' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}>PLANO</button>
+                            <button onClick={() => setSimStakingMode('COMPOUND')} className={`flex-1 py-1.5 text-[10px] rounded font-bold transition-all ${simStakingMode === 'COMPOUND' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>COMPUESTO</button>
+                          </div>
+                          <div className="relative">
+                            <input type="number" value={simStake} onChange={e => setSimStake(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-2.5 text-white font-bold pl-3" />
+                            <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-500">{simStakingMode === 'FLAT' ? '€' : '%'}</span>
+                          </div>
                         </div>
                       </div>
 
-                      <button onClick={runSimulation} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 py-3 rounded-lg font-bold text-white shadow-lg shadow-emerald-900/40 transform active:scale-95 transition-all flex items-center justify-center gap-2">
-                        <Zap size={18} fill="currentColor" /> EJECUTAR SIMULACIÓN
+                      <button onClick={runSimulation} className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-900/40 transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group">
+                        <Zap size={20} className="group-hover:text-yellow-300 transition-colors" /> <span className="tracking-wide">SIMULAR AHORA</span>
                       </button>
-                    </div>
-
-                    {/* RISK METRICS */}
-                    <div className="bg-red-900/10 border border-red-500/30 p-4 rounded-xl">
-                      <div className="flex items-center gap-2 mb-3 text-red-400 font-bold text-xs uppercase"><AlertTriangle size={14} /> Análisis de Riesgo</div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-400">Riesgo de Ruina:</span>
-                          <span className="text-white font-bold">
-                            {(() => {
-                              // Kelly Criterion Approximation for Ruin
-                              // Simplified: If edge is negative -> 100%. If positive -> check var/bank.
-                              const p = parseFloat(simWinRate) / 100;
-                              const q = 1 - p;
-                              const b = parseFloat(simAvgOdds) - 1;
-                              const edge = (p * b) - q;
-                              if (edge <= 0) return "100% (Esperanza Negativa)";
-                              // Very rough approximation for display purposes in "Super Simulator" context without complex backend
-                              // Using Kelly Fraction: f* = edge / b. If current stake > f*, ruin is high.
-                              const kelly = edge / b;
-                              let currentStakeElem = parseFloat(simStake);
-                              if (simStakingMode === 'FLAT') currentStakeElem = (currentStakeElem / parseFloat(simBank)); // as %
-                              else currentStakeElem = currentStakeElem / 100;
-
-                              if (currentStakeElem > kelly) return "> 50% (Stake > Full Kelly)";
-                              if (currentStakeElem > kelly / 2) return "~ 10-25% (Riesgoso)";
-                              return "< 1% (Seguro)";
-                            })()}
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1">
-                          <div className="bg-red-500 h-full" style={{ width: '10%' }}></div> {/* Simulated visual */}
-                        </div>
-                      </div>
                     </div>
                   </div>
 
-                  {/* VISUALIZATION */}
-                  <div className="lg:col-span-3 space-y-6">
+                  {/* --- RIGHT DASHBOARD: VISUALIZATION (Col 9) --- */}
+                  <div className="lg:col-span-9 space-y-6">
 
-                    {/* PORTFOLIO CONFIG TABLE (V41) */}
+                    {/* 1. METRICS ROW */}
+                    {simResults && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in-up">
+                        <div className="bg-slate-900/60 backdrop-blur border border-red-500/20 p-4 rounded-2xl relative overflow-hidden group">
+                          <div className="absolute -right-4 -top-4 bg-red-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all"></div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Peor Caso (P10)</div>
+                          <div className="text-2xl lg:text-3xl font-bold text-red-400">{simResults.worst.toFixed(0)}€</div>
+                          <div className="text-[10px] text-red-500/60 font-mono mt-1">Drawdown Máx: {simResults.worstMDD}%</div>
+                        </div>
+                        <div className="bg-slate-900/60 backdrop-blur border border-blue-500/20 p-4 rounded-2xl relative overflow-hidden group">
+                          <div className="absolute -right-4 -top-4 bg-blue-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Esperado (Media)</div>
+                          <div className="text-2xl lg:text-3xl font-bold text-blue-400">{simResults.avg.toFixed(0)}€</div>
+                          <div className="text-[10px] text-blue-500/60 font-mono mt-1">ROI {(((simResults.avg - parseFloat(simBank)) / parseFloat(simBank)) * 100).toFixed(0)}%</div>
+                        </div>
+                        <div className="bg-slate-900/60 backdrop-blur border border-emerald-500/20 p-4 rounded-2xl relative overflow-hidden group">
+                          <div className="absolute -right-4 -top-4 bg-emerald-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mejor Caso (P90)</div>
+                          <div className="text-2xl lg:text-3xl font-bold text-emerald-400">{simResults.best.toFixed(0)}€</div>
+                          <div className="text-[10px] text-emerald-500/60 font-mono mt-1">To The Moon 🚀</div>
+                        </div>
+                        <div className="bg-slate-900/60 backdrop-blur border border-orange-500/20 p-4 rounded-2xl relative overflow-hidden group">
+                          <div className="absolute -right-4 -top-4 bg-orange-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all"></div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Riesgo de Ruina</div>
+                          <div className="text-2xl lg:text-3xl font-bold text-orange-400">{simResults.riskOfRuin}%</div>
+                          <div className="text-[10px] text-orange-500/60 font-mono mt-1">Prob. Bancarrota</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. MAIN CHART AREA */}
+                    <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden min-h-[500px] flex flex-col">
+                      {/* Chart Tabs */}
+                      <div className="flex border-b border-white/5 p-2 bg-black/20">
+                        {['evolution', 'drawdown', 'distribution'].map(tab => (
+                          <button
+                            key={tab}
+                            onClick={() => setSimChartTab(tab)}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${simChartTab === tab ? 'bg-slate-800 text-white shadow ring-1 ring-white/10' : 'text-slate-500 hover:text-slate-300'}`}
+                          >
+                            {tab === 'evolution' ? '📈 Evolución' : tab === 'drawdown' ? '📉 Underwater (Drawdown)' : '📊 Distribución'}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Chart Canvas */}
+                      <div className="flex-1 p-6 relative">
+                        {!simResults ? (
+                          <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-pulse gap-4">
+                            <RefreshCw size={48} className="opacity-20 spin-slow" />
+                            <p className="font-light text-lg">Configura los parámetros y lanza la simulación.</p>
+                          </div>
+                        ) : (
+                          <ResponsiveContainer width="100%" height="100%">
+                            {simChartTab === 'evolution' && (
+                              <AreaChart data={simResults.paths[0]?.data.map((_, idx) => {
+                                // Construct composite data frame on the fly for the chart
+                                // We need to merge all 5 paths into one object per X
+                                const frame = { step: idx };
+                                simResults.paths.forEach((p, pIdx) => frame[`path${pIdx}`] = p.data[idx]?.y);
+                                return frame;
+                              })}>
+                                <defs>
+                                  <linearGradient id="gEvo" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.2} /><stop offset="95%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.5} />
+                                <XAxis dataKey="step" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
+                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }} formatter={(val) => `${val.toFixed(0)}€`} />
+                                {simResults.paths.map((p, i) => (
+                                  <Area key={i} type="monotone" dataKey={`path${i}`} stroke={i === 0 || i === 4 ? '#ef4444' : '#10b981'} fill="url(#gEvo)" strokeWidth={i === 2 ? 3 : 1} strokeOpacity={i === 2 ? 1 : 0.5} fillOpacity={i === 2 ? 1 : 0.1} />
+                                ))}
+                              </AreaChart>
+                            )}
+
+                            {simChartTab === 'drawdown' && (
+                              <AreaChart data={simResults.paths[2]?.data.map((pt, idx) => {
+                                // Calculate DD for the Median Path (Index 2 usually represents typical if sorted? No, visualPaths are 0..4 chronological)
+                                // Actually visualPaths are just first 5 sims. Let's use Sim 0 as representative or Avg of them?
+                                // Let's just plot Sim 0's underwater curve.
+                                const y = pt.y;
+                                // This is tricky without history of peak. 
+                                // We need to re-calculate peak-to-date for this specific path.
+                                // Let's do it right here: 
+                                // Warning: map() is stateless. We need to compute array beforehand.
+                                // Let's assume we compute it outside or use a trick.
+                                return { step: idx, val: y };
+                              }).reduce((acc, curr, i, arr) => {
+                                // Transform into DD array
+                                const prevPeak = i === 0 ? curr.val : acc[i - 1].peak;
+                                const peak = Math.max(prevPeak, curr.val);
+                                const dd = peak > 0 ? ((peak - curr.val) / peak) * 100 : 0;
+                                acc.push({ step: curr.step, dd: dd, peak: peak });
+                                return acc;
+                              }, [])}>
+                                <defs>
+                                  <linearGradient id="gDD" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} /><stop offset="95%" stopColor="#ef4444" stopOpacity={0} /></linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.5} />
+                                <XAxis dataKey="step" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `${v.toFixed(0)}%`} flipped={true} /> {/* Flipped for Underwater effect? Or just normal 0 to 100? Normal DD is positive number representing loss size. */}
+                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }} formatter={(val) => `-${val.toFixed(2)}%`} labelFormatter={(l) => `Apuesta ${l}`} />
+                                <Area type="monotone" dataKey="dd" stroke="#ef4444" fill="url(#gDD)" strokeWidth={2} />
+                              </AreaChart>
+                            )}
+
+                            {simChartTab === 'distribution' && (
+                              <BarChart data={simResults.histogram}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.5} />
+                                <XAxis dataKey="range" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} angle={-45} textAnchor="end" height={60} />
+                                <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }} />
+                                <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]}>
+                                  {simResults.histogram.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={`hsl(${220 + (index * 5)}, 80%, 60%)`} />
+                                  ))}
+                                </Bar>
+                              </BarChart>
+                            )}
+                          </ResponsiveContainer>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 3. CONFIG TABLE (Conditional - Bottom of Dashboard) */}
                     {simAlgo === 'REALISTIC' && simPortfolioConfig.length > 0 && (
-                      <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-xl overflow-hidden animate-fade-in-up">
-                        <h3 className="text-emerald-400 font-bold mb-4 flex items-center gap-2 text-sm"><Settings size={16} /> Configuración de Cartera ({simPortfolioConfig.filter(t => t.enabled).length} Activos)</h3>
+                      <div className="bg-slate-900/80 backdrop-blur rounded-2xl border border-white/10 p-6 shadow-xl animate-fade-in-up">
+                        <h3 className="text-emerald-400 font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-wider"><Settings size={16} /> Configuración de Cartera ({simPortfolioConfig.filter(t => t.enabled).length} Activos)</h3>
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs text-left">
                             <thead>
-                              <tr className="text-slate-500 border-b border-slate-800 uppercase font-bold">
-                                <th className="pb-2 pl-2">Tipster</th>
-                                <th className="pb-2 text-center">Peso (Vol)</th>
-                                <th className="pb-2 text-center">WinRate %</th>
-                                <th className="pb-2 text-center">Cuota @</th>
-                                <th className="pb-2 text-center">Stake</th>
-                                <th className="pb-2 text-center">Activo</th>
+                              <tr className="text-slate-500 border-b border-slate-700/50 uppercase font-bold">
+                                <th className="pb-3 pl-2">Tipster</th>
+                                <th className="pb-3 text-center">Peso (Vol)</th>
+                                <th className="pb-3 text-center">WinRate %</th>
+                                <th className="pb-3 text-center">Cuota @</th>
+                                <th className="pb-3 text-center">Stake</th>
+                                <th className="pb-3 text-center">Activo</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/50">
                               {simPortfolioConfig.map((t, idx) => (
-                                <tr key={idx} className={`transition-colors ${t.enabled ? 'hover:bg-slate-800/30' : 'opacity-50 grayscale'}`}>
-                                  <td className="py-2 pl-2 text-white font-bold">{t.name}</td>
-                                  <td className="py-2 text-center text-slate-400 font-mono">{t.weight}%</td>
-                                  <td className="py-2 text-center">
-                                    <input type="number" value={t.winRate} onChange={e => updatePortfolioConfig(idx, 'winRate', e.target.value)} className="w-16 bg-slate-950 border border-slate-700 rounded px-1 text-center text-emerald-400 font-bold focus:border-emerald-500" />
+                                <tr key={idx} className={`transition-colors ${t.enabled ? 'hover:bg-slate-800/30' : 'opacity-40 grayscale'} group`}>
+                                  <td className="py-3 pl-2 text-white font-bold group-hover:text-emerald-300 transition-colors">{t.name}</td>
+                                  <td className="py-3 text-center text-slate-400 font-mono">{t.weight}%</td>
+                                  <td className="py-3 text-center px-2">
+                                    <input type="number" value={t.winRate} onChange={e => updatePortfolioConfig(idx, 'winRate', e.target.value)} className="w-20 bg-black/30 border border-slate-700/50 rounded px-2 py-1 text-center text-emerald-400 font-bold focus:border-emerald-500 outline-none" />
                                   </td>
-                                  <td className="py-2 text-center">
-                                    <input type="number" value={t.avgOdds} onChange={e => updatePortfolioConfig(idx, 'avgOdds', e.target.value)} className="w-16 bg-slate-950 border border-slate-700 rounded px-1 text-center text-blue-400 font-bold focus:border-blue-500" />
+                                  <td className="py-3 text-center px-2">
+                                    <input type="number" value={t.avgOdds} onChange={e => updatePortfolioConfig(idx, 'avgOdds', e.target.value)} className="w-20 bg-black/30 border border-slate-700/50 rounded px-2 py-1 text-center text-blue-400 font-bold focus:border-blue-500 outline-none" />
                                   </td>
-                                  <td className="py-2 text-center">
-                                    <input type="number" value={t.avgStake} onChange={e => updatePortfolioConfig(idx, 'avgStake', e.target.value)} className="w-16 bg-slate-950 border border-slate-700 rounded px-1 text-center text-indigo-300 font-bold focus:border-indigo-500" />
+                                  <td className="py-3 text-center px-2">
+                                    <input type="number" value={t.avgStake} onChange={e => updatePortfolioConfig(idx, 'avgStake', e.target.value)} className="w-20 bg-black/30 border border-slate-700/50 rounded px-2 py-1 text-center text-indigo-300 font-bold focus:border-indigo-500 outline-none" />
                                   </td>
-                                  <td className="py-2 text-center">
-                                    <input type="checkbox" checked={t.enabled} onChange={e => updatePortfolioConfig(idx, 'enabled', e.target.checked)} className="rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 w-4 h-4 cursor-pointer" />
+                                  <td className="py-3 text-center px-2">
+                                    <input type="checkbox" checked={t.enabled} onChange={e => updatePortfolioConfig(idx, 'enabled', e.target.checked)} className="rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 w-5 h-5 cursor-pointer" />
                                   </td>
                                 </tr>
                               ))}
@@ -3497,69 +3626,6 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         </div>
                       </div>
                     )}
-
-                    {/* STATS SUMMARY CARDS */}
-                    {simResults && (
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg relative overflow-hidden group hover:border-red-500/50 transition-colors">
-                          <div className="absolute right-0 top-0 p-3 opacity-10"><ArrowDown size={40} className="text-red-500" /></div>
-                          <div className="text-xs font-bold text-slate-500 uppercase mb-1">Peor Escenario (10%)</div>
-                          <div className="text-2xl font-bold text-red-400">{simResults.worst.toFixed(2)}€</div>
-                          <div className="text-xs text-red-500/70 font-mono mt-1">Drawdown Severo</div>
-                        </div>
-                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg relative overflow-hidden group hover:border-blue-500/50 transition-colors">
-                          <div className="absolute right-0 top-0 p-3 opacity-10"><Activity size={40} className="text-blue-500" /></div>
-                          <div className="text-xs font-bold text-slate-500 uppercase mb-1">Escenario Medio (Esperado)</div>
-                          <div className="text-2xl font-bold text-blue-400">{simResults.avg.toFixed(2)}€</div>
-                          <div className="text-xs text-blue-500/70 font-mono mt-1">ROI {(((simResults.avg - parseFloat(simBank)) / parseFloat(simBank)) * 100).toFixed(0)}%</div>
-                        </div>
-                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg relative overflow-hidden group hover:border-emerald-500/50 transition-colors">
-                          <div className="absolute right-0 top-0 p-3 opacity-10"><ArrowUp size={40} className="text-emerald-500" /></div>
-                          <div className="text-xs font-bold text-slate-500 uppercase mb-1">Mejor Escenario (Top 10%)</div>
-                          <div className="text-2xl font-bold text-emerald-400">{simResults.best.toFixed(2)}€</div>
-                          <div className="text-xs text-emerald-500/70 font-mono mt-1">To The Moon 🚀</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* MAIN CHART */}
-                    <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-xl h-[450px] relative">
-                      <div className="absolute top-4 right-4 z-10 bg-slate-950/80 px-3 py-1 rounded text-xs text-slate-400 border border-slate-800 backdrop-blur">
-                        {simResults ? 'Simulación Monte Carlo (1000 iteraciones)' : 'Esperando ejecución...'}
-                      </div>
-                      <ResponsiveContainer width="100%" height="100%">
-                        {!simResults ? (
-                          <div className="flex items-center justify-center h-full text-slate-600 font-bold animate-pulse">
-                            Configura los parámetros y pulsa EJECUTAR
-                          </div>
-                        ) : (
-                          <AreaChart data={simResults.chartData}> {/* Need to transform simResults.paths to area data ideally, or just lines for now */}
-                            <defs>
-                              <linearGradient id="colorAvg" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                            <XAxis dataKey="step" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `${v / 1000}k€`} />
-                            <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} formatter={(val) => val.toFixed(0) + '€'} />
-
-                            {/* We render a "Cloud" using 5 representative lines for performance in Recharts (Rendering 1000 lines kills browser) */}
-                            <Area type="monotone" dataKey="best" stroke="transparent" fill="#10b981" fillOpacity={0.1} />
-                            <Area type="monotone" dataKey="worst" stroke="transparent" fill="#ef4444" fillOpacity={0.1} />
-
-                            <Line type="monotone" dataKey="worst" stroke="#ef4444" strokeWidth={2} dot={false} strokeOpacity={0.8} />
-                            <Line type="monotone" dataKey="avg" stroke="#3b82f6" strokeWidth={4} dot={false} />
-                            <Line type="monotone" dataKey="best" stroke="#10b981" strokeWidth={2} dot={false} strokeOpacity={0.8} />
-
-                            {/* Some random path samples for "Cloud Effect" */}
-                            <Line type="monotone" dataKey="p25" stroke="#64748b" strokeWidth={1} dot={false} strokeDasharray="5 5" opacity={0.5} />
-                            <Line type="monotone" dataKey="p75" stroke="#64748b" strokeWidth={1} dot={false} strokeDasharray="5 5" opacity={0.5} />
-                          </AreaChart>
-                        )}
-                      </ResponsiveContainer>
-                    </div>
 
                   </div>
                 </div>
