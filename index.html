@@ -919,8 +919,13 @@
 
       // (Deleted legacy handleSaveBet to fix conflict)
 
-      const addBetLine = () => setBetLines([...betLines, { tipster: formTipster, description: '', odds: '' }]);
+      const addBetLine = () => setBetLines([...betLines, { tipster: formTipster, description: '', odds: '', result: 'pending' }]);
       const removeBetLine = (idx) => setBetLines(betLines.filter((_, i) => i !== idx));
+      const updateBetLine = (idx, field, val) => {
+        const newLines = [...betLines];
+        newLines[idx] = { ...newLines[idx], [field]: val };
+        setBetLines(newLines);
+      };
 
       const updateSubPickStatus = (betId, subPickIndex, newStatus) => {
         const updatedBets = bets.map(b => {
@@ -4885,27 +4890,24 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                               onChange={e => {
                                                 const currentParts = line.tipster ? line.tipster.split(' + ') : [''];
                                                 currentParts[tIdx] = e.target.value;
-                                                // Filter empty only if we have more than 1 and user cleared one? Or just keep empty string?
-                                                // Ideally keep empty string so they can re-select, unless they explicitly delete.
-                                                // But let's filter out completely empty entries if they are not the only one? No, bad UX.
-                                                updateLine(idx, 'tipster', currentParts.join(' + '));
+                                                updateBetLine(idx, 'tipster', currentParts.join(' + '));
                                               }}
                                             >
                                               <option value="">Seleccionar...</option>
-                                              {tipsters.filter(t => t.name !== 'Mezcla-Tips' && t.name !== 'Combis (Apuesta D)').map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                                              {tipsters.filter(t => t.name !== 'Mezcla-Tips' && t.name !== 'Combis (Apuesta D)').map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
                                             </select>
-                                            {(line.tipster ? line.tipster.split(' + ').length : 1) > 1 && (
+                                            {tIdx > 0 && (
                                               <button type="button" onClick={() => {
                                                 const currentParts = line.tipster ? line.tipster.split(' + ') : [''];
                                                 const newParts = currentParts.filter((_, i) => i !== tIdx);
-                                                updateLine(idx, 'tipster', newParts.join(' + '));
+                                                updateBetLine(idx, 'tipster', newParts.join(' + '));
                                               }} className="text-red-400 hover:text-red-300 p-1"><X size={12} /></button>
                                             )}
                                           </div>
                                         ))}
                                         <button type="button" onClick={() => {
                                           const current = line.tipster ? line.tipster : '';
-                                          updateLine(idx, 'tipster', current + (current ? ' + ' : '') + ''); // Append empty slot
+                                          updateBetLine(idx, 'tipster', current + (current ? ' + ' : '') + ''); // Append empty slot
                                         }} className="self-start text-[10px] text-emerald-400 hover:text-white bg-emerald-900/20 px-2 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1 mt-0.5">
                                           <Plus size={10} /> Añadir Co-Tipster
                                         </button>
@@ -4918,21 +4920,21 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                     )}
                                   </div>
                                 </div>
-                                <input type="text" placeholder="Descripción selección..." value={line.description} onChange={e => updateLine(idx, 'description', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-indigo-500" />
+                                <input type="text" placeholder="Descripción selección..." value={line.description} onChange={e => updateBetLine(idx, 'description', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-indigo-500" />
                               </div>
                               <div className="flex gap-2 w-full md:w-auto">
-                                <input type="number" placeholder="@" step="0.01" value={line.odds} onChange={e => updateLine(idx, 'odds', e.target.value)} className="w-20 bg-slate-950 border border-slate-700 rounded p-2 text-sm text-center font-bold text-white focus:border-indigo-500" />
-                                <button type="button" onClick={() => removeLine(idx)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-900/10 rounded"><Trash2 size={16} /></button>
+                                <input type="number" placeholder="@" step="0.01" value={line.odds} onChange={e => updateBetLine(idx, 'odds', e.target.value)} className="w-20 bg-slate-950 border border-slate-700 rounded p-2 text-sm text-center font-bold text-white focus:border-indigo-500" />
+                                <button type="button" onClick={() => removeBetLine(idx)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-900/10 rounded"><Trash2 size={16} /></button>
                               </div>
                             </div>
                           ))}
-                          <button type="button" onClick={addLine} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 text-xs rounded hover:bg-slate-800 hover:text-indigo-400 transition-colors flex justify-center items-center gap-2">
+                          <button type="button" onClick={addBetLine} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 text-xs rounded hover:bg-slate-800 hover:text-indigo-400 transition-colors flex justify-center items-center gap-2">
                             <Plus size={14} /> AÑADIR LÍNEA
                           </button>
                         </div>
                       )}
                       {/* Auto-enable if empty */}
-                      {betLines.length === 0 && <div className="text-center text-xs text-slate-500 italic py-2 cursor-pointer hover:text-indigo-400" onClick={addLine}>Haga clic para añadir líneas detalladas</div>}
+                      {betLines.length === 0 && <div className="text-center text-xs text-slate-500 italic py-2 cursor-pointer hover:text-indigo-400" onClick={addBetLine}>Haga clic para añadir líneas detalladas</div>}
                     </div>
 
                     {/* SYSTEM BETS SECTION (V42) */}
