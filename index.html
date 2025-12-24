@@ -616,12 +616,7 @@
       // V41: Interactive Tipster Chart State
       const [compSelectedTipsters, setCompSelectedTipsters] = useState([]);
 
-      // Auto-select all active tipsters when financialStats updates (only if empty to respect user selection)
-      useEffect(() => {
-        if (financialStats.activeTipsters.length > 0 && compSelectedTipsters.length === 0) {
-          setCompSelectedTipsters(financialStats.activeTipsters);
-        }
-      }, [financialStats.activeTipsters]);
+
 
 
 
@@ -1427,6 +1422,14 @@
 
         return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters).filter(Boolean), oddsEfficiencyData, maxProfit };
       }, [filteredBets]);
+
+      // Auto-select all active tipsters when financialStats updates (only if empty to respect user selection)
+      // Moved here to avoid ReferenceError
+      useEffect(() => {
+        if (financialStats.activeTipsters && financialStats.activeTipsters.length > 0 && compSelectedTipsters.length === 0) {
+          setCompSelectedTipsters(financialStats.activeTipsters);
+        }
+      }, [financialStats]);
 
       // V18: GLOBAL BANK CALCULATION (Moved here to fix ReferenceError)
       const currentGlobalBank = useMemo(() => {
