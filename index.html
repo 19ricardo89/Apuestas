@@ -959,6 +959,23 @@
       };
 
       // --- LÓGICA RETOS ---
+      const handleSaveEditedBetV2 = (e) => {
+        e.preventDefault();
+        const updatedBets = bets.map(b => {
+          if (b.id === editingBet.id) {
+            // Recalculate profit if status is resolved
+            let newProfit = b.profit;
+            if (b.result === 'win') newProfit = (editingBet.stake * editingBet.odds) - editingBet.stake;
+            if (b.result === 'loss') newProfit = -editingBet.stake;
+            if (b.result === 'void') newProfit = 0;
+            return { ...editingBet, profit: parseFloat(newProfit.toFixed(2)) };
+          }
+          return b;
+        });
+        setBets(updatedBets);
+        setEditingBet(null);
+      };
+
       const addChallengeBet = (e, challengeId) => {
         e.preventDefault();
         const updatedChallenges = challenges.map(c => {
@@ -4868,7 +4885,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   <h3 className="font-bold text-white uppercase text-sm flex items-center gap-2"><Edit size={16} className="text-blue-400" /> Editar Apuesta en Vivo</h3>
                   <button onClick={() => setEditingBet(null)}><X size={20} className="text-slate-500 hover:text-white" /></button>
                 </div>
-                <form onSubmit={handleSaveEditedBet} className="p-6 space-y-4">
+                <form onSubmit={handleSaveEditedBetV2} className="p-6 space-y-4">
+                  {/* TIPSTER SELECTION (V3 FIX) */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Tipster</label>
+                    <div className="relative">
+                      <select value={editingBet.tipster} onChange={e => setEditingBet({ ...editingBet, tipster: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm focus:border-blue-500 appearance-none">
+                        {tipsters.map(t => <option key={t.id || t.name} value={t.name}>{t.name}</option>)}
+                      </select>
+                      <ChevronRight className="absolute right-3 top-3.5 text-slate-500 rotate-90 pointer-events-none" size={16} />
+                    </div>
+                  </div>
                   {/* DESCRIPTION */}
                   <div>
                     <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción</label>
