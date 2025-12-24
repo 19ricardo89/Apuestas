@@ -1361,7 +1361,57 @@
         });
         const tagStats = Object.values(tagMap).sort((a, b) => b.profit - a.profit);
 
-        return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats };
+        // Tipster Evolution (Multi-line)
+        const tipsterDailyMap = {};
+        const activeTipsters = new Set();
+        filteredBets
+          .filter(b => b.result !== 'pending' && b.result !== 'void')
+          .sort((a, b) => new Date(a.date) - new Date(b.date))
+          .forEach(b => {
+            const d = b.date;
+            if (!tipsterDailyMap[d]) tipsterDailyMap[d] = { name: d.slice(5), fullDate: d };
+
+            const tName = b.tipster;
+            activeTipsters.add(tName);
+
+            if (!tipsterDailyMap[d][tName]) tipsterDailyMap[d][tName] = 0;
+            tipsterDailyMap[d][tName] += b.profit;
+          });
+
+        const sortedDays = Object.values(tipsterDailyMap).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
+        const tipsterRunning = {};
+        const tipsterEvolutionData = sortedDays.map(dayObj => {
+          const newPoint = { ...dayObj };
+          activeTipsters.forEach(t => {
+            if (tipsterRunning[t] === undefined) tipsterRunning[t] = 0;
+            if (dayObj[t] !== undefined) tipsterRunning[t] += dayObj[t];
+            newPoint[t] = parseFloat(tipsterRunning[t].toFixed(2));
+          });
+          return newPoint;
+        });
+
+        // Odds Efficiency (Agent Choice)
+        const oddsBuckets = [
+          { label: '1.0 - 1.5', min: 1.0, max: 1.5, wins: 0, total: 0 },
+          { label: '1.5 - 2.0', min: 1.5001, max: 2.0, wins: 0, total: 0 },
+          { label: '2.0 - 3.0', min: 2.0001, max: 3.0, wins: 0, total: 0 },
+          { label: '3.0 +', min: 3.0001, max: 999, wins: 0, total: 0 },
+        ];
+        filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
+          const o = parseFloat(b.odds);
+          const bucket = oddsBuckets.find(buc => o >= buc.min && o <= buc.max);
+          if (bucket) {
+            bucket.total++;
+            if (b.result === 'win') bucket.wins++;
+          }
+        });
+        const oddsEfficiencyData = oddsBuckets.map(b => ({
+          name: b.label,
+          winRate: b.total > 0 ? parseFloat(((b.wins / b.total) * 100).toFixed(1)) : 0,
+          count: b.total
+        }));
+
+        return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters), oddsEfficiencyData };
       }, [filteredBets]);
 
       // V18: GLOBAL BANK CALCULATION (Moved here to fix ReferenceError)
@@ -3124,6 +3174,62 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* NEW: TIPSTER EVOLUTION (V40 Multi-line) */}
+                <section className="mb-8">
+                  <header className="mb-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2"><TrendingUp className="text-blue-500" /> Comparativa de Evolución (Tipsters)</h2>
+                  </header>
+                  <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
+                    <div className="h-[400px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={financialStats.tipsterEvolutionData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}€`} />
+                          <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} />
+                          <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                          {financialStats.activeTipsters.map((tipster, index) => (
+                            <Line
+                              key={tipster}
+                              type="monotone"
+                              dataKey={tipster}
+                              stroke={`hsl(${index * 45}, 70%, 60%)`}
+                              strokeWidth={2}
+                              dot={false}
+                              connectNulls={true}
+                              activeDot={{ r: 6 }}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </section>
+
+                {/* NEW: ODDS EFFICIENCY (V40 Agent Choice) */}
+                <section className="mb-8">
+                  <header className="mb-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2"><Target className="text-emerald-500" /> Eficiencia por Cuota (Win Rate %)</h2>
+                  </header>
+                  <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
+                    <div className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={financialStats.oddsEfficiencyData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} unit="%" />
+                          <RechartsTooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value}%`, 'Win Rate']} />
+                          <Bar dataKey="winRate" radius={[4, 4, 0, 0]}>
+                            {financialStats.oddsEfficiencyData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.winRate >= 50 ? '#10b981' : (entry.winRate >= 30 ? '#f59e0b' : '#ef4444')} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 </section>
@@ -4967,12 +5073,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                           <Plus size={10} /> Añadir Co-Tipster
                                         </button>
                                       </div>
-                                    ) : (
-                                      /* FIXED TIPSTER DISPLAY */
-                                      <div className="bg-slate-950/50 border border-slate-700/50 px-2 py-1 rounded text-xs font-bold text-slate-400">
-                                        {formTipster}
-                                      </div>
-                                    )}
+                                    ) : null}
                                   </div>
                                 </div>
                                 <input type="text" placeholder="Descripción selección..." value={line.description} onChange={e => updateBetLine(idx, 'description', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-indigo-500" />
