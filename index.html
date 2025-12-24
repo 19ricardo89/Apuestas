@@ -613,6 +613,16 @@
       const [formDesc, setFormDesc] = useState('');
       const [formTags, setFormTags] = useState('');
 
+      // V41: Interactive Tipster Chart State
+      const [compSelectedTipsters, setCompSelectedTipsters] = useState([]);
+
+      // Auto-select all active tipsters when financialStats updates (only if empty to respect user selection)
+      useEffect(() => {
+        if (financialStats.activeTipsters.length > 0 && compSelectedTipsters.length === 0) {
+          setCompSelectedTipsters(financialStats.activeTipsters);
+        }
+      }, [financialStats.activeTipsters]);
+
 
 
       const addChallengeLine = () => setChallengeForm({ ...challengeForm, lines: [...challengeForm.lines, { desc: '', odds: '', tipster: challengeForm.tipster || '' }] });
@@ -2505,7 +2515,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                           {(bet.betLines || bet.subPicks).map((line, i) => (
                                             <div key={i} className="flex justify-between items-center text-xs">
                                               <span className="text-slate-400 truncate max-w-[200px]">
-                                                {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && (
+                                                {bet.tipster === 'Mezcla-Tips' && (
                                                   <span className="font-bold text-indigo-400 mr-1">{line.tipster}:</span>
                                                 )}
                                                 {line.description || line.detail}
@@ -3179,10 +3189,40 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 </section>
 
                 {/* NEW: TIPSTER EVOLUTION (V40 Multi-line) */}
-                <section className="mb-8">
-                  <header className="mb-4">
+                <section className="mb-8 pl-4 pr-4">
+                  <header className="mb-4 flex justify-between items-center">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2"><TrendingUp className="text-blue-500" /> Comparativa de Evolución (Tipsters)</h2>
+                    <div className="text-xs text-slate-500 font-mono">
+                      {compSelectedTipsters.length}/{financialStats.activeTipsters.length} seleccionados
+                    </div>
                   </header>
+
+                  {/* FILTER BAR */}
+                  <div className="flex flex-wrap gap-2 mb-4 bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                    <button
+                      onClick={() => setCompSelectedTipsters(compSelectedTipsters.length === financialStats.activeTipsters.length ? [] : financialStats.activeTipsters)}
+                      className={`px-2 py-1 text-[10px] rounded font-bold transition-all border ${compSelectedTipsters.length === financialStats.activeTipsters.length ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'}`}
+                    >
+                      {compSelectedTipsters.length === financialStats.activeTipsters.length ? 'Ocultar Todos' : 'Ver Todos'}
+                    </button>
+                    {financialStats.activeTipsters.map(t => (
+                      <button
+                        key={t}
+                        onClick={() => {
+                          if (compSelectedTipsters.includes(t)) {
+                            setCompSelectedTipsters(compSelectedTipsters.filter(ct => ct !== t));
+                          } else {
+                            setCompSelectedTipsters([...compSelectedTipsters, t]);
+                          }
+                        }}
+                        className={`px-2 py-1 text-[10px] rounded font-bold transition-all border flex items-center gap-1 ${compSelectedTipsters.includes(t) ? 'bg-slate-800 text-white border-blue-500/50' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-600'}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${compSelectedTipsters.includes(t) ? 'bg-blue-400' : 'bg-slate-600'}`}></span>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
                     <div className="h-[400px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -3192,7 +3232,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}€`} />
                           <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} />
                           <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                          {financialStats.activeTipsters.map((tipster, index) => (
+                          {compSelectedTipsters.map((tipster, index) => (
                             <Line
                               key={tipster}
                               type="monotone"
@@ -5040,7 +5080,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   {/* MULTI TIPSTER LOGIC */}
                                   {/* MULTI TIPSTER LOGIC - RESTRICTED */}
                                   <div className="flex items-center gap-1 flex-wrap">
-                                    {(formTipster === 'Mezcla-Tips' || formTipster === 'Combis (Apuesta D)') ? (
+                                    {formTipster === 'Mezcla-Tips' ? (
                                       <div className="flex flex-col gap-1 min-w-[140px]">
                                         {/* Dynamic Dropdowns for Tipsters */}
                                         {(line.tipster ? line.tipster.split(' + ') : ['']).map((tName, tIdx) => (
