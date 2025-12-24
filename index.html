@@ -1421,7 +1421,10 @@
           count: b.total
         }));
 
-        return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters), oddsEfficiencyData };
+        // MAX PROFIT (ATH) Logic
+        const maxProfit = chartData.length > 0 ? Math.max(...chartData.map(d => d.profit)) : 0;
+
+        return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters).filter(Boolean), oddsEfficiencyData, maxProfit };
       }, [filteredBets]);
 
       // V18: GLOBAL BANK CALCULATION (Moved here to fix ReferenceError)
@@ -2578,23 +2581,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                           // 2. Generate Slope Gradient
                           // We want GREEN if current point >= previous point, RED if < previous point.
-                          // But gradient stops work on percentage of the whole width.
-                          // We need to calculate the % position of each data point on the X axis.
                           const generateSlopeGradient = () => {
                             if (displayData.length < 2) return <stop offset="0" stopColor="#10b981" />;
 
                             const steps = [];
-                            // Assuming equally spaced points for simplicity in categorical X-Axis
-                            // Or better: use index / (length - 1)
                             displayData.forEach((d, i) => {
                               if (i === 0) return;
                               const prev = displayData[i - 1];
                               const isRising = d.profit >= prev.profit;
                               const color = isRising ? '#10b981' : '#ef4444';
-
                               const startPct = ((i - 1) / (displayData.length - 1));
                               const endPct = (i / (displayData.length - 1));
-
                               steps.push(<stop key={`start-${i}`} offset={startPct} stopColor={color} />);
                               steps.push(<stop key={`end-${i}`} offset={endPct} stopColor={color} />);
                             });
@@ -2604,7 +2601,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           return (
                             <LineChart data={displayData}>
                               <defs>
-                                <linearGradient id="slopeGradient" x1="0" y1="0" x2="1" y2="0"> {/* Horizontal Gradient */}
+                                <linearGradient id="slopeGradient" x1="0" y1="0" x2="1" y2="0">
                                   {generateSlopeGradient()}
                                 </linearGradient>
                               </defs>
