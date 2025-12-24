@@ -2554,7 +2554,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         ))}
                       </div>
                     </div>
-                    <div className="h-[250px] w-full">
+                    <div className="h-[250px] w-full relative">
+                      {/* ATH Badge */}
+                      <div className="absolute top-0 right-0 z-10 bg-slate-950/80 backdrop-blur border border-emerald-500/30 px-3 py-1 rounded-lg flex flex-col items-end">
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">Máx. Histórico</div>
+                        <div className="text-sm font-bold text-emerald-400 font-mono">+{financialStats.maxProfit ? financialStats.maxProfit.toFixed(2) : '0.00'}€</div>
+                      </div>
+
                       <ResponsiveContainer width="100%" height="100%">
                         {(() => {
                           // 1. Filter Data based on Range
@@ -2568,31 +2574,45 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             displayData = financialStats.chartData.filter(d => new Date(d.fullDate) >= cutoff);
                           }
 
-                          // 2. Calculate Gradient Offset
                           if (!displayData || displayData.length === 0) return <div className="h-full flex items-center justify-center text-slate-500 text-xs">Sin datos para mostrar</div>;
 
-                          const dataMax = Math.max(...displayData.map((i) => i.profit));
-                          const dataMin = Math.min(...displayData.map((i) => i.profit));
-                          const gradientOffset = () => {
-                            if (dataMax <= 0) return 0;
-                            if (dataMin >= 0) return 1;
-                            return dataMax / (dataMax - dataMin);
+                          // 2. Generate Slope Gradient
+                          // We want GREEN if current point >= previous point, RED if < previous point.
+                          // But gradient stops work on percentage of the whole width.
+                          // We need to calculate the % position of each data point on the X axis.
+                          const generateSlopeGradient = () => {
+                            if (displayData.length < 2) return <stop offset="0" stopColor="#10b981" />;
+
+                            const steps = [];
+                            // Assuming equally spaced points for simplicity in categorical X-Axis
+                            // Or better: use index / (length - 1)
+                            displayData.forEach((d, i) => {
+                              if (i === 0) return;
+                              const prev = displayData[i - 1];
+                              const isRising = d.profit >= prev.profit;
+                              const color = isRising ? '#10b981' : '#ef4444';
+
+                              const startPct = ((i - 1) / (displayData.length - 1));
+                              const endPct = (i / (displayData.length - 1));
+
+                              steps.push(<stop key={`start-${i}`} offset={startPct} stopColor={color} />);
+                              steps.push(<stop key={`end-${i}`} offset={endPct} stopColor={color} />);
+                            });
+                            return steps;
                           };
-                          const off = gradientOffset();
 
                           return (
                             <LineChart data={displayData}>
                               <defs>
-                                <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset={off} stopColor="#10b981" stopOpacity={1} />
-                                  <stop offset={off} stopColor="#ef4444" stopOpacity={1} />
+                                <linearGradient id="slopeGradient" x1="0" y1="0" x2="1" y2="0"> {/* Horizontal Gradient */}
+                                  {generateSlopeGradient()}
                                 </linearGradient>
                               </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                               <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                               <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}€`} />
                               <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}€`, 'Beneficio']} />
-                              <Line type="monotone" dataKey="profit" stroke="url(#splitColor)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+                              <Line type="monotone" dataKey="profit" stroke="url(#slopeGradient)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
                             </LineChart>
                           );
                         })()}
