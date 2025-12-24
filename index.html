@@ -1415,14 +1415,15 @@
             if (b.result === 'win') bucket.wins++;
           }
         });
+
         const oddsEfficiencyData = oddsBuckets.map(b => ({
           name: b.label,
           winRate: b.total > 0 ? parseFloat(((b.wins / b.total) * 100).toFixed(1)) : 0,
           count: b.total
         }));
 
-        // MAX PROFIT (ATH) Logic
-        const maxProfit = chartData.length > 0 ? Math.max(...chartData.map(d => d.profit)) : 0;
+        // MAX PROFIT (ATH) Logic - SAFE (Reduce instead of Spread)
+        const maxProfit = chartData.length > 0 ? chartData.reduce((max, d) => (d.profit > max ? d.profit : max), -Infinity) : 0;
 
         return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters).filter(Boolean), oddsEfficiencyData, maxProfit };
       }, [filteredBets]);
