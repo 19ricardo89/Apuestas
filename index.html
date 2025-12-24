@@ -920,7 +920,10 @@
 
       // (Deleted legacy handleSaveBet to fix conflict)
 
-      const addBetLine = () => setBetLines([...betLines, { tipster: formTipster, description: '', odds: '', result: 'pending' }]);
+      const addBetLine = () => {
+        setBetLines([...betLines, { tipster: formTipster, description: '', odds: '', result: 'pending' }]);
+        setIsMultiLine(true);
+      };
       const removeBetLine = (idx) => setBetLines(betLines.filter((_, i) => i !== idx));
       const updateBetLine = (idx, field, val) => {
         const newLines = [...betLines];
@@ -2051,6 +2054,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
           } else {
             // --- NORMAL SINGLE/PARLAY BET ---
+            const isMulti = isMultiLine || betLines.length > 0 || formTipster === 'Mezcla-Tips';
             const newBet = {
               id: editingBet ? editingBet.id : Date.now(),
               date: formDate || new Date().toISOString(),
