@@ -118,10 +118,95 @@
         // Limpiar markdown json si existe
         const cleanJson = text.replace(/```json|```/g, '').trim();
         return JSON.parse(cleanJson);
-      } catch (error) {
-        console.error("Gemini Error:", error);
-        throw error;
+      } catch (err) {
+        console.error("Gemini Error:", err);
+        throw err;
       }
+    };
+
+    // --- SYSTEM BETS LOGIC (V42) ---
+    // Helper to generate combinations of k elements from an array
+    const getCombinations = (array, k) => {
+      const result = [];
+      const f = (prefix, array) => {
+        for (let i = 0; i < array.length; i++) {
+          const newPrefix = prefix.concat([array[i]]);
+          if (newPrefix.length === k) {
+            result.push(newPrefix);
+          } else {
+            f(newPrefix, array.slice(i + 1));
+          }
+        }
+      };
+      f([], array);
+      return result;
+    };
+
+    // V43: Dynamic System Config Generator
+    const getSystemOptions = (n) => {
+      const options = [];
+
+      if (n < 2) return [];
+
+      // 1. Generic N-folds (from 2 up to N-1)
+      // We exclude N because that's just a normal parlay (already handled)
+      for (let k = 2; k < n; k++) {
+        // Spanish naming for low numbers, numeric for high
+        let name = `${k} selecciones`;
+        if (k === 2) name = 'Dobles';
+        if (k === 3) name = 'Triples';
+        if (k === 4) name = 'Cuatros';
+        if (k === 5) name = 'Cincos';
+        if (k === 6) name = 'Seises';
+        if (k === 7) name = 'Sietes';
+        if (k === 8) name = 'Ochos';
+
+        // Calculate count: nCk
+        // Simple nCk implementation for count display
+        const nFact = (num) => { let r = 1; for (let i = 2; i <= num; i++) r *= i; return r; };
+        const count = Math.round(nFact(n) / (nFact(k) * nFact(n - k)));
+
+        options.push({ name: name, k: k, count: count });
+      }
+
+      // 2. Named Full Cover Systems (All-in logic)
+      // "All-in" means all combinations from 2 up to N (or N-1? User said "aplica todo"). 
+      // Standard "Super Yankee" (Canadian) for 5 is: 10 doubles, 10 triples, 5 four-folds, 1 five-fold. Total 26.
+      // We will generate an "All-in" option that includes EVERYTHING from K=2 to K=N.
+
+      // Named defaults for specific sizes (classic names + All-in)
+      if (n === 3) {
+        options.push({ name: 'Trixie', type: 'named', count: 4, composition: [{ k: 2, count: 3 }, { k: 3, count: 1 }] });
+        options.push({ name: 'Patent', type: 'named', count: 7, composition: [{ k: 1, count: 3 }, { k: 2, count: 3 }, { k: 3, count: 1 }] });
+      }
+      if (n === 4) {
+        options.push({ name: 'Yankee', type: 'named', count: 11, composition: [{ k: 2, count: 6 }, { k: 3, count: 4 }, { k: 4, count: 1 }] });
+        options.push({ name: 'Lucky 15', type: 'named', count: 15, composition: [{ k: 1, count: 4 }, { k: 2, count: 6 }, { k: 3, count: 4 }, { k: 4, count: 1 }] });
+      }
+      if (n === 5) {
+        // User renamed Super Yankee to All-in
+        options.push({ name: 'All-in (Super Yankee)', type: 'named', count: 26, composition: [{ k: 2, count: 10 }, { k: 3, count: 10 }, { k: 4, count: 5 }, { k: 5, count: 1 }] });
+        options.push({ name: 'Lucky 31', type: 'named', count: 31, composition: [{ k: 1, count: 5 }, { k: 2, count: 10 }, { k: 3, count: 10 }, { k: 4, count: 5 }, { k: 5, count: 1 }] });
+      }
+      if (n === 6) {
+        options.push({ name: 'Heinz', type: 'named', count: 57, composition: [{ k: 2, count: 15 }, { k: 3, count: 20 }, { k: 4, count: 15 }, { k: 5, count: 6 }, { k: 6, count: 1 }] });
+        options.push({ name: 'Lucky 63', type: 'named', count: 63, composition: [{ k: 1, count: 6 }, { k: 2, count: 15 }, { k: 3, count: 20 }, { k: 4, count: 15 }, { k: 5, count: 6 }, { k: 6, count: 1 }] });
+      }
+      // Dynamic All-in for N > 6?
+      if (n > 6) {
+        // Calculate total bets for All-in (2 to N)
+        let total = 0;
+        let comp = [];
+        for (let k = 2; k <= n; k++) {
+          const nFact = (num) => { let r = 1; for (let i = 2; i <= num; i++) r *= i; return r; };
+          const c = Math.round(nFact(n) / (nFact(k) * nFact(n - k)));
+          total += c;
+          comp.push({ k: k, count: c });
+        }
+        options.push({ name: `All-in (${n} sel)`, type: 'named', count: total, composition: comp });
+      }
+
+      return options;
     };
 
     // --- ORACLE HELPER (TEXT ONLY) ---
@@ -1377,6 +1462,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
       // Multi-linea state
       const [isMultiLine, setIsMultiLine] = useState(false);
+      // System Bets State (V42)
+      const [systemType, setSystemType] = useState(null); // { name, k, count }
+      const [systemStake, setSystemStake] = useState(''); // Stake per bet
 
 
       // Simulator State (V5 Refined)
@@ -1409,6 +1497,84 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       const [goalProfit, setGoalProfit] = useState(1000);
       const [goalMonth, setGoalMonth] = useState('Próximo Mes');
       const [goalResults, setGoalResults] = useState(null);
+
+      // Bulk Resolution State (V43)
+      const [showSystemResolutionModal, setShowSystemResolutionModal] = useState(false);
+      const [bulkResGroupId, setBulkResGroupId] = useState(null);
+      const [bulkResLines, setBulkResLines] = useState([]); // [{ description, tipster, odds, status: 'pending'|'win'|'loss'|'void' }]
+
+      const openBulkResolution = (groupId, betsInGroup) => {
+        // 1. Extract unique lines from all bets in this group
+        const uniqueLinesMap = new Map();
+        betsInGroup.forEach(bet => {
+          const lines = bet.betLines || bet.subPicks || [];
+          lines.forEach(line => {
+            // Key generation: generic description + tipster
+            const key = `${line.description}|${line.tipster || ''}`;
+            if (!uniqueLinesMap.has(key)) {
+              uniqueLinesMap.set(key, { ...line, status: line.result || line.status || 'pending' });
+            }
+          });
+        });
+
+        setBulkResGroupId(groupId);
+        setBulkResLines(Array.from(uniqueLinesMap.values()));
+        setShowSystemResolutionModal(true);
+      };
+
+      const saveBulkResolution = () => {
+        // Iterate all bets in the group
+        const groupBets = bets.filter(b => b.groupId === bulkResGroupId);
+        const updatedBets = groupBets.map(bet => {
+          // Update lines within the bet
+          const lines = bet.betLines || bet.subPicks || [];
+          const newLines = lines.map(line => {
+            // Find matching line in bulkResLines
+            // Match by description AND tipster (if exists)
+            const match = bulkResLines.find(bl => bl.description === line.description && bl.tipster === line.tipster);
+            return match ? { ...line, result: match.status, status: match.status } : line;
+          });
+
+          // Recalculate Bet Status
+          const anyLoss = newLines.some(l => l.status === 'loss');
+          const allVoid = newLines.every(l => l.status === 'void');
+          const allWinOrVoid = newLines.every(l => l.status === 'win' || l.status === 'void');
+          const pending = newLines.some(l => l.status === 'pending');
+
+          let newResult = bet.result;
+          let newProfit = bet.profit;
+
+          if (pending) {
+            newResult = 'pending';
+            newProfit = 0;
+          } else if (anyLoss) {
+            newResult = 'loss';
+            newProfit = -bet.stake;
+          } else if (allVoid) {
+            newResult = 'void';
+            newProfit = 0;
+          } else {
+            // WIN (or reduced win)
+            newResult = 'win';
+            // Calc effective odds
+            const effOdds = newLines.reduce((acc, l) => {
+              if (l.status === 'void') return acc;
+              return acc * (parseFloat(l.odds) || 1);
+            }, 1);
+            newProfit = (bet.stake * effOdds) - bet.stake;
+          }
+
+          return { ...bet, betLines: newLines, result: newResult, profit: newProfit };
+        });
+
+        // Update Global State
+        setBets(prev => prev.map(b => {
+          const updated = updatedBets.find(ub => ub.id === b.id);
+          return updated || b;
+        }));
+
+        setShowSystemResolutionModal(false);
+      };
 
       const loadRealStats = () => {
         let sourceBets = [];
@@ -1748,10 +1914,15 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
         // VALIDATION
         if (!formTipster) { alert("Selecciona un Tipster"); return; }
-        if (!formStake || parseFloat(formStake) <= 0) { alert("Introduce un Stake válido"); return; }
-        if ((!formOdds || parseFloat(formOdds) < 1) && !isMultiLine && parseFloat(formStake) > 0) {
-          // Allow 0 odds if calculating from profit? No, odds mandated.
-          alert("Introduce una Cuota válida"); return;
+        // System Bet Validation
+        if (systemType) {
+          if (!systemStake || parseFloat(systemStake) <= 0) { alert("Introduce un Stake por apuesta válido para el sistema"); return; }
+          if (betLines.length < systemType.k) { alert(`Necesitas al menos ${systemType.k} selecciones para ${systemType.name}`); return; }
+        } else {
+          if (!formStake || parseFloat(formStake) <= 0) { alert("Introduce un Stake válido"); return; }
+          if ((!formOdds || parseFloat(formOdds) < 1) && !isMultiLine && parseFloat(formStake) > 0) {
+            alert("Introduce una Cuota válida"); return;
+          }
         }
 
         // Consolidated Multi logic
@@ -1801,39 +1972,105 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           }
         } else {
           finalProfit = 0; // New bets always pending profit until resolved
-        }
+          // 2. CREATE BET OBJECT
+          if (systemType) {
+            // --- SYSTEM BET GENERATION (V43 Support for Composite Systems) ---
+            const groupId = `SYS-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            const groupType = systemType.name; // e.g. "All-in", "Yankee"
 
-        const newBet = {
-          id: editingBet ? editingBet.id : Date.now(), // Preserve ID if editing
-          date: formDate,
-          description: formDescription,
-          stake: parseFloat(formStake),
-          odds: parseFloat(formOdds),
-          result: finalResult, // Updated Result
-          tipster: formTipster,
-          tag: finalTag,
-          tags: tagsArray,
-          betLines: isMulti ? betLines : [], // Lines now contain their own results
-          subPicks: (!isMulti && subPicks.length > 0) ? subPicks : [],
-          profit: finalProfit
+            let allCombinations = [];
+
+            if (systemType.type === 'named' && systemType.composition) {
+              // Generate combos for each part of the composition
+              systemType.composition.forEach(part => {
+                const partCombos = getCombinations(betLines, part.k);
+                // Add metadata if needed, but we flatten them
+                allCombinations = [...allCombinations, ...partCombos];
+              });
+            } else {
+              // Standard K-fold (Dobles, Triples...)
+              allCombinations = getCombinations(betLines, systemType.k);
+            }
+
+            const newBets = allCombinations.map((combo, idx) => {
+              // Calc odds for this combo
+              const comboOdds = combo.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+              const comboDesc = `${formDescription} (${groupType} ${idx + 1}/${allCombinations.length})`;
+
+              return {
+                id: Date.now() + idx,
+                date: formDate || new Date().toISOString(),
+                tipster: formTipster,
+                stake: parseFloat(systemStake), // Stake per bet
+                odds: parseFloat(comboOdds.toFixed(2)),
+                description: comboDesc,
+                tag: finalTag,
+                tags: tagsArray,
+                result: formResult || 'pending',
+                bookie: 'Bet365', // Default or add field
+                betLines: combo, // The specific lines for this combo
+                isSystemBet: true,
+                groupId: groupId,
+                groupType: groupType,
+                systemTotalBets: combinations.length,
+                profit: formResult === 'win' ? ((parseFloat(systemStake) * comboOdds) - parseFloat(systemStake)) : (formResult === 'loss' ? -parseFloat(systemStake) : 0)
+              };
+            });
+
+            if (editingBet) {
+              // Editing system bets is complex. For now, treat as new set or block editing?
+              // User asked to create, not explicitly edit complex systems.
+              // We'll just push new ones.
+              setBets([...bets.filter(b => b.id !== editingBet.id), ...newBets]);
+              setEditingBet(null);
+            } else {
+              setBets([...bets, ...newBets]);
+            }
+
+          } else {
+            // --- NORMAL SINGLE/PARLAY BET ---
+            const newBet = {
+              id: editingBet ? editingBet.id : Date.now(),
+              date: formDate || new Date().toISOString(),
+              tipster: formTipster,
+              stake: parseFloat(formStake),
+              odds: parseFloat(formOdds),
+              description: finalDesc,
+              tag: finalTag,
+              tags: tagsArray,
+              result: formResult, // V20: Allow setting result directly
+              bookie: 'Bet365', // Placeholder
+              betLines: isMulti ? betLines : [],
+              // Legacy support
+              subPicks: isMulti ? betLines : [],
+              isSystemBet: false
+            };
+
+            // ... (Simple Profit Calc Logic kept simple here for brevity, usually handled by result button or default 0 if pending)
+            if (newBet.result === 'win') newBet.profit = (newBet.stake * newBet.odds) - newBet.stake;
+            if (newBet.result === 'loss') newBet.profit = -newBet.stake;
+            if (newBet.result === 'void') newBet.profit = 0;
+            if (newBet.result === 'pending') newBet.profit = 0;
+
+            if (editingBet) {
+              setBets(bets.map(b => b.id === editingBet.id ? newBet : b));
+              setEditingBet(null);
+            } else {
+              setBets([...bets, newBet]);
+            }
+          }
+
+          // RESET FORM
+          setShowAddBetModal(false);
+          setFormDescription('');
+          setFormStake('');
+          setFormOdds('');
+          setBetLines([]);
+          setSystemType(null);
+          setSystemStake('');
+          setFormTag('');
+          // Keep Tipster
         };
-
-        if (editingBet) {
-          setBets(bets.map(b => b.id === editingBet.id ? newBet : b));
-          setEditingBet(null); // Clear edit mode
-          alert("Apuesta actualizada correctamente.");
-        } else {
-          setBets([newBet, ...bets]);
-        }
-
-        // Reset
-        setFormDesc('');
-        setFormDescription('');
-        setFormTags('');
-        setSubPicks([]);
-        setSubDetail('');
-        setBetLines([]);
-        setIsMultiLine(false);
         setManualProfit('');
         setFormResult('pending'); // Reset result
         setShowAddBetModal(false);
@@ -2039,68 +2276,150 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       <h3 className="font-bold text-lg flex items-center gap-2 text-white"><AlertCircle className="text-yellow-500" /> Apuestas Activas ({pendingBetsList.length})</h3>
                     </div>
                     <div className="space-y-4">
-                      {pendingBetsList.map(bet => (
-                        <div key={bet.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-sm">
-                          <div className="mb-2">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="font-bold text-emerald-400">{bet.tipster}</span>
-                              <span className="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400 border border-slate-700">@{bet.odds.toFixed(2)}</span>
-                              {bet.tag && bet.tag !== 'ALL' && <span className="text-[10px] bg-blue-900/30 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30 uppercase font-bold"><Tag size={10} className="inline mr-1" />{bet.tag}</span>}
-                            </div>
-                            <p className="text-sm font-medium text-slate-200 mb-1">{bet.description}</p>
+                      {(() => {
+                        // GROUPING LOGIC FOR DASHBOARD (V42)
+                        const grouped = [];
+                        const processed = new Set();
 
-                            {/* TAGS / HASHTAGS ROW */}
-                            {((bet.tags && bet.tags.length > 0) || (bet.description.match(/#[a-z0-9_]+/gi))) && (
-                              <div className="flex flex-wrap gap-1 mb-2">
-                                {(bet.tags || []).filter(t => t !== bet.tag && t !== 'ALL').map((t, idx) => (
-                                  <span key={idx} className="text-[10px] text-slate-500 bg-slate-900 px-1.5 rounded">#{t}</span>
-                                ))}
-                                {/* Render hashtags from description if not in tags array? Logic handles it usually but visual backup */}
-                              </div>
-                            )}
+                        pendingBetsList.forEach(bet => {
+                          if (processed.has(bet.id)) return;
 
-                            {/* MULTI-LINE PREVIEW COLLAPSIBLE (DASHBOARD) */}
-                            {((bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0)) && (
-                              <div className="mt-2">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleHistoryExpansion(bet.id)}
-                                  className="text-xs font-bold text-slate-500 hover:text-indigo-400 flex items-center gap-1 transition-colors mb-1"
-                                >
-                                  {expandedBets.includes(bet.id) ? (
-                                    <span className="flex items-center gap-1"><ChevronUp size={12} /> Ocultar Desglose</span>
-                                  ) : (
-                                    <span className="flex items-center gap-1"><ChevronDown size={12} /> Ver {(bet.betLines || bet.subPicks).length} Líneas</span>
-                                  )}
-                                </button>
+                          if (bet.groupId) {
+                            const group = pendingBetsList.filter(b => b.groupId === bet.groupId);
+                            group.forEach(m => processed.add(m.id));
+                            const totalStake = group.reduce((sum, b) => sum + parseFloat(b.stake), 0);
+                            grouped.push({
+                              type: 'group',
+                              id: bet.groupId,
+                              description: bet.groupType,
+                              stake: totalStake,
+                              tipster: bet.tipster,
+                              children: group
+                            });
+                          } else {
+                            grouped.push({ type: 'single', ...bet });
+                          }
+                        });
 
-                                {expandedBets.includes(bet.id) && (
-                                  <div className="space-y-1 bg-slate-900/50 p-2 rounded border border-slate-800 animate-fade-in">
-                                    {(bet.betLines || bet.subPicks).map((line, i) => (
-                                      <div key={i} className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-400 truncate max-w-[200px]">
-                                          {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && (
-                                            <span className="font-bold text-indigo-400 mr-1">{line.tipster}:</span>
-                                          )}
-                                          {line.description || line.detail}
-                                        </span>
-                                        <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
+                        return grouped.map(item => {
+                          if (item.type === 'group') {
+                            const isExpanded = expandedBets.includes(item.id);
+                            return (
+                              <div key={item.id} className="bg-slate-900 border-2 border-cyan-900/50 rounded-xl overflow-hidden shadow-xl mb-4">
+                                <div className="p-4 bg-gradient-to-r from-slate-900 to-cyan-900/10 flex justify-between items-center cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => toggleHistoryExpansion(item.id)}>
+                                  <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-cyan-900/20 rounded text-cyan-400"><LayoutGrid size={24} /></div>
+                                    <div>
+                                      <h4 className="font-bold text-white flex items-center gap-2">
+                                        {item.description || 'Sistema Combinado'}
+                                        <span className="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-normal">{item.children.length} Apuestas</span>
+                                      </h4>
+                                      <div className="text-xs text-slate-500 font-bold">{item.tipster}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-lg font-bold text-white">{item.stake.toFixed(2)}€</div>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); openBulkResolution(item.id, item.children); }}
+                                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 mb-1 ml-auto shadow-lg shadow-emerald-900/20 z-10 relative"
+                                    >
+                                      <CheckCircle size={12} /> RESOLVER SISTEMA
+                                    </button>
+                                    <div className="text-[10px] text-cyan-500 font-bold flex items-center justify-end gap-1">
+                                      {isExpanded ? 'OCULTAR DESGLOSE' : 'GESTIONAR APUESTAS'} <ChevronDown size={12} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {isExpanded && (
+                                  <div className="bg-slate-950/50 border-t border-slate-800 p-2 space-y-2 animate-fade-in">
+                                    {item.children.map(bet => (
+                                      <div key={bet.id} className="bg-slate-900 p-3 rounded border border-slate-700/50 flex flex-col md:flex-row gap-3 items-center justify-between">
+                                        <div className="flex-1">
+                                          <div className="text-xs text-slate-300 font-bold mb-1">{bet.description}</div>
+                                          <div className="flex gap-2 text-[10px]">
+                                            <span className="bg-slate-800 px-1.5 rounded text-slate-400">@{bet.odds.toFixed(2)}</span>
+                                            <span className="text-slate-500">{bet.stake.toFixed(2)}€</span>
+                                          </div>
+                                        </div>
+                                        <div className="flex gap-1">
+                                          <button onClick={() => updateSimpleStatus(bet.id, 'win')} className="px-3 py-1 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 rounded hover:bg-emerald-600 hover:text-white font-bold text-xs">WIN</button>
+                                          <button onClick={() => updateSimpleStatus(bet.id, 'loss')} className="px-3 py-1 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600 hover:text-white font-bold text-xs">LOSS</button>
+                                          <button onClick={() => updateSimpleStatus(bet.id, 'void')} className="px-2 py-1 bg-slate-700/50 text-slate-400 border border-slate-600/50 rounded hover:bg-slate-600 hover:text-white font-bold text-xs">A</button>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
                                 )}
                               </div>
-                            )}
-                          </div>
-                          <div className="flex gap-2 w-full mt-3">
-                            <button onClick={() => handleOracle(bet.description, bet.odds)} className="w-10 py-2 bg-purple-600/20 text-purple-400 border border-purple-600/50 rounded hover:bg-purple-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Analizar con IA"><Sparkles size={16} /></button>
-                            <button onClick={() => setEditingBet(bet)} className="w-10 py-2 bg-blue-600/20 text-blue-400 border border-blue-600/50 rounded hover:bg-blue-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Editar Apuesta"><Edit size={16} /></button>
-                            <button onClick={() => updateSimpleStatus(bet.id, 'win')} className="flex-1 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 rounded hover:bg-emerald-600 hover:text-white font-bold text-sm">Ganada</button>
-                            <button onClick={() => updateSimpleStatus(bet.id, 'void')} className="w-10 py-2 bg-slate-700/50 text-slate-400 border border-slate-600/50 rounded hover:bg-slate-600 hover:text-slate-200 font-bold text-sm" title="Anulada">A</button>
-                            <button onClick={() => updateSimpleStatus(bet.id, 'loss')} className="flex-1 py-2 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600 hover:text-white font-bold text-sm">Perdida</button>
-                          </div>
-                        </div>
-                      ))}
+                            );
+                          } else {
+                            const bet = item;
+                            // ORIGINAL SINGLE BET CARD RENDER
+                            return (
+                              <div key={bet.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-sm">
+                                <div className="mb-2">
+                                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                    <span className="font-bold text-emerald-400">{bet.tipster}</span>
+                                    <span className="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400 border border-slate-700">@{bet.odds.toFixed(2)}</span>
+                                    {bet.tag && bet.tag !== 'ALL' && <span className="text-[10px] bg-blue-900/30 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30 uppercase font-bold"><Tag size={10} className="inline mr-1" />{bet.tag}</span>}
+                                  </div>
+                                  <p className="text-sm font-medium text-slate-200 mb-1">{bet.description}</p>
+
+                                  {/* TAGS / HASHTAGS ROW */}
+                                  {((bet.tags && bet.tags.length > 0) || (bet.description.match(/#[a-z0-9_]+/gi))) && (
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      {(bet.tags || []).filter(t => t !== bet.tag && t !== 'ALL').map((t, idx) => (
+                                        <span key={idx} className="text-[10px] text-slate-500 bg-slate-900 px-1.5 rounded">#{t}</span>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* MULTI-LINE PREVIEW COLLAPSIBLE (DASHBOARD) */}
+                                  {((bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0)) && (
+                                    <div className="mt-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleHistoryExpansion(bet.id)}
+                                        className="text-xs font-bold text-slate-500 hover:text-indigo-400 flex items-center gap-1 transition-colors mb-1"
+                                      >
+                                        {expandedBets.includes(bet.id) ? (
+                                          <span className="flex items-center gap-1"><ChevronUp size={12} /> Ocultar Desglose</span>
+                                        ) : (
+                                          <span className="flex items-center gap-1"><ChevronDown size={12} /> Ver {(bet.betLines || bet.subPicks).length} Líneas</span>
+                                        )}
+                                      </button>
+
+                                      {expandedBets.includes(bet.id) && (
+                                        <div className="space-y-1 bg-slate-900/50 p-2 rounded border border-slate-800 animate-fade-in">
+                                          {(bet.betLines || bet.subPicks).map((line, i) => (
+                                            <div key={i} className="flex justify-between items-center text-xs">
+                                              <span className="text-slate-400 truncate max-w-[200px]">
+                                                {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && (
+                                                  <span className="font-bold text-indigo-400 mr-1">{line.tipster}:</span>
+                                                )}
+                                                {line.description || line.detail}
+                                              </span>
+                                              <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-2 w-full mt-3">
+                                  <button onClick={() => handleOracle(bet.description, bet.odds)} className="w-10 py-2 bg-purple-600/20 text-purple-400 border border-purple-600/50 rounded hover:bg-purple-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Analizar con IA"><Sparkles size={16} /></button>
+                                  <button onClick={() => setEditingBet(bet)} className="w-10 py-2 bg-blue-600/20 text-blue-400 border border-blue-600/50 rounded hover:bg-blue-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Editar Apuesta"><Edit size={16} /></button>
+                                  <button onClick={() => updateSimpleStatus(bet.id, 'win')} className="flex-1 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 rounded hover:bg-emerald-600 hover:text-white font-bold text-sm">Ganada</button>
+                                  <button onClick={() => updateSimpleStatus(bet.id, 'void')} className="w-10 py-2 bg-slate-700/50 text-slate-400 border border-slate-600/50 rounded hover:bg-slate-600 hover:text-slate-200 font-bold text-sm" title="Anulada">A</button>
+                                  <button onClick={() => updateSimpleStatus(bet.id, 'loss')} className="flex-1 py-2 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600 hover:text-white font-bold text-sm">Perdida</button>
+                                </div>
+                              </div>
+                            );
+                          }
+                        });
+                      })()}
                     </div>
                   </div>
                 )}
@@ -3774,76 +4093,160 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                           if (filtered.length === 0) return <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No hay registros con estos filtros</td></tr>;
 
-                          return filtered.sort((a, b) => b.id - a.id).map((bet) => {
-                            // COMPACT VIEW LOGIC
-                            const isMulti = (bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0);
-                            const isExpanded = expandedBets.includes(bet.id);
+                          return (() => {
+                            // GROUPING LOGIC (V42)
+                            const sorted = filtered.sort((a, b) => b.id - a.id);
+                            const groupedList = [];
+                            const processedIds = new Set();
 
-                            return (
-                              <React.Fragment key={bet.id}>
-                                <tr className={`hover:bg-slate-800/50 transition-colors ${isExpanded ? 'bg-slate-800/30' : ''}`}>
-                                  <td className="p-4 text-slate-400 text-xs whitespace-nowrap">{bet.date}</td>
+                            sorted.forEach(bet => {
+                              if (processedIds.has(bet.id)) return;
 
-                                  {/* COLUMNA TIPSTER DESCRIPCION (INTERACTIVA SI MULTI) */}
-                                  <td className="p-4" onClick={() => isMulti && toggleHistoryExpansion(bet.id)}>
-                                    <div className={`flex items-start gap-3 ${isMulti ? 'cursor-pointer group' : ''}`}>
-                                      <div className={`p-2 rounded-lg ${isMulti ? 'bg-indigo-900/20 text-indigo-400 group-hover:bg-indigo-900/40' : 'bg-slate-800 text-slate-400'}`}>
-                                        {isMulti ? <Layers size={18} /> : (bet.stake > 50 ? <Flame size={18} className="text-orange-500" /> : <Tag size={18} />)}
-                                      </div>
-                                      <div>
-                                        <div className="font-bold text-white flex items-center gap-2">
-                                          {bet.tipster}
-                                          {isMulti && <span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 font-normal border border-slate-700">{isExpanded ? 'Ocultar' : 'Ver Líneas'}</span>}
-                                        </div>
-                                        <div className="text-xs text-slate-500 truncate max-w-[250px]">{bet.description}</div>
-                                      </div>
-                                    </div>
-                                  </td>
+                              if (bet.groupId) {
+                                const groupMembers = sorted.filter(b => b.groupId === bet.groupId);
+                                groupMembers.forEach(m => processedIds.add(m.id));
 
-                                  <td className="p-4 text-center text-slate-300">{bet.stake.toFixed(2)}€</td>
-                                  <td className="p-4 text-center font-mono text-emerald-400 font-bold">@{bet.odds.toFixed(2)}</td>
+                                // Calculate Group Stats
+                                const totalStake = groupMembers.reduce((sum, b) => sum + parseFloat(b.stake), 0);
+                                const totalProfit = groupMembers.reduce((sum, b) => sum + (b.profit || 0), 0);
+                                // Determine Status: 'pending' if any pending, else 'win'/'loss' based on net profit? 
+                                // Or just show profit.
+                                const isPending = groupMembers.some(b => b.result === 'pending');
 
-                                  <td className={`p-4 text-right font-bold font-mono ${bet.result === 'pending' ? 'text-slate-500' : (bet.profit >= 0 ? 'text-emerald-400' : 'text-red-400')}`}>
-                                    {bet.result === 'pending' ? 'PEND' : (bet.profit >= 0 ? '+' : '') + bet.profit.toFixed(2) + '€'}
-                                  </td>
+                                // Odds range?
+                                const oddsList = groupMembers.map(b => b.odds).sort((a, b) => a - b);
+                                const oddsDisplay = oddsList.length > 1 ? `${oddsList[0].toFixed(2)} - ${oddsList[oddsList.length - 1].toFixed(2)}` : oddsList[0].toFixed(2);
 
-                                  <td className="p-4 text-center flex items-center justify-center gap-2">
-                                    <button onClick={() => setEditingBet(bet)} className="text-blue-400 hover:text-white p-1.5 rounded bg-blue-900/20 hover:bg-blue-600 transition-colors" title="Editar"><Edit size={14} /></button>
-                                    <button onClick={() => deleteBet(bet.id)} className="text-slate-600 hover:text-red-400 p-1.5 transition-colors"><Trash2 size={16} /></button>
-                                  </td>
-                                </tr>
+                                groupedList.push({
+                                  type: 'group',
+                                  id: bet.groupId,
+                                  date: bet.date,
+                                  tipster: bet.tipster,
+                                  description: `${bet.groupType || 'Sistema'} (${groupMembers.length} apuestas)`,
+                                  stake: totalStake,
+                                  odds: oddsDisplay,
+                                  profit: totalProfit,
+                                  result: isPending ? 'pending' : (totalProfit >= 0 ? 'win' : 'loss'),
+                                  children: groupMembers
+                                });
+                              } else {
+                                groupedList.push({ type: 'single', ...bet });
+                              }
+                            });
 
-                                {/* EXPANDED DETAILS */}
-                                {isMulti && isExpanded && (
-                                  <tr className="bg-slate-950/50 animate-fade-in border-b border-slate-800">
-                                    <td colSpan="6" className="p-0">
-                                      <div className="p-4 pl-16 grid grid-cols-1 gap-2 bg-gradient-to-b from-indigo-900/10 to-transparent">
-                                        <div className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2 mb-1"><Layers size={10} /> Desglose de Combinada</div>
-                                        {(bet.betLines || bet.subPicks).map((line, i) => {
-                                          const s = line.result || line.status || 'pending';
-                                          let colorClass = 'text-slate-500';
-                                          if (s === 'win') colorClass = 'text-emerald-400';
-                                          if (s === 'loss') colorClass = 'text-red-400';
-                                          if (s === 'void') colorClass = 'text-slate-400 line-through';
+                            return groupedList.map(item => {
+                              if (item.type === 'group') {
+                                const isExpanded = expandedBets.includes(item.id);
+                                const profitColor = item.result === 'pending' ? 'text-slate-500' : (item.profit >= 0 ? 'text-emerald-400' : 'text-red-400');
 
-                                          return (
-                                            <div key={i} className="flex items-center justify-between bg-slate-900 border border-slate-800 p-2 rounded text-xs hover:border-slate-700 transition-colors">
-                                              <div className="flex items-center gap-3">
-                                                <div className={`w-1.5 h-1.5 rounded-full ${s === 'win' ? 'bg-emerald-500' : (s === 'loss' ? 'bg-red-500' : 'bg-slate-600')}`}></div>
-                                                {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && <span className="font-bold text-slate-300">{line.tipster || bet.tipster}</span>}
-                                                <span className={`${colorClass} truncate max-w-[200px]`}>{line.description}</span>
-                                              </div>
-                                              <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
+                                return (
+                                  <React.Fragment key={item.id}>
+                                    <tr className={`hover:bg-slate-800/50 transition-colors border-l-4 border-l-cyan-500/50 bg-cyan-900/10 cursor-pointer`} onClick={() => toggleHistoryExpansion(item.id)}>
+                                      <td className="p-4 text-slate-400 text-xs whitespace-nowrap">{item.date}</td>
+                                      <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                          <div className="p-2 rounded-lg bg-cyan-900/20 text-cyan-400"><LayoutGrid size={18} /></div>
+                                          <div>
+                                            <div className="font-bold text-white flex items-center gap-2">
+                                              {item.tipster} <span className="text-[10px] bg-cyan-900 text-cyan-200 px-1.5 rounded">{item.description}</span>
                                             </div>
-                                          )
-                                        })}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
-                              </React.Fragment>
-                            );
-                          });
+                                            <div className="text-xs text-slate-500">{isExpanded ? 'Ocultar desglose' : 'Ver desglose detallado'}</div>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="p-4 text-center text-slate-300 font-bold">{item.stake.toFixed(2)}€</td>
+                                      <td className="p-4 text-center font-mono text-slate-400 text-xs">@{item.odds}</td>
+                                      <td className={`p-4 text-right font-bold font-mono ${profitColor}`}>
+                                        {item.result === 'pending' ? 'PEND' : (item.profit > 0 ? '+' : '') + item.profit.toFixed(2) + '€'}
+                                      </td>
+                                      <td className="p-4 text-center">
+                                        <ChevronDown size={16} className={`text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                      </td>
+                                    </tr>
+                                    {isExpanded && item.children.map(child => (
+                                      <tr key={child.id} className="bg-slate-950/30 border-b border-slate-800/50">
+                                        <td className="p-4 pl-8 text-slate-600 text-[10px]">{child.id}</td>
+                                        <td className="p-4 pl-12 text-xs text-slate-400 flex items-center gap-2">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                                          {child.description}
+                                        </td>
+                                        <td className="p-4 text-center text-slate-500 text-xs">{child.stake.toFixed(2)}€</td>
+                                        <td className="p-4 text-center text-emerald-600 font-mono text-xs">@{child.odds.toFixed(2)}</td>
+                                        <td className={`p-4 text-right text-xs font-mono font-bold ${child.result === 'pending' ? 'text-slate-600' : (child.profit >= 0 ? 'text-emerald-500' : 'text-red-500')}`}>
+                                          {child.result === 'pending' ? '---' : (child.profit.toFixed(2) + '€')}
+                                        </td>
+                                        <td className="p-4 text-center">
+                                          {/* Actions for child? Maybe delete single line? Complex. Keep simple for now. */}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </React.Fragment>
+                                );
+                              } else {
+                                // SINGLE BET RENDER (Existing Logic)
+                                const bet = item;
+                                const isMulti = (bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0);
+                                const isExpanded = expandedBets.includes(bet.id);
+
+                                return (
+                                  <React.Fragment key={bet.id}>
+                                    <tr className={`hover:bg-slate-800/50 transition-colors ${isExpanded ? 'bg-slate-800/30' : ''}`}>
+                                      <td className="p-4 text-slate-400 text-xs whitespace-nowrap">{bet.date}</td>
+                                      <td className="p-4" onClick={() => isMulti && toggleHistoryExpansion(bet.id)}>
+                                        <div className={`flex items-start gap-3 ${isMulti ? 'cursor-pointer group' : ''}`}>
+                                          <div className={`p-2 rounded-lg ${isMulti ? 'bg-indigo-900/20 text-indigo-400 group-hover:bg-indigo-900/40' : 'bg-slate-800 text-slate-400'}`}>
+                                            {isMulti ? <Layers size={18} /> : (bet.stake > 50 ? <Flame size={18} className="text-orange-500" /> : <Tag size={18} />)}
+                                          </div>
+                                          <div>
+                                            <div className="font-bold text-white flex items-center gap-2">
+                                              {bet.tipster}
+                                              {isMulti && <span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 font-normal border border-slate-700">{isExpanded ? 'Ocultar' : 'Ver Líneas'}</span>}
+                                            </div>
+                                            <div className="text-xs text-slate-500 truncate max-w-[250px]">{bet.description}</div>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="p-4 text-center text-slate-300">{bet.stake.toFixed(2)}€</td>
+                                      <td className="p-4 text-center font-mono text-emerald-400 font-bold">@{bet.odds.toFixed(2)}</td>
+                                      <td className={`p-4 text-right font-bold font-mono ${bet.result === 'pending' ? 'text-slate-500' : (bet.profit >= 0 ? 'text-emerald-400' : 'text-red-400')}`}>
+                                        {bet.result === 'pending' ? 'PEND' : (bet.profit >= 0 ? '+' : '') + bet.profit.toFixed(2) + '€'}
+                                      </td>
+                                      <td className="p-4 text-center flex items-center justify-center gap-2">
+                                        <button onClick={() => setEditingBet(bet)} className="text-blue-400 hover:text-white p-1.5 rounded bg-blue-900/20 hover:bg-blue-600 transition-colors" title="Editar"><Edit size={14} /></button>
+                                        <button onClick={() => deleteBet(bet.id)} className="text-slate-600 hover:text-red-400 p-1.5 transition-colors"><Trash2 size={16} /></button>
+                                      </td>
+                                    </tr>
+                                    {isMulti && isExpanded && (
+                                      <tr className="bg-slate-950/50 animate-fade-in border-b border-slate-800">
+                                        <td colSpan="6" className="p-0">
+                                          <div className="p-4 pl-16 grid grid-cols-1 gap-2 bg-gradient-to-b from-indigo-900/10 to-transparent">
+                                            <div className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2 mb-1"><Layers size={10} /> Desglose de Combinada</div>
+                                            {(bet.betLines || bet.subPicks).map((line, i) => {
+                                              const s = line.result || line.status || 'pending';
+                                              let colorClass = 'text-slate-500';
+                                              if (s === 'win') colorClass = 'text-emerald-400';
+                                              if (s === 'loss') colorClass = 'text-red-400';
+                                              if (s === 'void') colorClass = 'text-slate-400 line-through';
+                                              return (
+                                                <div key={i} className="flex items-center justify-between bg-slate-900 border border-slate-800 p-2 rounded text-xs hover:border-slate-700 transition-colors">
+                                                  <div className="flex items-center gap-3">
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${s === 'win' ? 'bg-emerald-500' : (s === 'loss' ? 'bg-red-500' : 'bg-slate-600')}`}></div>
+                                                    {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && <span className="font-bold text-slate-300">{line.tipster || bet.tipster}</span>}
+                                                    <span className={`${colorClass} truncate max-w-[200px]`}>{line.description}</span>
+                                                  </div>
+                                                  <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
+                                                </div>
+                                              )
+                                            })}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              }
+                            });
+                          })()
                         })()}
                       </tbody>
                     </table>
@@ -4532,64 +4935,127 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       {betLines.length === 0 && <div className="text-center text-xs text-slate-500 italic py-2 cursor-pointer hover:text-indigo-400" onClick={addLine}>Haga clic para añadir líneas detalladas</div>}
                     </div>
 
-                    {/* 4. ODDS & PROFIT CALCULATOR */}
-                    <div className="grid grid-cols-2 gap-4 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Cuota Final (@)</label>
-                        <input type="number" step="0.01" value={formOdds} onChange={e => {
-                          const val = e.target.value;
-                          setFormOdds(val);
-                          // Auto-calc profit
-                          const s = parseFloat(formStake);
-                          const o = parseFloat(val);
-                          if (s > 0 && o > 1) {
-                            setManualProfit(((s * o) - s).toFixed(2));
-                          } else {
-                            if (!val) setManualProfit('');
-                          }
-                        }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-xl font-bold font-mono focus:border-emerald-500" placeholder="1.00" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">O Ganancia Neta (€)</label>
-                        <div className="relative">
-                          <input type="number" step="0.01" value={manualProfit} onChange={e => {
-                            const val = e.target.value;
-                            setManualProfit(val);
+                    {/* SYSTEM BETS SECTION (V42) */}
+                    {betLines.length >= 2 && (
+                      <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/50 space-y-3">
+                        <div className="flex justify-between items-center cursor-pointer" onClick={() => !systemType && setSystemType({ k: betLines.length, name: 'Combi', count: 1 })}>
+                          <div className="text-xs font-bold text-cyan-400 uppercase flex items-center gap-2"><LayoutGrid size={14} /> Apuestas de Sistema (Combinadas)</div>
+                          {systemType && <button type="button" onClick={(e) => { e.stopPropagation(); setSystemType(null); }} className="text-[10px] text-red-400 hover:text-red-300">Cancelar Sistema</button>}
+                        </div>
 
-                            const s = parseFloat(formStake);
-                            const p = parseFloat(val);
+                        <div className="space-y-2">
+                          {/* Main Accordion / List */}
+                          <div className="p-2 bg-slate-950 rounded border border-slate-800">
+                            <div className="text-xs text-slate-500 mb-2">Opciones disponibles para {betLines.length} selecciones:</div>
+                            <div className="space-y-1 max-h-[150px] overflow-y-auto custom-scrollbar">
+                              {/* ALWAYS ADD ACCUMULATOR OPTION */}
+                              <button type="button"
+                                onClick={() => setSystemType(null)}
+                                className={`w-full text-left flex justify-between px-3 py-2 rounded text-xs font-bold border transition-colors ${!systemType ? 'bg-emerald-900/30 text-emerald-400 border-emerald-500/50' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'}`}
+                              >
+                                <span>Combinada Normal (1 Apuesta)</span>
+                                <span>x{parseFloat(formOdds).toFixed(2)}</span>
+                              </button>
 
-                            if (s > 0 && p > 0) {
-                              const targetTotalOdds = (p + s) / s;
+                              {/* SYSTEM OPTIONS */}
+                              {getSystemOptions(betLines.length).map((sys, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setSystemType(sys)}
+                                  className={`w-full text-left flex justify-between px-3 py-2 rounded text-xs font-bold border transition-colors ${systemType?.name === sys.name && systemType?.count === sys.count ? 'bg-cyan-900/30 text-cyan-400 border-cyan-500/50' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'}`}
+                                >
+                                  <span>{sys.name} {sys.type === 'named' ? '(Sistema)' : ''}</span>
+                                  <span className="bg-slate-800 px-1.5 rounded text-[10px] text-slate-300">{sys.count}x</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
 
-                              // 1. Update Global Odds Display
-                              setFormOdds(targetTotalOdds.toFixed(2));
-
-                              // 2. Prop-Odds Scaling for Multi-Line
-                              // (Trigger if lines exist, regardless of implicit mode state, for UI consistency)
-                              if (betLines.length > 0) {
-                                const currentTotalProduct = betLines.reduce((acc, line) => acc * (parseFloat(line.odds) || 1), 1);
-                                if (currentTotalProduct > 0) {
-                                  // Math: NewLine = OldLine * (TargetTotal / CurrentTotal)^(1/n)
-                                  const ratio = targetTotalOdds / currentTotalProduct;
-                                  const n = betLines.length;
-                                  const multiplier = Math.pow(ratio, 1 / n);
-
-                                  const newLines = betLines.map(line => ({
-                                    ...line,
-                                    odds: ((parseFloat(line.odds) || 1) * multiplier).toFixed(2)
-                                  }));
-                                  setBetLines(newLines);
-                                }
-                              }
-                            } else {
-                              if (!val) setFormOdds(''); // Optional: clear odds if profit cleared? Or keep last.
-                            }
-                          }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-emerald-400 font-bold font-mono text-xl focus:border-emerald-500" placeholder="0.00" />
-                          {/* Removed AUTO-CALC label as requested */}
+                          {/* INPUT STAKE PER BET */}
+                          {systemType && (
+                            <div className="animate-fade-in p-3 bg-cyan-900/10 border border-cyan-500/30 rounded-lg">
+                              <div className="flex justify-between items-center mb-2">
+                                <label className="text-xs font-bold text-cyan-200 uppercase">Stake por apuesta</label>
+                                <span className="text-[10px] text-cyan-500 font-mono">Total: {((parseFloat(systemStake) || 0) * systemType.count).toFixed(2)}€</span>
+                              </div>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={systemStake}
+                                onChange={e => setSystemStake(e.target.value)}
+                                placeholder="1.00"
+                                className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white font-mono focus:border-cyan-500"
+                              />
+                              <p className="text-[10px] text-slate-400 mt-1 italic">
+                                Se crearán <strong>{systemType.count}</strong> apuestas de <strong>{systemType.name}</strong>.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* 4. ODDS & PROFIT CALCULATOR (Hidden if System Selected) */}
+                    {!systemType && (
+                      <div className="grid grid-cols-2 gap-4 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Cuota Final (@)</label>
+                          <input type="number" step="0.01" value={formOdds} onChange={e => {
+                            const val = e.target.value;
+                            setFormOdds(val);
+                            // Auto-calc profit
+                            const s = parseFloat(formStake);
+                            const o = parseFloat(val);
+                            if (s > 0 && o > 1) {
+                              setManualProfit(((s * o) - s).toFixed(2));
+                            } else {
+                              if (!val) setManualProfit('');
+                            }
+                          }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-xl font-bold font-mono focus:border-emerald-500" placeholder="1.00" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">O Ganancia Neta (€)</label>
+                          <div className="relative">
+                            <input type="number" step="0.01" value={manualProfit} onChange={e => {
+                              const val = e.target.value;
+                              setManualProfit(val);
+
+                              const s = parseFloat(formStake);
+                              const p = parseFloat(val);
+
+                              if (s > 0 && p > 0) {
+                                const targetTotalOdds = (p + s) / s;
+
+                                // 1. Update Global Odds Display
+                                setFormOdds(targetTotalOdds.toFixed(2));
+
+                                // 2. Prop-Odds Scaling for Multi-Line
+                                // (Trigger if lines exist, regardless of implicit mode state, for UI consistency)
+                                if (betLines.length > 0) {
+                                  const currentTotalProduct = betLines.reduce((acc, line) => acc * (parseFloat(line.odds) || 1), 1);
+                                  if (currentTotalProduct > 0) {
+                                    // Math: NewLine = OldLine * (TargetTotal / CurrentTotal)^(1/n)
+                                    const ratio = targetTotalOdds / currentTotalProduct;
+                                    const n = betLines.length;
+                                    const multiplier = Math.pow(ratio, 1 / n);
+
+                                    const newLines = betLines.map(line => ({
+                                      ...line,
+                                      odds: ((parseFloat(line.odds) || 1) * multiplier).toFixed(2)
+                                    }));
+                                    setBetLines(newLines);
+                                  }
+                                }
+                              } else {
+                                if (!val) setFormOdds(''); // Optional: clear odds if profit cleared? Or keep last.
+                              }
+                            }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-emerald-400 font-bold font-mono text-xl focus:border-emerald-500" placeholder="0.00" />
+                            {/* Removed AUTO-CALC label as requested */}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* EDICIÓN: BOTONES RESULTADO GENERAL (V35 - Refined) */}
                     {editingBet && (
