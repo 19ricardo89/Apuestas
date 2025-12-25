@@ -1591,83 +1591,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       const [goalMonth, setGoalMonth] = useState('Próximo Mes');
       const [goalResults, setGoalResults] = useState(null);
 
-      // Bulk Resolution State (V43)
-      const [showSystemResolutionModal, setShowSystemResolutionModal] = useState(false);
-      const [bulkResGroupId, setBulkResGroupId] = useState(null);
-      const [bulkResLines, setBulkResLines] = useState([]); // [{ description, tipster, odds, status: 'pending'|'win'|'loss'|'void' }]
-
-      const openBulkResolution = (groupId, betsInGroup) => {
-        // 1. Extract unique lines from all bets in this group
-        const uniqueLinesMap = new Map();
-        betsInGroup.forEach(bet => {
-          const lines = bet.betLines || bet.subPicks || [];
-          lines.forEach(line => {
-            // Key generation: generic description + tipster
-            const key = `${line.description}|${line.tipster || ''}`;
-            if (!uniqueLinesMap.has(key)) {
-              uniqueLinesMap.set(key, { ...line, status: line.result || line.status || 'pending' });
-            }
-          });
-        });
-
-        setBulkResGroupId(groupId);
-        setBulkResLines(Array.from(uniqueLinesMap.values()));
-        setShowSystemResolutionModal(true);
-      };
-
-      const saveBulkResolution = () => {
-        // Iterate all bets in the group
-        const groupBets = bets.filter(b => b.groupId === bulkResGroupId);
-        const updatedBets = groupBets.map(bet => {
-          // Update lines within the bet
-          const lines = bet.betLines || bet.subPicks || [];
-          const newLines = lines.map(line => {
-            // Find matching line in bulkResLines
-            // Match by description AND tipster (if exists)
-            const match = bulkResLines.find(bl => bl.description === line.description && bl.tipster === line.tipster);
-            return match ? { ...line, result: match.status, status: match.status } : line;
-          });
-
-          // Recalculate Bet Status
-          const anyLoss = newLines.some(l => l.status === 'loss');
-          const allVoid = newLines.every(l => l.status === 'void');
-          const allWinOrVoid = newLines.every(l => l.status === 'win' || l.status === 'void');
-          const pending = newLines.some(l => l.status === 'pending');
-
-          let newResult = bet.result;
-          let newProfit = bet.profit;
-
-          if (pending) {
-            newResult = 'pending';
-            newProfit = 0;
-          } else if (anyLoss) {
-            newResult = 'loss';
-            newProfit = -bet.stake;
-          } else if (allVoid) {
-            newResult = 'void';
-            newProfit = 0;
-          } else {
-            // WIN (or reduced win)
-            newResult = 'win';
-            // Calc effective odds
-            const effOdds = newLines.reduce((acc, l) => {
-              if (l.status === 'void') return acc;
-              return acc * (parseFloat(l.odds) || 1);
-            }, 1);
-            newProfit = (bet.stake * effOdds) - bet.stake;
-          }
-
-          return { ...bet, betLines: newLines, result: newResult, profit: newProfit };
-        });
-
-        // Update Global State
-        setBets(prev => prev.map(b => {
-          const updated = updatedBets.find(ub => ub.id === b.id);
-          return updated || b;
-        }));
-
-        setShowSystemResolutionModal(false);
-      };
+      // Bulk Resolution State (Refactored to use standard ResolutionModal)
+      // const [showSystemResolutionModal, setShowSystemResolutionModal] = useState(false);
+      // const [bulkResGroupId, setBulkResGroupId] = useState(null);
+      // const [bulkResLines, setBulkResLines] = useState([]);
 
       const loadRealStats = () => {
         let sourceBets = [];
@@ -2000,6 +1927,126 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         // But if user changes profit, odds usually implied change.
         const impliedOdds = calculateOddsFromProfit(val);
         if (impliedOdds > 0) setFormOdds(impliedOdds);
+      };
+
+      // --- REPEAT BET LOGIC ---
+      const handleRepeatBet = (bet) => {
+        // 1. Reset Form
+        setFormDescription(bet.description || '');
+        setFormStake(bet.stake || '');
+        setFormOdds(bet.odds || '');
+        setFormTipster(bet.tipster || 'Tipster A');
+        setFormTag(bet.tag || '');
+        setFormResult('pending');
+        setFormDate(new Date().toISOString().slice(0, 16));
+
+        // 2. Handle Multi/System
+        if (bet.isGroup || (bet.groupId && bet.isSystemBet)) {
+          // Logic for System Bets
+          let linesToRestore = [];
+          let sysStake = 0;
+          let sysType = null;
+
+          if (bet.children) {
+            // From Group Header (Dashboard/History)
+            const uniqueInfo = new Map();
+            bet.children.forEach(child => {
+              if (child.betLines) {
+                child.betLines.forEach(l => uniqueInfo.set(l.description + l.odds, l));
+              }
+            });
+            linesToRestore = Array.from(uniqueInfo.values());
+            sysStake = bet.children[0]?.stake || 0; // Assuming uniform stake
+
+            // Find System Type
+            const combinadas = Object.values(SYSTEM_BETS);
+            // Simple match by name or count? Match by name is safest if available
+            const found = combinadas.find(s => s.name === bet.description.split(' (')[0] || s.name === bet.groupType);
+            if (found) sysType = found;
+
+          } else {
+            // From Single Child of System (Restoring full system from one child is harder without siblings context)
+            // Best effort: Just restore this specific line as a single bet or try to find siblings?
+            // Let's assume user wants to repeat THIS specific bet configuration.
+            // If it's a child of a system, repeating just this child means making it a single/parlay.
+            // But user likely wants to repeat the SYSTEM. 
+            // For now, if single child, treat as simple bet unless we can find all siblings.
+            // We have 'bets' available in state!
+            if (bet.groupId) {
+              const siblings = bets.filter(b => b.groupId === bet.groupId);
+              const uniqueInfo = new Map();
+              siblings.forEach(sib => {
+                if (sib.betLines) {
+                  sib.betLines.forEach(l => uniqueInfo.set(l.description + l.odds, l));
+                }
+              });
+              linesToRestore = Array.from(uniqueInfo.values());
+              sysStake = bet.stake;
+              const combinadas = Object.values(SYSTEM_BETS);
+              const found = combinadas.find(s => s.name === bet.groupType);
+              if (found) sysType = found;
+            }
+          }
+
+          if (linesToRestore.length > 0) {
+            setIsMulti(true);
+            setBetLines(linesToRestore);
+            if (sysType) {
+              setSystemType(sysType);
+              setSystemStake(sysStake);
+            }
+          }
+
+        } else if (bet.betLines && bet.betLines.length > 0) {
+          // Normal Parlay
+          setIsMulti(true);
+          setBetLines(bet.betLines);
+          setSystemType(null);
+        } else if (bet.subPicks && bet.subPicks.length > 0) {
+          // Legacy Parlay
+          setIsMulti(true);
+          setBetLines(bet.subPicks.map(s => ({ ...s, description: s.detail || s.description, result: 'pending' })));
+          setSystemType(null);
+        } else {
+          // Single Bet
+          setIsMulti(false);
+          setBetLines([]);
+          setSystemType(null);
+        }
+
+        setActiveSection('dashboard');
+        setShowAddBetModal(true);
+      };
+
+      // --- BULK RESOLUTION LOGIC ---
+      const openBulkResolution = (groupId, children) => {
+        // 1. Extract Unique Lines
+        const uniqueLinesMap = new Map();
+        children.forEach(child => {
+          if (child.betLines) {
+            child.betLines.forEach(line => {
+              // Use description+odds as unique key
+              const key = line.description + '-' + line.odds;
+              if (!uniqueLinesMap.has(key)) {
+                uniqueLinesMap.set(key, { ...line, result: 'pending' }); // Reset result for resolution
+              }
+            });
+          }
+        });
+
+        const uniqueLines = Array.from(uniqueLinesMap.values());
+
+        // 2. Set Resolution State
+        setResolutionBet({
+          id: groupId, // Use GroupID as ID
+          isGroup: true,
+          children: children, // Keep reference to children to update them later
+          description: children[0]?.groupType || 'Sistema',
+          stake: children.reduce((s, c) => s + parseFloat(c.stake), 0),
+          odds: 1.0, // Calculated later
+          tempLines: uniqueLines,
+          tipster: children[0]?.tipster // Use main tipster
+        });
       };
 
       const handleAddBet = (e) => {
@@ -2435,9 +2482,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                     <div className="flex flex-col items-end gap-1 order-2 md:order-1">
                                       <button
                                         onClick={(e) => { e.stopPropagation(); openBulkResolution(item.id, item.children); }}
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1.5 rounded flex items-center gap-1 shadow-lg shadow-emerald-900/20 z-10 relative whitespace-nowrap"
+                                        className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1.5 rounded flex items-center gap-1 shadow-lg shadow-emerald-900/20 z-10 relative whitespace-nowrap transition-all active:scale-95"
                                       >
                                         <CheckCircle size={12} /> RESOLVER SISTEMA
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleRepeatBet({ ...item, isGroup: true }); }}
+                                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-3 py-1.5 rounded flex items-center gap-1 shadow-lg shadow-indigo-900/20 z-10 relative whitespace-nowrap transition-all active:scale-95"
+                                        title="Repetir Apuesta"
+                                      >
+                                        <Repeat size={12} />
                                       </button>
                                       <div className="text-[10px] text-cyan-500 font-bold flex items-center justify-end gap-1 whitespace-nowrap">
                                         {isExpanded ? 'OCULTAR' : 'GESTIONAR'} <ChevronDown size={12} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -2555,6 +2609,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 <div className="flex gap-2 w-full mt-3">
                                   <button onClick={() => handleOracle(bet.description, bet.odds)} className="w-10 py-2 bg-purple-600/20 text-purple-400 border border-purple-600/50 rounded hover:bg-purple-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Analizar con IA"><Sparkles size={16} /></button>
                                   <button onClick={() => setEditingBet(bet)} className="w-10 py-2 bg-blue-600/20 text-blue-400 border border-blue-600/50 rounded hover:bg-blue-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Editar Apuesta"><Edit size={16} /></button>
+                                  <button onClick={() => handleRepeatBet(bet)} className="w-10 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-600/50 rounded hover:bg-indigo-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Repetir Apuesta"><Repeat size={16} /></button>
                                   <button onClick={() => updateSimpleStatus(bet.id, 'win')} className="flex-1 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 rounded hover:bg-emerald-600 hover:text-white font-bold text-sm">Ganada</button>
                                   <button onClick={() => updateSimpleStatus(bet.id, 'void')} className="w-10 py-2 bg-slate-700/50 text-slate-400 border border-slate-600/50 rounded hover:bg-slate-600 hover:text-slate-200 font-bold text-sm" title="Anulada">A</button>
                                   <button onClick={() => updateSimpleStatus(bet.id, 'loss')} className="flex-1 py-2 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600 hover:text-white font-bold text-sm">Perdida</button>
@@ -4400,6 +4455,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             </div>
                                             <div className="text-xs text-slate-500">{isExpanded ? 'Ocultar desglose' : 'Ver desglose detallado'}</div>
                                           </div>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleRepeatBet({ ...item, isGroup: true }); }}
+                                            className="bg-indigo-900/40 hover:bg-indigo-600 text-indigo-400 hover:text-white p-2 rounded-lg transition-all"
+                                            title="Repetir Sistema"
+                                          >
+                                            <Repeat size={16} />
+                                          </button>
                                         </div>
                                       </td>
                                       <td className="p-4 text-center text-slate-300 font-bold">{item.stake.toFixed(2)}€</td>
@@ -4461,6 +4523,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                       </td>
                                       <td className="p-4 text-center flex items-center justify-center gap-2">
                                         <button onClick={() => setEditingBet(bet)} className="text-blue-400 hover:text-white p-1.5 rounded bg-blue-900/20 hover:bg-blue-600 transition-colors" title="Editar"><Edit size={14} /></button>
+                                        <button onClick={() => handleRepeatBet(bet)} className="text-indigo-400 hover:text-white p-1.5 rounded bg-indigo-900/20 hover:bg-indigo-600 transition-colors" title="Repetir Apuesta"><Repeat size={14} /></button>
                                         <button onClick={() => deleteBet(bet.id)} className="text-slate-600 hover:text-red-400 p-1.5 transition-colors"><Trash2 size={16} /></button>
                                       </td>
                                     </tr>
@@ -4612,6 +4675,57 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       const isV7 = resolutionBet.tempLines && resolutionBet.tempLines.length > 0;
                       const lines = isV7 ? resolutionBet.tempLines : resolutionBet.tempSubPicks;
 
+                      // --- GROUP RESOLUTION LOGIC ---
+                      if (resolutionBet.isGroup) {
+                        const updatedBets = bets.map(b => {
+                          // Allow update if it matches one of the children IDs
+                          const isChild = resolutionBet.children.some(child => child.id === b.id);
+                          if (isChild) {
+                            // Determine Child Result based on Lines
+                            const childLines = b.betLines || [];
+                            let childResult = 'win';
+                            let childOdds = 1.0;
+
+                            // Map results from resolution lines to child lines
+                            const resolvedChildLines = childLines.map(cl => {
+                              const match = lines.find(rl => rl.description === cl.description && rl.odds === cl.odds);
+                              return match ? { ...cl, result: match.result } : cl;
+                            });
+
+                            const anyLoss = resolvedChildLines.some(l => l.result === 'loss');
+                            const allVoid = resolvedChildLines.every(l => l.result === 'void');
+
+                            if (anyLoss) {
+                              childResult = 'loss';
+                              childOdds = 0;
+                            } else if (allVoid) {
+                              childResult = 'void';
+                              childOdds = 1.0;
+                            } else {
+                              const wins = resolvedChildLines.filter(l => l.result !== 'void');
+                              if (wins.length > 0) {
+                                childOdds = wins.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+                              }
+                            }
+
+                            const childProfit = childResult === 'win' ? (b.stake * childOdds) - b.stake : (childResult === 'loss' ? -b.stake : 0);
+
+                            return {
+                              ...b,
+                              result: childResult,
+                              profit: parseFloat(childProfit.toFixed(2)),
+                              odds: parseFloat(childOdds.toFixed(2)),
+                              betLines: resolvedChildLines
+                            };
+                          }
+                          return b;
+                        });
+                        setBets(updatedBets);
+                        setResolutionBet(null);
+                        return; // EXIT
+                      }
+
+                      // --- SINGLE BET RESOLUTION LOGIC (Existing) ---
                       let parentResult = 'win';
                       let finalOdds = resolutionBet.odds;
                       let parentProfit = 0;
