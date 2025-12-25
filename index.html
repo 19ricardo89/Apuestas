@@ -4687,15 +4687,30 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             let childOdds = 1.0;
 
                             // Map results from resolution lines to child lines
+                            // Map results from resolution lines to child lines
                             const resolvedChildLines = childLines.map(cl => {
-                              const match = lines.find(rl => rl.description === cl.description && rl.odds === cl.odds);
+                              // Find matching line in resolutionBet.tempLines (which is `lines` here)
+                              // Match by description AND tipster AND odds (robust float check)
+                              // Normalize comma to dot for odds just in case
+                              const clOdds = parseFloat(String(cl.odds).replace(',', '.'));
+
+                              const match = lines.find(rl => {
+                                const rlOdds = parseFloat(String(rl.odds).replace(',', '.'));
+                                return rl.description === cl.description &&
+                                  rl.tipster === cl.tipster &&
+                                  Math.abs(rlOdds - clOdds) < 0.01;
+                              });
                               return match ? { ...cl, result: match.result } : cl;
                             });
 
                             const anyLoss = resolvedChildLines.some(l => l.result === 'loss');
                             const allVoid = resolvedChildLines.every(l => l.result === 'void');
+                            const anyPending = resolvedChildLines.some(l => !l.result || l.result === 'pending');
 
-                            if (anyLoss) {
+                            if (anyPending) {
+                              childResult = 'pending';
+                              childOdds = 1.0; // Placeholder
+                            } else if (anyLoss) {
                               childResult = 'loss';
                               childOdds = 0;
                             } else if (allVoid) {
@@ -4704,7 +4719,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             } else {
                               const wins = resolvedChildLines.filter(l => l.result !== 'void');
                               if (wins.length > 0) {
-                                childOdds = wins.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+                                childOdds = wins.reduce((acc, l) => acc * (parseFloat(String(l.odds).replace(',', '.')) || 1), 1);
                               }
                             }
 
