@@ -4585,20 +4585,84 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       let status = 'WIN';
                       let statusColor = 'text-emerald-400';
 
-                      const anyLoss = isV7 ? lines.some(l => l.result === 'loss') : lines.some(l => l.status === 'loss');
-                      const allVoid = isV7 ? lines.every(l => l.result === 'void') : false;
+                      if (resolutionBet.isGroup && resolutionBet.children) {
+                        // --- GROUP SIMULATION ---
+                        estProfit = 0;
+                        let totalStake = 0;
+                        let anyPending = false;
 
-                      if (anyLoss) { status = 'LOSS'; estProfit = -resolutionBet.stake; statusColor = 'text-red-400'; effOdds = 0; }
-                      else if (allVoid) { status = 'VOID'; estProfit = 0; statusColor = 'text-slate-400'; effOdds = 1.00; }
-                      else if (isV7) {
-                        const winningLines = lines.filter(l => l.result !== 'void');
-                        if (winningLines.length > 0) {
-                          effOdds = winningLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
-                          estProfit = (resolutionBet.stake * effOdds) - resolutionBet.stake;
+                        resolutionBet.children.forEach(child => {
+                          totalStake += parseFloat(child.stake);
+                          const childLines = child.betLines || [];
+
+                          // Simulate matching
+                          const resolvedChildLines = childLines.map(cl => {
+                            const clOdds = parseFloat(String(cl.odds).replace(',', '.'));
+                            const match = lines.find(rl => {
+                              const rlOdds = parseFloat(String(rl.odds).replace(',', '.'));
+                              return rl.description === cl.description &&
+                                rl.tipster === cl.tipster &&
+                                Math.abs(rlOdds - clOdds) < 0.01;
+                            });
+                            return match ? { ...cl, result: match.result } : cl;
+                          });
+
+                          const isPending = resolvedChildLines.some(l => !l.result || l.result === 'pending');
+                          if (isPending) {
+                            anyPending = true;
+                            return;
+                          }
+
+                          const isLoss = resolvedChildLines.some(l => l.result === 'loss');
+                          const isVoid = resolvedChildLines.every(l => l.result === 'void');
+
+                          if (isLoss) {
+                            estProfit -= parseFloat(child.stake);
+                          } else if (isVoid) {
+                            // Void = Stake returned (Profit 0)
+                          } else {
+                            // Win
+                            const wins = resolvedChildLines.filter(l => l.result !== 'void');
+                            let childOdds = 1.0;
+                            if (wins.length > 0) {
+                              childOdds = wins.reduce((acc, l) => acc * (parseFloat(String(l.odds).replace(',', '.')) || 1), 1);
+                            }
+                            estProfit += (parseFloat(child.stake) * childOdds) - parseFloat(child.stake);
+                          }
+                        });
+
+                        if (anyPending) {
+                          status = 'PENDING';
+                          statusColor = 'text-yellow-400';
+                          effOdds = 0; // Not relevant
                         } else {
-                          // Should be void if no winning lines and no loss? Handled by allVoid check mostly.
-                          // Covers edge case of just one line remaining valid?
-                          // Actually winningLines logic handles it. 
+                          // All resolved
+                          status = estProfit >= 0 ? 'WIN' : 'PARTIAL'; // Or just WIN/LOSS logic based on total
+                          if (estProfit < 0 && estProfit > -totalStake) status = 'PARTIAL LOSS';
+                          if (estProfit === -totalStake) status = 'LOSS';
+
+                          statusColor = estProfit >= 0 ? 'text-emerald-400' : 'text-red-400';
+                          // effOdds is tricky for systems, maybe implied odds? (Profit + Stake) / Stake
+                          effOdds = (estProfit + totalStake) / totalStake;
+                        }
+
+                      } else {
+                        // --- SINGLE BET SIMULATION (Existing) ---
+                        const anyLoss = isV7 ? lines.some(l => l.result === 'loss') : lines.some(l => l.status === 'loss');
+                        const allVoid = isV7 ? lines.every(l => l.result === 'void') : false;
+
+                        if (anyLoss) { status = 'LOSS'; estProfit = -resolutionBet.stake; statusColor = 'text-red-400'; effOdds = 0; }
+                        else if (allVoid) { status = 'VOID'; estProfit = 0; statusColor = 'text-slate-400'; effOdds = 1.00; }
+                        else if (isV7) {
+                          const winningLines = lines.filter(l => l.result !== 'void');
+                          if (winningLines.length > 0) {
+                            effOdds = winningLines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
+                            estProfit = (resolutionBet.stake * effOdds) - resolutionBet.stake;
+                          } else {
+                            // Should be void if no winning lines and no loss? Handled by allVoid check mostly.
+                            // Covers edge case of just one line remaining valid?
+                            // Actually winningLines logic handles it. 
+                          }
                         }
                       }
 
