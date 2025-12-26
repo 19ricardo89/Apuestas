@@ -2376,7 +2376,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               tags: tagsArray,
               result: formResult, // V20: Allow setting result directly
               bookie: 'Bet365', // Placeholder
-              betLines: isMulti ? betLines : [],
+              betLines: isMulti ? betLines.map(l => ({ ...l, tipster: (formTipster !== 'Mezcla-Tips' && formTipster) ? formTipster : l.tipster })) : [],
               // Legacy support
               subPicks: isMulti ? betLines : [],
               isSystemBet: false
@@ -2401,7 +2401,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 setBets([...betsWithoutOld, newBet]);
                 setEditingBet(null);
               } else {
-                setBets(bets.map(b => b.id === editingBet.id ? newBet : b));
+                setBets(bets.map(b => {
+                  if (b.id === editingBet.id) {
+                    console.log("DEBUG: Found Match for ID:", b.id, "Updating Tipster to:", newBet.tipster);
+                    return newBet;
+                  }
+                  return b;
+                }));
                 setEditingBet(null);
               }
             } else {
