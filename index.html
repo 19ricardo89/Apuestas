@@ -2396,16 +2396,21 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 else idsToRemove.add(editingBet.id); // Fallback
 
                 // Filter out OLD group members
-                const betsWithoutOld = bets.filter(b => !idsToRemove.has(b.id));
-                setBets([...betsWithoutOld, newBet]);
+                setBets(prevBets => {
+                  const betsWithoutOld = prevBets.filter(b => !idsToRemove.has(b.id));
+                  return [...betsWithoutOld, newBet];
+                });
                 setEditingBet(null);
               } else {
                 // Update Single Bet (Loose ID Match for safety)
-                setBets(bets.map(b => String(b.id) === String(editingBet.id) ? newBet : b));
+                // DEBUG ALERT
+                // alert(`GUARDANDO APUESTA:\nTipster Nuevo: ${newBet.tipster}\nTipster Form: ${formTipster}`);
+
+                setBets(prevBets => prevBets.map(b => String(b.id) === String(editingBet.id) ? newBet : b));
                 setEditingBet(null);
               }
             } else {
-              setBets([...bets, newBet]);
+              setBets(prevBets => [...prevBets, newBet]);
             }
 
             if (systemType) {
