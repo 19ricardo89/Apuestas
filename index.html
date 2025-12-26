@@ -639,6 +639,50 @@
       const [showRecoveryModal, setShowRecoveryModal] = useState(false);
       const [recoveryKeys, setRecoveryKeys] = useState([]);
 
+      // GRANULAR IMPORT STATE (V45)
+      const [importModalOpen, setImportModalOpen] = useState(false);
+      const [pendingImportData, setPendingImportData] = useState(null);
+      const [editingChallengeBet, setEditingChallengeBet] = useState(null); // Challenge Edit State
+
+      const confirmImport = (selection) => {
+        if (!pendingImportData) return;
+
+        try {
+          // Backup current state before overwriting (Safety Net)
+          localStorage.setItem('betPortfolioV29_backup_pre_import_' + Date.now(), JSON.stringify({ bets, challenges, tipsters, userTags }));
+
+          if (selection.includeBets && pendingImportData.bets) {
+            setBets(pendingImportData.bets);
+            localStorage.setItem('betPortfolioV29_bets', JSON.stringify(pendingImportData.bets));
+          }
+          if (selection.includeChallenges && pendingImportData.challenges) {
+            setChallenges(pendingImportData.challenges);
+            localStorage.setItem('betPortfolioV29_challenges', JSON.stringify(pendingImportData.challenges));
+          }
+          if (selection.includeTipsters && pendingImportData.tipsters) {
+            setTipsters(pendingImportData.tipsters);
+            localStorage.setItem('betPortfolioV29_tipsters', JSON.stringify(pendingImportData.tipsters));
+          }
+          if (selection.includeConfig) {
+            if (pendingImportData.tags) {
+              setUserTags(pendingImportData.tags);
+              localStorage.setItem('betPortfolioV33_tags', JSON.stringify(pendingImportData.tags));
+            }
+            if (pendingImportData.bankTransactions) {
+              setBankTransactions(pendingImportData.bankTransactions);
+              localStorage.setItem('betPortfolioV29_bank', JSON.stringify({ transactions: pendingImportData.bankTransactions }));
+            }
+          }
+
+          alert("✅ Importación completada correctamente.");
+          setImportModalOpen(false);
+          setPendingImportData(null);
+          window.location.reload(); // Force reload to ensure clean state
+        } catch (e) {
+          alert("Error crítico al importar: " + e.message);
+        }
+      };
+
       const scanStorage = () => {
         const keys = Object.keys(localStorage);
         const data = keys.map(k => {
@@ -738,17 +782,11 @@
           if (error) throw error;
           if (!data || !data.data) throw new Error("No se encontraron datos para este ID de Sincronización.");
 
-          const imported = data.data;
-          if (imported.bets) setBets(imported.bets);
-          if (imported.challenges) setChallenges(imported.challenges);
-          if (imported.tipsters) setTipsters(imported.tipsters);
-          if (imported.bankTransactions) setBankTransactions(imported.bankTransactions);
-          if (imported.tags) setUserTags(imported.tags); // V33: Download Tags
+          // V45: OPEN MODAL INSTEAD OF AUTO-APPLY
+          setPendingImportData(data.data);
+          setImportModalOpen(true);
+          setCloudStatus('idle'); // Status handled by modal now
 
-          setCloudStatus('success');
-          alert("✅ ¡Datos descargados y sincronizados!");
-          setTimeout(() => setCloudStatus('idle'), 2000);
-          window.location.reload();
         } catch (err) {
           console.error("Download error:", err);
           setCloudStatus('error');
@@ -997,25 +1035,66 @@
 
             if (!odds || isNaN(odds)) { alert("Introduce Cuota o Ganancia válida"); return c; }
 
-            const newBet = {
-              id: Date.now(),
-              date: new Date().toISOString().split('T')[0],
-              stake: stake,
-              odds: parseFloat(odds.toFixed(2)),
-              description: challengeForm.desc,
-              tipster: challengeForm.tipster || 'Personal', // V14 Default
-              result: 'pending',
-              profit: 0,
-              betLines: isChallengeMulti ? challengeForm.lines : []
-            };
-            const updatedHistory = [newBet, ...c.history];
-            return { ...c, history: updatedHistory };
+            // EDIT EXISTING OR CREATE NEW
+            let updatedHistory;
+            if (editingChallengeBet) {
+              updatedHistory = c.history.map(b => {
+                if (b.id === editingChallengeBet.id) {
+                  return {
+                    ...b,
+                    stake: stake,
+                    odds: parseFloat(odds.toFixed(2)),
+                    description: challengeForm.desc,
+                    tipster: challengeForm.tipster || 'Personal',
+                    betLines: isChallengeMulti ? challengeForm.lines : []
+                  };
+                }
+                return b;
+              });
+            } else {
+              const newBet = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                stake: stake,
+                odds: parseFloat(odds.toFixed(2)),
+                description: challengeForm.desc,
+                tipster: challengeForm.tipster || 'Personal', // V14 Default
+                result: 'pending',
+                profit: 0,
+                betLines: isChallengeMulti ? challengeForm.lines : []
+              };
+              updatedHistory = [newBet, ...c.history];
+            }
+
+            // RECALCULATE BANK AND RETURN
+            // Optimization: If we edit a result that was already won/lost, we should ideally re-calc bank.
+            // Simplified: We assume pending for new. For edits, we keep result but update profit potential if needed?
+            // User request: ONLY wants to edit Tipster/Description mostly. But if odds change, profit changes.
+            // Let's recalculate profit if it was already settled.
+
+            updatedHistory = updatedHistory.map(b => {
+              if (b.id === editingChallengeBet?.id && b.result !== 'pending') {
+                let newProf = b.profit;
+                if (b.result === 'win') newProf = (b.stake * b.odds) - b.stake;
+                if (b.result === 'loss') newProf = -b.stake;
+                return { ...b, profit: parseFloat(newProf.toFixed(2)) };
+              }
+              return b;
+            });
+
+            // Re-calc Challenge Bank from scratch based on history
+            let newBank = c.initialBank;
+            // history is usually reverse chronological in array, so we should sum carefully or just sum all profits
+            const totalProfit = updatedHistory.reduce((sum, b) => sum + (b.result !== 'pending' ? b.profit : 0), 0);
+
+            return { ...c, history: updatedHistory, currentBank: parseFloat((c.initialBank + totalProfit).toFixed(2)) };
           }
           return c;
         });
         setChallenges(updatedChallenges);
-        setChallengeForm({ id: null, stake: '', odds: '', profit: '', desc: '', lines: [] });
+        setChallengeForm({ id: null, stake: '', odds: '', profit: '', desc: '', tipster: '', lines: [] }); // Reset Tipster too
         setIsChallengeMulti(false);
+        setEditingChallengeBet(null); // Clear Edit Mode
       };
 
       const addFunds = (challengeId) => {
@@ -2292,12 +2371,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           try {
             const imported = JSON.parse(event.target.result);
             if (imported.bets && Array.isArray(imported.bets)) {
-              setBets(imported.bets);
-              if (imported.challenges) setChallenges(imported.challenges);
-              if (imported.tipsters) setTipsters(imported.tipsters);
-              if (imported.bankTransactions) setBankTransactions(imported.bankTransactions);
-              if (imported.tags) setUserTags(imported.tags); // V33: Load Tags
-              alert('¡Datos restaurados con éxito! (' + imported.bets.length + ' apuestas)');
+              // V45: Open Modal
+              setPendingImportData(imported);
+              setImportModalOpen(true);
             } else {
               alert('Formato de archivo inválido');
             }
@@ -2793,6 +2869,105 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                     return (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 relative">
+
+                        {/* IMPORT MODAL (V45) */}
+                        {importModalOpen && pendingImportData && (
+                          <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm">
+                            <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                              <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
+                                <div>
+                                  <h3 className="font-bold text-white uppercase text-sm flex items-center gap-2"><DownloadCloud size={16} className="text-indigo-400" /> Restauración Selectiva</h3>
+                                  <div className="text-[10px] text-slate-500">Backup del: {new Date(pendingImportData.timestamp || Date.now()).toLocaleString()}</div>
+                                </div>
+                                <button onClick={() => { setImportModalOpen(false); setPendingImportData(null); }}><X size={20} className="text-slate-500 hover:text-white" /></button>
+                              </div>
+
+                              <div className="p-6">
+                                <div className="bg-blue-900/20 text-blue-300 p-3 rounded mb-4 text-xs border border-blue-500/30 flex items-start gap-2">
+                                  <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                                  <span>Selecciona qué datos quieres restaurar. Los datos no seleccionados se mantendrán tal como están ahora en tu navegador.</span>
+                                </div>
+
+                                <form onSubmit={(e) => {
+                                  e.preventDefault();
+                                  const formData = new FormData(e.target);
+                                  confirmImport({
+                                    includeBets: formData.get('includeBets') === 'on',
+                                    includeChallenges: formData.get('includeChallenges') === 'on',
+                                    includeTipsters: formData.get('includeTipsters') === 'on',
+                                    includeConfig: formData.get('includeConfig') === 'on'
+                                  });
+                                }} className="space-y-3">
+
+                                  <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                                    <div className="flex items-center gap-3">
+                                      <input type="checkbox" name="includeBets" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                                      <div>
+                                        <div className="font-bold text-white text-sm">Apuestas (Portfolio)</div>
+                                        <div className="text-[10px] text-slate-500">Historial principal y estadísticas</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-xs font-bold text-indigo-400">{pendingImportData.bets?.length || 0}</span>
+                                      <span className="text-[10px] text-slate-600 block">vs {bets.length} actuales</span>
+                                    </div>
+                                  </label>
+
+                                  <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                                    <div className="flex items-center gap-3">
+                                      <input type="checkbox" name="includeChallenges" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                                      <div>
+                                        <div className="font-bold text-white text-sm">Retos y Objetivos</div>
+                                        <div className="text-[10px] text-slate-500">Todos los retos y sus pasos</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-xs font-bold text-indigo-400">{pendingImportData.challenges?.length || 0}</span>
+                                      <span className="text-[10px] text-slate-600 block">vs {challenges.length} actuales</span>
+                                    </div>
+                                  </label>
+
+                                  <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                                    <div className="flex items-center gap-3">
+                                      <input type="checkbox" name="includeTipsters" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                                      <div>
+                                        <div className="font-bold text-white text-sm">Lista de Tipsters</div>
+                                        <div className="text-[10px] text-slate-500">Configuración de Tipsters y Stakes</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-xs font-bold text-indigo-400">{pendingImportData.tipsters?.length || 0}</span>
+                                      <span className="text-[10px] text-slate-600 block">vs {tipsters.length} actuales</span>
+                                    </div>
+                                  </label>
+
+                                  <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                                    <div className="flex items-center gap-3">
+                                      <input type="checkbox" name="includeConfig" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                                      <div>
+                                        <div className="font-bold text-white text-sm">Configuración y Bank</div>
+                                        <div className="text-[10px] text-slate-500">Etiquetas personalizadas y Transacciones Bank</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-xs font-bold text-indigo-400">Info</span>
+                                      <span className="text-[10px] text-slate-600 block">Global</span>
+                                    </div>
+                                  </label>
+
+                                  <div className="pt-4 flex gap-3">
+                                    <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold shadow-lg shadow-emerald-900/20 text-sm">
+                                      Confirmar Restauración
+                                    </button>
+                                    <button type="button" onClick={() => { setImportModalOpen(false); setPendingImportData(null); }} className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-sm">
+                                      Cancelar
+                                    </button>
+                                  </div>
+                                </form>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         {challengeStatsFilter === 'ALL' ? (
                           <>
                             <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
@@ -2916,9 +3091,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                         {challengeTab === 'active' && (
                           activeChallengeId === challenge.id ? (
-                            <div className="p-4 bg-slate-950 border-b border-slate-800 animate-fade-in">
+                            <div id={`challenge-form-${challenge.id}`} className={`p-4 bg-slate-950 border-b ${editingChallengeBet && editingChallengeBet.id ? 'border-amber-500/50' : 'border-slate-800'} animate-fade-in`}>
                               <div className="flex justify-between items-center mb-3">
-                                <h4 className="text-sm font-bold text-emerald-400 uppercase">Nuevo Paso</h4>
+                                <h4 className={`text-sm font-bold uppercase ${editingChallengeBet ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                  {editingChallengeBet ? `Editando Paso #${editingChallengeBet.id}` : 'Nuevo Paso'}
+                                </h4>
                                 <button type="button" onClick={() => setIsChallengeMulti(!isChallengeMulti)} className={`text-[10px] font-bold px-2 py-1 rounded border ${isChallengeMulti ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-slate-900 text-slate-500 border-slate-700'}`}>
                                   {isChallengeMulti ? 'MODO COMBINADA' : 'MODO SIMPLE'}
                                 </button>
@@ -3095,7 +3272,29 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             <span className={`font-bold text-xs ${bet.result === 'win' ? 'text-emerald-400' : 'text-red-400'}`}>{bet.result === 'win' ? `+${bet.profit.toFixed(2)}€` : `-${bet.stake}€`}</span>
                                           )}
                                         </td>
-                                        <td className="p-3 text-center"><button onClick={() => deleteChallengeBet(challenge.id, bet.id)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button></td>
+                                        <td className="p-3 text-center flex items-center justify-center gap-2">
+                                          <button onClick={() => {
+                                            // EDIT MODE TRIGGER
+                                            setEditingChallengeBet(bet);
+                                            setActiveChallengeId(challenge.id);
+                                            setChallengeForm({
+                                              id: bet.id, // Important for tracking
+                                              stake: bet.stake,
+                                              odds: bet.odds,
+                                              profit: bet.result === 'win' ? bet.profit.toFixed(2) : '',
+                                              desc: bet.description,
+                                              tipster: bet.tipster,
+                                              lines: bet.betLines || []
+                                            });
+                                            setIsChallengeMulti(bet.betLines && bet.betLines.length > 0);
+
+                                            // Scroll to form (simple hack)
+                                            const formEl = document.getElementById(`challenge-form-${challenge.id}`);
+                                            if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+
+                                          }} className="text-slate-600 hover:text-blue-400"><Edit size={14} /></button>
+                                          <button onClick={() => deleteChallengeBet(challenge.id, bet.id)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button>
+                                        </td>
                                       </tr>
                                       {isMulti && isExpanded && (
                                         <tr className="bg-slate-900/50">
