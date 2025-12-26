@@ -2365,10 +2365,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             });
 
             if (editingBet) {
-              // Editing system bets is complex. For now, treat as new set or block editing?
-              // User asked to create, not explicitly edit complex systems.
-              // We'll just push new ones.
-              setBets([...bets.filter(b => b.id !== editingBet.id), ...newBets]);
+              // REMOVE OLD GROUP MEMBERS
+              const idsToRemove = new Set();
+              if (editingBet.children) editingBet.children.forEach(c => idsToRemove.add(c.id));
+              else idsToRemove.add(editingBet.id);
+
+              const betsToKeep = bets.filter(b => !idsToRemove.has(b.id));
+              setBets([...betsToKeep, ...newBets]);
               setEditingBet(null);
             } else {
               setBets([...bets, ...newBets]);
