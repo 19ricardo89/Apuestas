@@ -2046,13 +2046,14 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             }));
             setBetLines(linesToRestore);
 
-            // Attempt to restore System Type
-            const combinadas = Object.values(SYSTEM_BETS);
-            // Try matching by "Type" or "Title"
-            const found = combinadas.find(s => s.name === editingBet.groupType || (editingBet.description && editingBet.description.includes(s.name)));
-            if (found) {
-              setSystemType(found);
-              setSystemStake(editingBet.children[0]?.stake || 0); // Approx
+            // Attempt to restore System Type (Dynamic Lookup)
+            if (linesToRestore.length >= 2) {
+              const options = getSystemOptions(linesToRestore.length);
+              const found = options.find(s => s.name === editingBet.groupType || (editingBet.description && editingBet.description.includes(s.name)));
+              if (found) {
+                setSystemType(found);
+                setSystemStake(editingBet.children[0]?.stake || 0);
+              }
             }
 
           } else if (editingBet.betLines && editingBet.betLines.length > 0) {
@@ -2143,11 +2144,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             }));
             sysStake = bet.children[0]?.stake || 0; // Assuming uniform stake
 
-            // Find System Type
-            const combinadas = Object.values(SYSTEM_BETS);
-            // Simple match by name or count? Match by name is safest if available
-            const found = combinadas.find(s => s.name === bet.description.split(' (')[0] || s.name === bet.groupType);
-            if (found) sysType = found;
+            // Find System Type (Dynamic)
+            if (linesToRestore.length >= 2) {
+              const options = getSystemOptions(linesToRestore.length);
+              // Simple match by name or count
+              const found = options.find(s =>
+                s.name === bet.groupType ||
+                (bet.description && bet.description.startsWith(s.name))
+              );
+              if (found) sysType = found;
+            }
 
           } else {
             // From Single Child of System (Restoring full system from one child is harder without siblings context)
