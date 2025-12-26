@@ -1027,22 +1027,7 @@ La página se recargará ahora.`;
       };
 
       // --- LÓGICA RETOS ---
-      const handleSaveEditedBetV2 = (e) => {
-        e.preventDefault();
-        const updatedBets = bets.map(b => {
-          if (b.id === editingBet.id) {
-            // Recalculate profit if status is resolved
-            let newProfit = b.profit;
-            if (b.result === 'win') newProfit = (editingBet.stake * editingBet.odds) - editingBet.stake;
-            if (b.result === 'loss') newProfit = -editingBet.stake;
-            if (b.result === 'void') newProfit = 0;
-            return { ...editingBet, profit: parseFloat(newProfit.toFixed(2)) };
-          }
-          return b;
-        });
-        setBets(updatedBets);
-        setEditingBet(null);
-      };
+
 
       const addChallengeBet = (e, challengeId) => {
         e.preventDefault();
