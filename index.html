@@ -1985,39 +1985,66 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       // --- EDIT MODE EFFECT ---
       useEffect(() => {
         if (editingBet) {
-          // Populate form with existing bet data
+          // 1. Common Fields
           setFormTipster(editingBet.tipster);
           setFormStake(editingBet.stake);
           setFormOdds(editingBet.odds);
           setFormDescription(editingBet.description);
           setFormDesc(editingBet.description); // Sync legacy
           setFormDate(editingBet.date);
-          setFormResult(editingBet.result || 'pending'); // V35: Load Result
+          setFormResult(editingBet.result || 'pending');
 
           if (editingBet.tag) setFormTag(editingBet.tag);
-          if (editingBet.tags) setUserTags(prev => [...new Set([...prev, ...editingBet.tags])]); // Ensure tags exist
+          if (editingBet.tags) setUserTags(prev => [...new Set([...prev, ...editingBet.tags])]);
 
-          // Handle Multi-Line
-          if (editingBet.betLines && editingBet.betLines.length > 0) {
+          // 2. Handle System / Group Bets
+          if (editingBet.isGroup || (editingBet.children && editingBet.children.length > 0)) {
+            console.log("Editing System Bet:", editingBet);
             setIsMultiLine(true);
-            // Load lines with their results if available
+
+            // Extract Unique Lines from Children
+            const uniqueInfo = new Map();
+            if (editingBet.children) {
+              editingBet.children.forEach(child => {
+                if (child.betLines) {
+                  child.betLines.forEach(l => uniqueInfo.set(l.description + l.odds, l));
+                }
+              });
+            }
+            const linesToRestore = Array.from(uniqueInfo.values());
+            setBetLines(linesToRestore);
+
+            // Attempt to restore System Type
+            const combinadas = Object.values(SYSTEM_BETS);
+            // Try matching by "Type" or "Title"
+            const found = combinadas.find(s => s.name === editingBet.groupType || (editingBet.description && editingBet.description.includes(s.name)));
+            if (found) {
+              setSystemType(found);
+              setSystemStake(editingBet.children[0]?.stake || 0); // Approx
+            }
+
+          } else if (editingBet.betLines && editingBet.betLines.length > 0) {
+            // 3. Normal Parlay
+            setIsMultiLine(true);
             setBetLines(editingBet.betLines.map(l => ({
               ...l,
-              result: l.result || l.status || 'pending' // Normalize result
+              result: l.result || l.status || 'pending'
             })));
+            setSystemType(null);
           } else {
-            // Handle Legacy SubPicks if any
+            // 4. Single Bet
             if (editingBet.subPicks && editingBet.subPicks.length > 0) {
-              // Convert simple subpicks to lines? Or just load them
-              setIsMultiLine(false);
+              // Legacy SubPicks
+              setIsMultiLine(false); // or true? Legacy subpicks usually meant single bet with details. Keeping false.
               setSubPicks(editingBet.subPicks);
             } else {
               setIsMultiLine(false);
               setBetLines([]);
             }
+            setSystemType(null);
           }
 
-          setShowAddBetModal(true); // Open modal
+          setShowAddBetModal(true);
         }
       }, [editingBet]);
 
@@ -2094,7 +2121,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           }
 
           if (linesToRestore.length > 0) {
-            setIsMulti(true);
+            setIsMultiLine(true);
             setBetLines(linesToRestore);
             if (sysType) {
               setSystemType(sysType);
@@ -2104,17 +2131,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
         } else if (bet.betLines && bet.betLines.length > 0) {
           // Normal Parlay
-          setIsMulti(true);
+          setIsMultiLine(true);
           setBetLines(bet.betLines);
           setSystemType(null);
         } else if (bet.subPicks && bet.subPicks.length > 0) {
           // Legacy Parlay
-          setIsMulti(true);
+          setIsMultiLine(true);
           setBetLines(bet.subPicks.map(s => ({ ...s, description: s.detail || s.description, result: 'pending' })));
           setSystemType(null);
         } else {
           // Single Bet
-          setIsMulti(false);
+          setIsMultiLine(false);
           setBetLines([]);
           setSystemType(null);
         }
@@ -2630,8 +2657,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          handleRepeatBet({ ...item, isGroup: true });
-                                          setEditingBet({ id: item.id, isGroup: true, oldIds: item.children.map(c => c.id) });
+                                          setEditingBet({ id: item.id, isGroup: true, children: item.children, description: item.description, groupType: item.children[0].groupType, stake: item.stake, odds: 0, date: item.date, tipster: item.tipster });
                                           setActiveSection('dashboard');
                                         }}
                                         className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1 shadow-lg shadow-indigo-900/20 z-10 relative whitespace-nowrap transition-all active:scale-95 flex-1 md:flex-none justify-center"
@@ -2643,7 +2669,6 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          console.log("Repeating Multi Bet:", item);
                                           handleRepeatBet({ ...item, isGroup: true });
                                         }}
                                         className="bg-slate-700 hover:bg-slate-600 text-slate-300 text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1 border border-slate-600 hover:border-slate-500 z-10 relative whitespace-nowrap transition-all active:scale-95 flex-1 md:flex-none justify-center mt-0"
@@ -2955,111 +2980,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     return (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 relative">
 
-                        {/* IMPORT MODAL (V45) - Fixed Z-Index to be above Cloud Modal (z-200) -> Z-500 */}
-                        {importModalOpen && pendingImportData && (
-                          <div className="fixed inset-0 bg-black/95 z-[500] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
-                            <div className="bg-slate-900 w-full max-w-lg rounded-xl border-2 border-emerald-500 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                              <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
-                                <div>
-                                  <h3 className="font-bold text-white uppercase text-sm flex items-center gap-2"><DownloadCloud size={16} className="text-indigo-400" /> Restauración Selectiva</h3>
-                                  <div className="text-[10px] text-slate-500">Backup del: {new Date(pendingImportData.timestamp || Date.now()).toLocaleString()}</div>
-                                </div>
-                                <button onClick={() => { setImportModalOpen(false); setPendingImportData(null); }}><X size={20} className="text-slate-500 hover:text-white" /></button>
-                              </div>
-
-                              <div className="p-6">
-                                <div className="bg-blue-900/20 text-blue-300 p-3 rounded mb-4 text-xs border border-blue-500/30 flex items-start gap-2">
-                                  <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                                  <span>Selecciona qué datos quieres restaurar. Los datos no seleccionados se mantendrán tal como están ahora en tu navegador.</span>
-                                </div>
-
-                                <form onSubmit={(e) => {
-                                  e.preventDefault();
-                                  const formData = new FormData(e.target);
-                                  confirmImport({
-                                    includeBets: formData.get('includeBets') === 'on',
-                                    includeChallenges: formData.get('includeChallenges') === 'on',
-                                    includeTipsters: formData.get('includeTipsters') === 'on',
-                                    includeConfig: formData.get('includeConfig') === 'on'
-                                  });
-                                }} className="space-y-3">
-
-                                  <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
-                                    <div className="flex items-center gap-3">
-                                      <input type="checkbox" name="includeBets" defaultChecked className="w-4 h-4 accent-emerald-500" />
-                                      <div>
-                                        <div className="font-bold text-white text-sm">Apuestas (Portfolio)</div>
-                                        <div className="text-[10px] text-slate-500">Historial principal y estadísticas</div>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <span className="text-xs font-bold text-indigo-400">{pendingImportData.bets?.length || 0}</span>
-                                      <span className="text-[10px] text-slate-600 block">vs {bets.length} actuales</span>
-                                    </div>
-                                  </label>
-
-                                  <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
-                                    <div className="flex items-center gap-3">
-                                      <input type="checkbox" name="includeChallenges" defaultChecked className="w-4 h-4 accent-emerald-500" />
-                                      <div>
-                                        <div className="font-bold text-white text-sm">Retos y Objetivos</div>
-                                        <div className="text-[10px] text-slate-500">Todos los retos y sus pasos</div>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <span className="text-xs font-bold text-indigo-400">{pendingImportData.challenges?.length || 0}</span>
-                                      <span className="text-[10px] text-slate-600 block">vs {challenges.length} actuales</span>
-                                    </div>
-                                  </label>
-
-                                  <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
-                                    <div className="flex items-center gap-3">
-                                      <input type="checkbox" name="includeTipsters" defaultChecked className="w-4 h-4 accent-emerald-500" />
-                                      <div>
-                                        <div className="font-bold text-white text-sm">Lista de Tipsters</div>
-                                        <div className="text-[10px] text-slate-500">Configuración de Tipsters y Stakes</div>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <span className="text-xs font-bold text-indigo-400">{pendingImportData.tipsters?.length || 0}</span>
-                                      <span className="text-[10px] text-slate-600 block">vs {tipsters.length} actuales</span>
-                                    </div>
-                                  </label>
-
-                                  <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
-                                    <div className="flex items-center gap-3">
-                                      <input type="checkbox" name="includeConfig" defaultChecked className="w-4 h-4 accent-emerald-500" />
-                                      <div>
-                                        <div className="font-bold text-white text-sm">Configuración y Bank</div>
-                                        <div className="text-[10px] text-slate-500">Etiquetas personalizadas y Transacciones Bank</div>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <span className="text-xs font-bold text-indigo-400">Info</span>
-                                      <span className="text-[10px] text-slate-600 block">Global</span>
-                                    </div>
-                                  </label>
-
-                                  <div className="pt-4 flex gap-3">
-                                    <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold shadow-lg shadow-emerald-900/20 text-sm">
-                                      Confirmar Restauración
-                                    </button>
-                                    <button type="button" onClick={() => { setImportModalOpen(false); setPendingImportData(null); }} className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-sm">
-                                      Cancelar
-                                    </button>
-                                  </div>
-                                </form>
-                              </div>
-                            </div>
-                          </div>
-                        )}
                         {challengeStatsFilter === 'ALL' ? (
                           <>
                             <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
                               <div className="text-xs text-slate-500 uppercase font-bold mb-1">Total Invertido</div>
                               <div className="text-2xl font-mono text-white font-bold">{challengesGlobalStats.totalInvested.toFixed(2)}€</div>
                             </div>
-                            <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
                               <div className="text-xs text-slate-500 uppercase font-bold mb-1">Valor Actual</div>
                               <div className={`text-2xl font-mono font-bold ${challengesGlobalStats.totalCurrentValue >= challengesGlobalStats.totalInvested ? 'text-emerald-400' : 'text-red-400'}`}>{challengesGlobalStats.totalCurrentValue.toFixed(2)}€</div>
                             </div>
@@ -4740,6 +4667,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             <div className="text-xs text-slate-500">{isExpanded ? 'Ocultar desglose' : 'Ver desglose detallado'}</div>
                                           </div>
                                           <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingBet({ id: item.id, isGroup: true, children: item.children, description: item.description, groupType: item.children[0].groupType, stake: item.stake, date: item.date, tipster: item.tipster }); setActiveSection('dashboard'); }}
+                                            className="bg-blue-900/40 hover:bg-blue-600 text-blue-400 hover:text-white p-2 rounded-lg transition-all"
+                                            title="Editar Sistema"
+                                          >
+                                            <Edit size={16} />
+                                          </button>
+                                          <button
                                             onClick={(e) => { e.stopPropagation(); handleRepeatBet({ ...item, isGroup: true }); }}
                                             className="bg-indigo-900/40 hover:bg-indigo-600 text-indigo-400 hover:text-white p-2 rounded-lg transition-all"
                                             title="Repetir Sistema"
@@ -6145,6 +6079,108 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               </div>
             )
           }
+
+
+
+          {/* IMPORT MODAL (V45) - Fixed Z-Index to be above Cloud Modal (z-200) -> Z-500 */}
+          {importModalOpen && pendingImportData && (
+            <div className="fixed inset-0 bg-black/95 z-[500] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
+              <div className="bg-slate-900 w-full max-w-lg rounded-xl border-2 border-emerald-500 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-white uppercase text-sm flex items-center gap-2"><DownloadCloud size={16} className="text-indigo-400" /> Restauración Selectiva</h3>
+                    <div className="text-[10px] text-slate-500">Backup del: {new Date(pendingImportData.timestamp || Date.now()).toLocaleString()}</div>
+                  </div>
+                  <button onClick={() => { setImportModalOpen(false); setPendingImportData(null); }}><X size={20} className="text-slate-500 hover:text-white" /></button>
+                </div>
+
+                <div className="p-6">
+                  <div className="bg-blue-900/20 text-blue-300 p-3 rounded mb-4 text-xs border border-blue-500/30 flex items-start gap-2">
+                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                    <span>Selecciona qué datos quieres restaurar. Los datos no seleccionados se mantendrán tal como están ahora en tu navegador.</span>
+                  </div>
+
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    confirmImport({
+                      includeBets: formData.get('includeBets') === 'on',
+                      includeChallenges: formData.get('includeChallenges') === 'on',
+                      includeTipsters: formData.get('includeTipsters') === 'on',
+                      includeConfig: formData.get('includeConfig') === 'on'
+                    });
+                  }} className="space-y-3">
+
+                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" name="includeBets" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                        <div>
+                          <div className="font-bold text-white text-sm">Apuestas (Portfolio)</div>
+                          <div className="text-[10px] text-slate-500">Historial principal y estadísticas</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-bold text-indigo-400">{pendingImportData.bets?.length || 0}</span>
+                        <span className="text-[10px] text-slate-600 block">vs {bets.length} actuales</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" name="includeChallenges" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                        <div>
+                          <div className="font-bold text-white text-sm">Retos y Objetivos</div>
+                          <div className="text-[10px] text-slate-500">Todos los retos y sus pasos</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-bold text-indigo-400">{pendingImportData.challenges?.length || 0}</span>
+                        <span className="text-[10px] text-slate-600 block">vs {challenges.length} actuales</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" name="includeTipsters" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                        <div>
+                          <div className="font-bold text-white text-sm">Lista de Tipsters</div>
+                          <div className="text-[10px] text-slate-500">Configuración de Tipsters y Stakes</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-bold text-indigo-400">{pendingImportData.tipsters?.length || 0}</span>
+                        <span className="text-[10px] text-slate-600 block">vs {tipsters.length} actuales</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" name="includeConfig" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                        <div>
+                          <div className="font-bold text-white text-sm">Configuración y Bank</div>
+                          <div className="text-[10px] text-slate-500">Etiquetas personalizadas y Transacciones Bank</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-bold text-indigo-400">Info</span>
+                        <span className="text-[10px] text-slate-600 block">Global</span>
+                      </div>
+                    </label>
+
+                    <div className="pt-4 flex gap-3">
+                      <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold shadow-lg shadow-emerald-900/20 text-sm">
+                        Confirmar Restauración
+                      </button>
+                      <button type="button" onClick={() => { setImportModalOpen(false); setPendingImportData(null); }} className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-sm">
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       );
     }
