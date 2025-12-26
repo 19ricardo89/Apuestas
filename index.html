@@ -2100,7 +2100,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         setFormTipster(bet.tipster || 'Tipster A');
         setFormTag(bet.tag || '');
         setFormResult('pending');
-        setFormDate(new Date().toISOString().slice(0, 16));
+        setFormDate(new Date().toISOString().split('T')[0]);
 
         // 2. Handle Multi/System
         // 2. Handle Multi/System
@@ -2345,7 +2345,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
               return {
                 id: Date.now() + idx,
-                date: formDate || new Date().toISOString(),
+                date: formDate ? formDate : new Date().toISOString().split('T')[0],
                 tipster: formTipster,
                 stake: parseFloat(systemStake), // Stake per bet
                 odds: parseFloat(comboOdds.toFixed(2)),
@@ -2382,7 +2382,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             const isMulti = isMultiLine || betLines.length > 0 || formTipster === 'Mezcla-Tips';
             const newBet = {
               id: editingBet ? editingBet.id : Date.now(),
-              date: formDate || new Date().toISOString(),
+              date: formDate ? formDate : new Date().toISOString().split('T')[0],
               tipster: formTipster,
               stake: parseFloat(formStake),
               odds: parseFloat(formOdds),
@@ -4762,7 +4762,14 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                         </div>
                                       </td>
                                       <td className="p-4 text-center text-slate-300 font-bold">{item.stake.toFixed(2)}€</td>
-                                      <td className="p-4 text-center font-mono text-slate-400 text-xs">@{item.odds}</td>
+                                      <td className="p-4 text-center font-mono text-slate-400 text-xs">
+                                        {(() => {
+                                          const ods = item.children.map(c => c.odds || 0);
+                                          const min = Math.min(...ods);
+                                          const max = Math.max(...ods);
+                                          return min === max ? `@${min.toFixed(2)}` : `@${min.toFixed(2)} - ${max.toFixed(2)}`;
+                                        })()}
+                                      </td>
                                       <td className={`p-4 text-right font-bold font-mono ${profitColor}`}>
                                         {item.result === 'pending' ? 'PEND' : (item.profit > 0 ? '+' : '') + item.profit.toFixed(2) + '€'}
                                       </td>
