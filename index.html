@@ -1019,6 +1019,13 @@ La página se recargará ahora.`;
         if (window.confirm("¿Borrar registro permanentemente?")) setBets(bets.filter(b => b.id !== id));
       };
 
+      const deleteGroup = (group) => {
+        if (window.confirm(`¿Borrar TODO el grupo de apuestas (${group.children.length}) permanentemente?`)) {
+          const idsToDelete = group.children.map(c => c.id);
+          setBets(bets.filter(b => !idsToDelete.includes(b.id)));
+        }
+      };
+
       // --- LÓGICA RETOS ---
       const handleSaveEditedBetV2 = (e) => {
         e.preventDefault();
@@ -2002,14 +2009,32 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             console.log("Editing System Bet:", editingBet);
             setIsMultiLine(true);
 
-            // Extract Unique Lines from Children
+            // Extract Unique Lines from Children (ROBUST)
             const uniqueInfo = new Map();
-            if (editingBet.children) {
-              editingBet.children.forEach(child => {
-                if (child.betLines) {
-                  child.betLines.forEach(l => uniqueInfo.set(l.description + l.odds, l));
-                }
-              });
+            try {
+              if (editingBet.children && Array.isArray(editingBet.children)) {
+                editingBet.children.forEach(child => {
+                  if (!child) return;
+                  // Case A: Child has betLines (Standard)
+                  if (child.betLines && Array.isArray(child.betLines)) {
+                    child.betLines.forEach(l => {
+                      if (l && l.description) uniqueInfo.set(l.description + l.odds, l);
+                    });
+                  }
+                  // Case B: Child is a Single Bet (treated as a line)
+                  else if (child.description && child.odds) {
+                    uniqueInfo.set(child.description + child.odds, {
+                      description: child.description,
+                      odds: child.odds,
+                      tipster: child.tipster,
+                      result: child.result,
+                      status: child.result
+                    });
+                  }
+                });
+              }
+            } catch (err) {
+              console.error("Error extracting system lines:", err);
             }
             // SANITIZE RESTORED LINES TO PREVENT REF ERRORS OR NULL VALUES
             const linesToRestore = Array.from(uniqueInfo.values()).map(l => ({
@@ -2087,14 +2112,35 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           let sysType = null;
 
           if (bet.children) {
-            // From Group Header (Dashboard/History)
+            // From Group Header (Dashboard/History) (ROBUST)
             const uniqueInfo = new Map();
-            bet.children.forEach(child => {
-              if (child.betLines) {
-                child.betLines.forEach(l => uniqueInfo.set(l.description + l.odds, l));
-              }
-            });
-            linesToRestore = Array.from(uniqueInfo.values());
+            try {
+              bet.children.forEach(child => {
+                if (!child) return;
+                if (child.betLines && Array.isArray(child.betLines)) {
+                  child.betLines.forEach(l => {
+                    if (l && l.description) uniqueInfo.set(l.description + l.odds, l);
+                  });
+                } else if (child.description && child.odds) {
+                  // Single Bet Case
+                  uniqueInfo.set(child.description + child.odds, {
+                    description: child.description,
+                    odds: child.odds,
+                    tipster: child.tipster,
+                    result: child.result,
+                    status: child.result
+                  });
+                }
+              });
+            } catch (err) { console.error("Error extracting repeat lines:", err); }
+
+            linesToRestore = Array.from(uniqueInfo.values()).map(l => ({
+              description: l.description || '',
+              odds: l.odds || '',
+              result: 'pending', // Reset result for Repeat
+              tipster: l.tipster || '',
+              isJoint: l.isJoint || false
+            }));
             sysStake = bet.children[0]?.stake || 0; // Assuming uniform stake
 
             // Find System Type
@@ -2682,6 +2728,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                         title="Repetir Apuesta"
                                       >
                                         <Repeat size={12} />
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          deleteGroup(item);
+                                        }}
+                                        className="bg-red-900/40 hover:bg-red-600 text-red-500 hover:text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1 border border-red-900 z-10 relative whitespace-nowrap transition-all active:scale-95 flex-1 md:flex-none justify-center mt-0"
+                                        title="Borrar Grupo"
+                                      >
+                                        <Trash2 size={12} />
                                       </button>
                                       <div className="text-[10px] text-cyan-500 font-bold flex items-center justify-end gap-1 whitespace-nowrap">
                                         {isExpanded ? 'OCULTAR' : 'GESTIONAR'} <ChevronDown size={12} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -4686,6 +4742,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             title="Repetir Sistema"
                                           >
                                             <Repeat size={16} />
+                                          </button>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); deleteGroup(item); }}
+                                            className="bg-red-900/40 hover:bg-red-600 text-red-400 hover:text-white p-2 rounded-lg transition-all"
+                                            title="Borrar Grupo"
+                                          >
+                                            <Trash2 size={16} />
                                           </button>
                                         </div>
                                       </td>
