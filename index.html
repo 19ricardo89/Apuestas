@@ -2403,8 +2403,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 setEditingBet(null);
               } else {
                 // Update Single Bet (Loose ID Match for safety)
-                // DEBUG ALERT
-                // alert(`GUARDANDO APUESTA:\nTipster Nuevo: ${newBet.tipster}\nTipster Form: ${formTipster}`);
+                // WARNING: DEBUG ALERT ACTIVE
+                alert(`DEBUG: Intentando Guardar.\nTipster Nuevo: ${newBet.tipster}\nTipster Form: ${formTipster}`);
 
                 setBets(prevBets => prevBets.map(b => String(b.id) === String(editingBet.id) ? newBet : b));
                 setEditingBet(null);
@@ -5801,7 +5801,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       )}
 
                       <button type="submit" className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 py-4 rounded-xl font-bold text-white shadow-lg shadow-emerald-900/20 text-lg transition-all transform active:scale-95 flex items-center justify-center gap-3">
-                        <Save size={20} /> REGISTRAR APUESTA
+                        <Save size={20} /> REGISTRAR APUESTA (DEBUG)
                       </button>
                     </form>
                   </div>
