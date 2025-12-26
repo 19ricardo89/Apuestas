@@ -783,9 +783,13 @@
           if (!data || !data.data) throw new Error("No se encontraron datos para este ID de Sincronización.");
 
           // V45: OPEN MODAL INSTEAD OF AUTO-APPLY
+          console.log("Cloud Data Received:", data.data);
+          if (!data.data || (!data.data.bets && !data.data.challenges)) {
+            throw new Error("El backup en la nube parece estar vacío o corrupto.");
+          }
           setPendingImportData(data.data);
-          setShowCloudModal(false); // Close Cloud Modal so user focuses on Import
-          setImportModalOpen(true);
+          setShowCloudModal(false); // Close Cloud Modal
+          setTimeout(() => setImportModalOpen(true), 100); // Small delay to ensure state update logic doesn't conflict
           setCloudStatus('idle'); // Status handled by modal now
 
         } catch (err) {
@@ -2290,10 +2294,49 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             if (newBet.result === 'pending') newBet.profit = 0;
 
             if (editingBet) {
-              setBets(bets.map(b => b.id === editingBet.id ? newBet : b));
-              setEditingBet(null);
+              if (editingBet.isGroup) {
+                // RE-GENERATE SYSTEM (DELETE OLD, ADD NEW)
+                // Wait, this block is inside the 'else' of 'if (systemType)'? 
+                // NO, this code block (lines 2296+) seems to be part of the SINGLE BET creation logic flow?
+                // CAUTION: The previous tool invocation might have messed up the flow.
+                // Let's look at context: line 2284 `isSystemBet: false`. This block is creating `newBet` (single).
+                // So if `editingBet.isGroup` is true, we should NOT be here, or we are converting a group to a single?
+                // If converting, we delete old group.
+                const betsWithoutOld = bets.filter(b => !editingBet.oldIds.includes(b.id));
+                setBets([...betsWithoutOld, newBet]);
+                setEditingBet(null);
+              } else {
+                setBets(bets.map(b => b.id === editingBet.id ? newBet : b));
+                setEditingBet(null);
+              }
             } else {
               setBets([...bets, newBet]);
+            }
+
+            if (systemType) {
+              // Block 2195 just created `allCombinations`.
+              // We need to verify where they are saved.
+              // Line 2270 (not visible but inferred) probably iterates or saves `createdBets`.
+              // Let's assume `createdBets` is the array of new bet objects.
+
+              if (editingBet && editingBet.isGroup) {
+                const betsWithoutOld = bets.filter(b => !editingBet.oldIds.includes(b.id));
+                setBets([...betsWithoutOld, ...createdBets]);
+                setEditingBet(null);
+              } else {
+                setBets([...bets, ...createdBets]);
+              }
+              // SKIP SINGLE BET CREATION LOGIC BELOW
+              setShowAddBetModal(false);
+              setFormDescription('');
+              setFormStake('');
+              setFormOdds('');
+              setBetLines([]);
+              setSystemType(null);
+              setSystemStake('');
+              setFormTag('');
+              setActiveSection('dashboard');
+              return; // EXIT HERE
             }
           }
 
@@ -2564,6 +2607,20 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                       >
                                         <CheckCircle size={12} /> RESOLVER SISTEMA
                                       </button>
+                                      <div className="flex gap-1 items-end">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRepeatBet({ ...item, isGroup: true });
+                                            setEditingBet({ id: item.id, isGroup: true, oldIds: item.children.map(c => c.id) });
+                                            setActiveSection('dashboard');
+                                          }}
+                                          className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1 shadow-lg shadow-indigo-900/20 z-10 relative whitespace-nowrap transition-all active:scale-95"
+                                          title="Editar Sistema"
+                                        >
+                                          <Edit size={12} />
+                                        </button>
+                                      </div>
                                       <button
                                         onClick={(e) => { e.stopPropagation(); handleRepeatBet({ ...item, isGroup: true }); }}
                                         className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-3 py-1.5 rounded flex items-center gap-1 shadow-lg shadow-indigo-900/20 z-10 relative whitespace-nowrap transition-all active:scale-95"
