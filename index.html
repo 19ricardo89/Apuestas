@@ -2372,53 +2372,58 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
           } else {
             // --- NORMAL SINGLE/PARLAY BET ---
-            const isMulti = isMultiLine || betLines.length > 0 || formTipster === 'Mezcla-Tips';
-            const newBet = {
-              id: editingBet ? editingBet.id : Date.now(),
-              date: formDate ? formDate : new Date().toISOString().split('T')[0],
-              tipster: formTipster,
-              stake: parseFloat(formStake),
-              odds: parseFloat(formOdds),
-              description: finalDesc,
-              tag: finalTag,
-              tags: tagsArray,
-              result: formResult, // V20: Allow setting result directly
-              bookie: 'Bet365', // Placeholder
-              betLines: isMulti ? betLines.map(l => ({ ...l, tipster: (formTipster !== 'Mezcla-Tips' && formTipster) ? formTipster : l.tipster })) : [],
-              // Legacy support
-              subPicks: isMulti ? betLines : [],
-              isSystemBet: false
-            };
+            try {
+              const isMulti = isMultiLine || betLines.length > 0 || formTipster === 'Mezcla-Tips';
+              const newBet = {
+                id: editingBet ? editingBet.id : Date.now(),
+                date: formDate ? formDate : new Date().toISOString().split('T')[0],
+                tipster: formTipster,
+                stake: parseFloat(formStake),
+                odds: parseFloat(formOdds),
+                description: finalDesc,
+                tag: finalTag,
+                tags: tagsArray,
+                result: formResult, // V20: Allow setting result directly
+                bookie: 'Bet365', // Placeholder
+                betLines: isMulti ? betLines.map(l => ({ ...l, tipster: (formTipster !== 'Mezcla-Tips' && formTipster) ? formTipster : l.tipster })) : [],
+                // Legacy support
+                subPicks: isMulti ? betLines : [],
+                isSystemBet: false
+              };
 
-            // ... (Simple Profit Calc Logic kept simple here for brevity, usually handled by result button or default 0 if pending)
-            if (newBet.result === 'win') newBet.profit = (newBet.stake * newBet.odds) - newBet.stake;
-            if (newBet.result === 'loss') newBet.profit = -newBet.stake;
-            if (newBet.result === 'void') newBet.profit = 0;
-            if (newBet.result === 'pending') newBet.profit = 0;
+              // ... (Simple Profit Calc Logic kept simple here for brevity, usually handled by result button or default 0 if pending)
+              if (newBet.result === 'win') newBet.profit = (newBet.stake * newBet.odds) - newBet.stake;
+              if (newBet.result === 'loss') newBet.profit = -newBet.stake;
+              if (newBet.result === 'void') newBet.profit = 0;
+              if (newBet.result === 'pending') newBet.profit = 0;
 
-            if (editingBet) {
-              if (editingBet.isGroup || (editingBet.children && editingBet.children.length > 0)) {
-                // Determine IDs to remove (Robust)
-                const idsToRemove = new Set();
-                if (editingBet.children) editingBet.children.forEach(c => idsToRemove.add(c.id));
-                else idsToRemove.add(editingBet.id); // Fallback
+              if (editingBet) {
+                if (editingBet.isGroup || (editingBet.children && editingBet.children.length > 0)) {
+                  // Determine IDs to remove (Robust)
+                  const idsToRemove = new Set();
+                  if (editingBet.children) editingBet.children.forEach(c => idsToRemove.add(c.id));
+                  else idsToRemove.add(editingBet.id); // Fallback
 
-                // Filter out OLD group members
-                setBets(prevBets => {
-                  const betsWithoutOld = prevBets.filter(b => !idsToRemove.has(b.id));
-                  return [...betsWithoutOld, newBet];
-                });
-                setEditingBet(null);
+                  // Filter out OLD group members
+                  setBets(prevBets => {
+                    const betsWithoutOld = prevBets.filter(b => !idsToRemove.has(b.id));
+                    return [...betsWithoutOld, newBet];
+                  });
+                  setEditingBet(null);
+                } else {
+                  // Update Single Bet (Loose ID Match for safety)
+                  // WARNING: DEBUG ALERT ACTIVE
+                  alert(`DEBUG: Intentando Guardar.\nTipster Nuevo: ${newBet.tipster}\nTipster Form: ${formTipster}`);
+
+                  setBets(prevBets => prevBets.map(b => String(b.id) === String(editingBet.id) ? newBet : b));
+                  setEditingBet(null);
+                }
               } else {
-                // Update Single Bet (Loose ID Match for safety)
-                // WARNING: DEBUG ALERT ACTIVE
-                alert(`DEBUG: Intentando Guardar.\nTipster Nuevo: ${newBet.tipster}\nTipster Form: ${formTipster}`);
-
-                setBets(prevBets => prevBets.map(b => String(b.id) === String(editingBet.id) ? newBet : b));
-                setEditingBet(null);
+                setBets(prevBets => [...prevBets, newBet]);
               }
-            } else {
-              setBets(prevBets => [...prevBets, newBet]);
+            } catch (err) {
+              alert("ERROR CRASH: " + err.message);
+              console.error(err);
             }
 
             if (systemType) {
