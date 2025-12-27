@@ -2228,6 +2228,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       const handleAddBet = (e) => {
         e.preventDefault();
 
+        // DEBUG ENTRY
+        if (editingBet) alert(`DEBUG ENTRY: Editando ID: ${editingBet.id}\nEs Grupo: ${!!editingBet.isGroup}\nChildren: ${editingBet.children ? editingBet.children.length : 0}`);
+
         // VALIDATION
         if (!formTipster) { alert("Selecciona un Tipster"); return; }
         // System Bet Validation
