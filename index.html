@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -89,7 +89,7 @@
 
     // --- GEMINI AI CONFIG (V4) ---
     const GEMINI_API_KEY = "AIzaSyCUVnkzykwI8XhQsqRweZlJ2vEG5zSwOJ4";
-    // Si realmente existe 2.5 en el futuro, se cambiaría aquí. Usamos 1.5-flash por estabilidad.
+    // Si realmente existe 2.5 en el futuro, se cambiarÃ­a aquÃ­. Usamos 1.5-flash por estabilidad.
     const GEMINI_MODEL = "gemini-1.5-flash";
     const analyzeImageWithGemini = async (base64Image, prompt) => {
       try {
@@ -230,7 +230,7 @@
       }
     };
     // --- ADAPTADOR LUCIDE-REACT PARA CDN ---
-    // Convierte las definiciones de iconos de la librería 'lucide' (vanilla) en componentes React
+    // Convierte las definiciones de iconos de la librerÃ­a 'lucide' (vanilla) en componentes React
     const LucideIcon = ({ name, size = 24, color = "currentColor", className = "", ...props }) => {
       const iconDef = lucide.icons[name];
       if (!iconDef) { console.warn(`Icono ${name} no encontrado en lucide.icons`); return null; }
@@ -251,7 +251,7 @@
     };
 
     // Crear componentes individuales para uso directo (ej: <Plus />)
-    // Extraemos solo los que usamos para evitar procesar toda la librería si no es necesario, aunque aquí mapeamos dinámicamente
+    // Extraemos solo los que usamos para evitar procesar toda la librerÃ­a si no es necesario, aunque aquÃ­ mapeamos dinÃ¡micamente
     // los que necesitamos
     const IconList = [
       'Plus', 'Trash2', 'Users', 'Save', 'History', 'PieChart', 'TrendingUp',
@@ -279,7 +279,7 @@
       AreaChart, Area, ScatterChart, Scatter, ZAxis
     } = Recharts;
 
-    // FIX: Alias manual para compatibilidad con código antiguo y nuevo
+    // FIX: Alias manual para compatibilidad con cÃ³digo antiguo y nuevo
     const RechartsTooltip = Tooltip;
 
     // --- COMPONENTES UI AUXILIARES ---
@@ -327,7 +327,7 @@
       // --- SUPER SIMULATOR STATE (V40) ---
 
 
-      // CONFIGURACIÓN DE TIPSTERS (DINÁMICA V11 - Refactor V30)
+      // CONFIGURACIÃ“N DE TIPSTERS (DINÃMICA V11 - Refactor V30)
       const [tipsters, setTipsters] = useState(() => {
         const saved = localStorage.getItem('betPortfolioV29_tipsters');
         try {
@@ -345,7 +345,7 @@
       });
       useEffect(() => { localStorage.setItem('betPortfolioV29_tipsters', JSON.stringify(tipsters)); }, [tipsters]);
 
-      // ETIQUETAS DINÁMICAS (V33)
+      // ETIQUETAS DINÃMICAS (V33)
       const DEFAULT_TAGS = ['ALL', 'FUNBET', 'LIVE', 'PREMATCH', 'STAKE ALTO', 'RETOS'];
       const [userTags, setUserTags] = useState(() => {
         const saved = localStorage.getItem('betPortfolioV33_tags');
@@ -375,7 +375,7 @@
 
       const handleAddTipster = (name, stake) => {
         if (tipsters.some(t => t.name.toLowerCase() === name.toLowerCase())) {
-          alert("¡Este Tipster ya existe!");
+          alert("Â¡Este Tipster ya existe!");
           return;
         }
         setTipsters([...tipsters, { id: Date.now(), name, originalName: name, defaultStake: parseFloat(stake) || 10 }]);
@@ -386,14 +386,14 @@
       };
 
       const handleDeleteTipster = (id) => {
-        if (confirm("¿Eliminar tipster? Sus apuestas históricas se mantendrán, pero no aparecerá en el selector.")) {
+        if (confirm("Â¿Eliminar tipster? Sus apuestas histÃ³ricas se mantendrÃ¡n, pero no aparecerÃ¡ en el selector.")) {
           setTipsters(tipsters.filter(t => t.id !== id));
         }
       };
 
       // HISTORIAL DE APUESTAS (BASE DE DATOS COMPLETA - CORREGIDA V29)
       const fullHistory = [
-        // --- DÍA 3 (17 Dic) ---
+        // --- DÃA 3 (17 Dic) ---
         {
           id: 20, date: '2025-12-17', tipster: 'Combis (Apuesta D)', stake: 5.00, odds: 10.28, result: 'pending', description: 'Celta class + Villarreal class + Madrid gana + Brentford +7.5r + Fulham +9.5r + PSG', profit: 0, subPicks: []
         },
@@ -411,18 +411,18 @@
           id: 17, date: '2025-12-17', tipster: 'Stakazo', stake: 5.00, odds: 1.96, result: 'win', description: 'Jose David Segovia + Kabeer Kapasi', profit: 4.82, subPicks: []
         },
 
-        // --- DÍA 2 (16 Dic) ---
+        // --- DÃA 2 (16 Dic) ---
         {
           id: 15, date: '2025-12-16', tipster: 'Club Remates (Media)', stake: 10.00, odds: 2.00, result: 'loss', description: 'Joel Colwill (1+ Remates) + Chelsea Gana', profit: -10.00, subPicks: []
         },
         {
-          id: 14, date: '2025-12-16', tipster: 'Copete', stake: 5.00, odds: 1.90, result: 'loss', description: 'Bolívar Gana y +2.5 Goles', profit: -5.00, subPicks: []
+          id: 14, date: '2025-12-16', tipster: 'Copete', stake: 5.00, odds: 1.90, result: 'loss', description: 'BolÃ­var Gana y +2.5 Goles', profit: -5.00, subPicks: []
         },
         {
           id: 13, date: '2025-12-16', tipster: 'Club Vip (Media)', stake: 10.00, odds: 2.37, result: 'win', description: 'Tyrique George (+1.5 Remates a Puerta)', profit: 13.70, subPicks: []
         },
         {
-          id: 12, date: '2025-12-16', tipster: 'Combis (Apuesta D)', stake: 5.00, odds: 11.56, result: 'loss', description: 'Copa: Real Sociedad + Mallorca X2 (Fallo) + Elche Clasif + Barça a 0 + Valencia Clasif', profit: -5.00, subPicks: []
+          id: 12, date: '2025-12-16', tipster: 'Combis (Apuesta D)', stake: 5.00, odds: 11.56, result: 'loss', description: 'Copa: Real Sociedad + Mallorca X2 (Fallo) + Elche Clasif + BarÃ§a a 0 + Valencia Clasif', profit: -5.00, subPicks: []
         },
         {
           id: 11, date: '2025-12-16', tipster: 'Zona Tipster (Alta)', stake: 50.00, odds: 1.61, result: 'win', description: 'Cardiff (+7.5 Remates) vs Chelsea', profit: 30.50, subPicks: []
@@ -431,17 +431,17 @@
           id: 10, date: '2025-12-16', tipster: 'Elitebets', stake: 5.00, odds: 1.50, result: 'loss', description: 'Peter Goldsteinier Gana', profit: -5.00, subPicks: []
         },
         {
-          id: 9, date: '2025-12-16', tipster: 'Torete', stake: 5.00, odds: 1.66, result: 'loss', description: 'Sporting de Gijón Gana o Empata', profit: -5.00, subPicks: []
+          id: 9, date: '2025-12-16', tipster: 'Torete', stake: 5.00, odds: 1.66, result: 'loss', description: 'Sporting de GijÃ³n Gana o Empata', profit: -5.00, subPicks: []
         },
         {
-          id: 8, date: '2025-12-16', tipster: 'Copete', stake: 5.00, odds: 1.57, result: 'win', description: 'Hapoel Tel Aviv Gana + Barça Gana y +1.5 Goles', profit: 2.85, subPicks: []
+          id: 8, date: '2025-12-16', tipster: 'Copete', stake: 5.00, odds: 1.57, result: 'win', description: 'Hapoel Tel Aviv Gana + BarÃ§a Gana y +1.5 Goles', profit: 2.85, subPicks: []
         },
 
-        // --- DÍA 1 (15 Dic) ---
+        // --- DÃA 1 (15 Dic) ---
         {
-          id: 1, date: '2025-12-15', tipster: 'Mezcla-Tips', stake: 5.00, odds: 2.42, result: 'win', description: 'Combinada Mixta Día 1', profit: 7.10,
+          id: 1, date: '2025-12-15', tipster: 'Mezcla-Tips', stake: 5.00, odds: 2.42, result: 'win', description: 'Combinada Mixta DÃ­a 1', profit: 7.10,
           subPicks: [
-            { id: 's1', tipster: 'Torete', status: 'win', detail: 'CD Castellón' },
+            { id: 's1', tipster: 'Torete', status: 'win', detail: 'CD CastellÃ³n' },
             { id: 's2', tipster: 'Elitebets', status: 'win', detail: 'Jakub Prachar' },
             { id: 's3', tipster: 'Copete', status: 'win', detail: 'Rayo Vallecano' }
           ]
@@ -450,7 +450,7 @@
           id: 2, date: '2025-12-15', tipster: 'Stakazo', stake: 5.00, odds: 1.92, result: 'win', description: 'Combinada Doble Tenis (Axel + John)', profit: 4.60, subPicks: []
         },
         {
-          id: 3, date: '2025-12-15', tipster: 'Combis (Apuesta D)', stake: 5.00, odds: 13.01, result: 'win', description: 'Remates: Serrano, Athletic, Mbappé...', profit: 60.05, subPicks: []
+          id: 3, date: '2025-12-15', tipster: 'Combis (Apuesta D)', stake: 5.00, odds: 13.01, result: 'win', description: 'Remates: Serrano, Athletic, MbappÃ©...', profit: 60.05, subPicks: []
         },
         {
           id: 4, date: '2025-12-15', tipster: 'Club Remates (Media)', stake: 10.00, odds: 1.50, result: 'loss', description: 'Bournemouth (Menos 13.5) + Senne', profit: -10.00, subPicks: []
@@ -474,7 +474,7 @@
         {
           id: 1,
           title: 'Escalera iPhone (Copete)',
-          subtitle: 'Objetivo 1.000€ (Navidad)',
+          subtitle: 'Objetivo 1.000â‚¬ (Navidad)',
           initialBank: 30,
           currentBank: 54.00,
           targetBank: 1000,
@@ -495,7 +495,7 @@
         {
           id: 2,
           title: 'Reto Torete ITF',
-          subtitle: 'Objetivo 10.000€',
+          subtitle: 'Objetivo 10.000â‚¬',
           initialBank: 100,
           currentBank: 570,
           targetBank: 10000,
@@ -524,7 +524,7 @@
         {
           id: 3,
           title: 'Reto Torete NextGen',
-          subtitle: 'Objetivo 11.000€',
+          subtitle: 'Objetivo 11.000â‚¬',
           initialBank: 100,
           currentBank: 100,
           targetBank: 11000,
@@ -536,7 +536,7 @@
               date: '2025-12-16',
               stake: 100.00,
               odds: 2.00,
-              description: 'Dino Prizmic vs Nishesh (Más de 1.5 Tie Breaks)',
+              description: 'Dino Prizmic vs Nishesh (MÃ¡s de 1.5 Tie Breaks)',
               result: 'pending',
               profit: 0
             }
@@ -545,7 +545,7 @@
         {
           id: 4,
           title: 'Reto Elitebets NextGen',
-          subtitle: 'Objetivo 1.000€',
+          subtitle: 'Objetivo 1.000â‚¬',
           initialBank: 50,
           currentBank: 50,
           targetBank: 1000,
@@ -571,7 +571,7 @@
       const [challengeTab, setChallengeTab] = useState('active');
       const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
       const [newChallengeData, setNewChallengeData] = useState({ title: '', target: '', bank: '', color: 'emerald' });
-      const [activeChallengeId, setActiveChallengeId] = useState(null); // ID del reto donde estamos añadiendo un paso
+      const [activeChallengeId, setActiveChallengeId] = useState(null); // ID del reto donde estamos aÃ±adiendo un paso
       const [challengeStatsFilter, setChallengeStatsFilter] = useState('ALL');
       const [showCalculator, setShowCalculator] = useState(false);
       const [calculatorData, setCalculatorData] = useState({ mode: 'simple', stake: '10', odds: '', profit: '', targetProfit: '', lines: [{ odds: '', desc: '', void: false }] });
@@ -628,7 +628,7 @@
       };
       const removeChallengeLine = (idx) => setChallengeForm({ ...challengeForm, lines: challengeForm.lines.filter((_, i) => i !== idx) });
 
-      // ESTADO EDICIÓN EN VIVO (V10)
+      // ESTADO EDICIÃ“N EN VIVO (V10)
       const [editingBet, setEditingBet] = useState(null);
 
       // ESTADO HISTORIAL 2.0 (V12)
@@ -675,20 +675,20 @@
           }
 
 
-          const msg = `✅ RESTAURACIÓN COMPLETADA:
+          const msg = `âœ… RESTAURACIÃ“N COMPLETADA:
           
 - Apuestas: ${selection.includeBets && pendingImportData.bets ? pendingImportData.bets.length : 'Sin cambios'}
 - Retos: ${selection.includeChallenges && pendingImportData.challenges ? pendingImportData.challenges.length : 'Sin cambios'}
 - Tipsters: ${selection.includeTipsters && pendingImportData.tipsters ? pendingImportData.tipsters.length : 'Sin cambios'}
 
-La página se recargará ahora.`;
+La pÃ¡gina se recargarÃ¡ ahora.`;
           alert(msg);
 
           setImportModalOpen(false);
           setPendingImportData(null);
           window.location.reload(); // Force reload to ensure clean state
         } catch (e) {
-          alert("Error crítico al importar: " + e.message);
+          alert("Error crÃ­tico al importar: " + e.message);
         }
       };
 
@@ -699,7 +699,7 @@ La página se recargará ahora.`;
           return {
             key: k,
             size: content ? content.length : 0,
-            preview: content ? (content.substring(0, 50) + '...') : '(vacío)',
+            preview: content ? (content.substring(0, 50) + '...') : '(vacÃ­o)',
             isCurrent: k === 'betPortfolioV29_challenges'
           };
         }).sort((a, b) => b.size - a.size); // Sort by size to find big data chunks
@@ -755,7 +755,7 @@ La página se recargará ahora.`;
 
           if (!silent) {
             setCloudStatus('success');
-            alert("✅ ¡Datos subidos a la Nube correctamente!");
+            alert("âœ… Â¡Datos subidos a la Nube correctamente!");
             setTimeout(() => setCloudStatus('idle'), 2000);
           } else {
             console.log("Auto-Sync Complete");
@@ -789,16 +789,16 @@ La página se recargará ahora.`;
             .single();
 
           if (error) throw error;
-          if (!data || !data.data) throw new Error("No se encontraron datos para este ID de Sincronización.");
+          if (!data || !data.data) throw new Error("No se encontraron datos para este ID de SincronizaciÃ³n.");
 
           // V45: OPEN MODAL INSTEAD OF AUTO-APPLY
           console.log("Cloud Data Received:", data.data);
           if (!data.data || (!data.data.bets && !data.data.challenges)) {
-            throw new Error("El backup en la nube parece estar vacío o corrupto.");
+            throw new Error("El backup en la nube parece estar vacÃ­o o corrupto.");
           }
           // V45: OPEN MODAL INSTEAD OF AUTO-APPLY
           console.log("Cloud Data Received, Opening Modal...", data.data);
-          if (!data.data) throw new Error("Datos vacíos en la nube.");
+          if (!data.data) throw new Error("Datos vacÃ­os en la nube.");
 
           setPendingImportData(data.data);
           // setShowCloudModal(false); // USER REQUEST: Don't close Cloud Modal, open Import on top
@@ -818,7 +818,7 @@ La página se recargará ahora.`;
       };
 
       const restoreBackup = (key) => {
-        if (!confirm(`¿Estás seguro de REEMPLAZAR los datos actuales con la copia "${key}"? Esta acción reiniciará la página.`)) return;
+        if (!confirm(`Â¿EstÃ¡s seguro de REEMPLAZAR los datos actuales con la copia "${key}"? Esta acciÃ³n reiniciarÃ¡ la pÃ¡gina.`)) return;
         try {
           const raw = localStorage.getItem(key);
           // Auto-detect target (bets vs challenges based on key name or content?)
@@ -877,13 +877,13 @@ La página se recargará ahora.`;
         setEditingBet({ ...editingBet, betLines: newLines, odds: parseFloat(newOdds.toFixed(2)) });
       };
 
-      // LÓGICA DE RETOS (V9)
+      // LÃ“GICA DE RETOS (V9)
       const handleCreateChallenge = (e) => {
         e.preventDefault();
         const newCh = {
           id: Date.now(),
           title: newChallengeData.title,
-          subtitle: `Objetivo ${parseFloat(newChallengeData.target).toLocaleString()}€`,
+          subtitle: `Objetivo ${parseFloat(newChallengeData.target).toLocaleString()}â‚¬`,
           initialBank: parseFloat(newChallengeData.bank),
           currentBank: parseFloat(newChallengeData.bank),
           targetBank: parseFloat(newChallengeData.target),
@@ -897,13 +897,13 @@ La página se recargará ahora.`;
       };
 
       const updateChallengeStatus = (id, newStatus) => {
-        if (confirm(newStatus === 'won' ? '¿Marcar reto como COMPLETADO/GANADO?' : '¿Marcar reto como FALLIDO? Se moverá al historial.')) {
+        if (confirm(newStatus === 'won' ? 'Â¿Marcar reto como COMPLETADO/GANADO?' : 'Â¿Marcar reto como FALLIDO? Se moverÃ¡ al historial.')) {
           setChallenges(challenges.map(c => c.id === id ? { ...c, status: newStatus } : c));
         }
       };
 
       const rescueChallenge = (oldChallenge) => {
-        if (confirm('¿Rescatar este reto? Se creará una copia nueva con el bank inicial original.')) {
+        if (confirm('Â¿Rescatar este reto? Se crearÃ¡ una copia nueva con el bank inicial original.')) {
           const rescued = {
             ...oldChallenge,
             id: Date.now(),
@@ -936,7 +936,7 @@ La página se recargará ahora.`;
         const savedChallenges = localStorage.getItem('betPortfolioV29_challenges');
         let challengesToLoad = savedChallenges ? JSON.parse(savedChallenges) : initialChallenges;
 
-        // Forzamos la actualización de datos 'hardcoded' si estamos en desarrollo o para corregir
+        // Forzamos la actualizaciÃ³n de datos 'hardcoded' si estamos en desarrollo o para corregir
         // En este caso, si el usuario ya tiene datos, queremos respetar sus nuevos datos pero corregir el saldo
         // Si usamos initialChallenges (primera carga/cache borrada), recalculamos
 
@@ -956,7 +956,7 @@ La página se recargará ahora.`;
         if (challenges.length > 0) localStorage.setItem('betPortfolioV29_challenges', JSON.stringify(challenges));
       }, [challenges]);
 
-      // --- LÓGICA PORTFOLIO ---
+      // --- LÃ“GICA PORTFOLIO ---
       const updateSimpleStatus = (id, newStatus) => {
         const targetBet = bets.find(b => b.id === id);
         // Intercept V7 Multi-line or V3 SubPicks for Granular Resolution
@@ -965,7 +965,7 @@ La página se recargará ahora.`;
           return;
         } else if (targetBet && (targetBet.tipster === 'Mezcla-Tips' || targetBet.description.includes('Mezcla') || (targetBet.betLines && targetBet.betLines.length === 0 && targetBet.subPicks && targetBet.subPicks.length === 0 && targetBet.tipster.includes('+')))) {
           // Safety check for broken old bets
-          alert("⚠️ Esta apuesta parece ser una Mezcla antigua o dañada (sin líneas guardadas). Por favor elimínala y créala de nuevo para usar la resolución detallada.");
+          alert("âš ï¸ Esta apuesta parece ser una Mezcla antigua o daÃ±ada (sin lÃ­neas guardadas). Por favor elimÃ­nala y crÃ©ala de nuevo para usar la resoluciÃ³n detallada.");
           return;
         }
 
@@ -1016,17 +1016,17 @@ La página se recargará ahora.`;
       };
 
       const deleteBet = (id) => {
-        if (window.confirm("¿Borrar registro permanentemente?")) setBets(bets.filter(b => b.id !== id));
+        if (window.confirm("Â¿Borrar registro permanentemente?")) setBets(bets.filter(b => b.id !== id));
       };
 
       const deleteGroup = (group) => {
-        if (window.confirm(`¿Borrar TODO el grupo de apuestas (${group.children.length}) permanentemente?`)) {
+        if (window.confirm(`Â¿Borrar TODO el grupo de apuestas (${group.children.length}) permanentemente?`)) {
           const idsToDelete = group.children.map(c => c.id);
           setBets(bets.filter(b => !idsToDelete.includes(b.id)));
         }
       };
 
-      // --- LÓGICA RETOS ---
+      // --- LÃ“GICA RETOS ---
 
 
       const addChallengeBet = (e, challengeId) => {
@@ -1048,7 +1048,7 @@ La página se recargará ahora.`;
               if (combinedOdds > 1) odds = combinedOdds;
             }
 
-            if (!odds || isNaN(odds)) { alert("Introduce Cuota o Ganancia válida"); return c; }
+            if (!odds || isNaN(odds)) { alert("Introduce Cuota o Ganancia vÃ¡lida"); return c; }
 
             // EDIT EXISTING OR CREATE NEW
             let updatedHistory;
@@ -1113,7 +1113,7 @@ La página se recargará ahora.`;
       };
 
       const addFunds = (challengeId) => {
-        const amount = prompt("¿Cantidad a reingresar (€)?");
+        const amount = prompt("Â¿Cantidad a reingresar (â‚¬)?");
         if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
 
         const updatedChallenges = challenges.map(c => {
@@ -1123,7 +1123,7 @@ La página se recargará ahora.`;
               date: new Date().toISOString().split('T')[0],
               stake: 0,
               odds: 1,
-              description: 'Reingreso Saldo 🔄',
+              description: 'Reingreso Saldo ðŸ”„',
               result: 'deposit',
               profit: parseFloat(amount)
             };
@@ -1171,7 +1171,7 @@ La página se recargará ahora.`;
       };
 
       const deleteChallengeBet = (challengeId, betId) => {
-        if (!window.confirm("¿Eliminar apuesta del reto? Se recalculará el saldo.")) return;
+        if (!window.confirm("Â¿Eliminar apuesta del reto? Se recalcularÃ¡ el saldo.")) return;
         const updatedChallenges = challenges.map(c => {
           if (c.id === challengeId) {
             const updatedHistory = c.history.filter(b => b.id !== betId);
@@ -1301,7 +1301,7 @@ La página se recargará ahora.`;
           { label: 'Seguras (1.0-1.5)', min: 1.0, max: 1.5, bets: 0, profit: 0, staked: 0 },
           { label: 'Valor (1.51-2.0)', min: 1.51, max: 2.0, bets: 0, profit: 0, staked: 0 },
           { label: 'Riesgo (2.01-5.0)', min: 2.01, max: 5.0, bets: 0, profit: 0, staked: 0 },
-          { label: 'Lotería (5.0+)', min: 5.01, max: 999, bets: 0, profit: 0, staked: 0 },
+          { label: 'LoterÃ­a (5.0+)', min: 5.01, max: 999, bets: 0, profit: 0, staked: 0 },
         ];
         filteredBets.forEach(b => {
           if (b.result !== 'pending' && b.result !== 'void') {
@@ -1316,7 +1316,7 @@ La página se recargará ahora.`;
 
       // Phase 14: Rescue without Reset
       const resumeChallenge = (challenge) => {
-        if (!window.confirm("¿Reactivar el reto manteniendo el historial y saldo actual?")) return;
+        if (!window.confirm("Â¿Reactivar el reto manteniendo el historial y saldo actual?")) return;
         setChallenges(challenges.map(c => c.id === challenge.id ? { ...c, status: 'active' } : c));
       };
 
@@ -1409,7 +1409,7 @@ La página se recargará ahora.`;
         const profit = valid.reduce((acc, b) => acc + b.profit, 0);
         const yield_val = staked > 0 ? ((profit / staked) * 100).toFixed(2) : 0;
 
-        // Gráfico acumulativo Ganancias
+        // GrÃ¡fico acumulativo Ganancias
         let runningProfit = 0;
         const chartData = [...filteredBets]
           .filter(b => b.result !== 'pending')
@@ -1419,7 +1419,7 @@ La página se recargará ahora.`;
             return { name: b.date.slice(5), fullDate: b.date, profit: runningProfit };
           });
 
-        // Gráfico acumulativo PÉRDIDAS (Solo suma los rojos)
+        // GrÃ¡fico acumulativo PÃ‰RDIDAS (Solo suma los rojos)
         let runningLoss = 0;
         const lossChartData = [...filteredBets]
           .filter(b => b.result !== 'pending')
@@ -1427,14 +1427,14 @@ La página se recargará ahora.`;
           .map(b => {
             // Si es perdida, sumamos (en negativo). Si es ganancia, se mantiene plano (o sube si queremos Net Loss? No, Cumulative Loss suelo ser solo las perdidas sumadas).
             // User dijo: "cuente las apuestas perdidas... acumulativa igual que las ganancias".
-            // Interpretación: Una linea que baja (o sube en valor absoluto) cada vez que pierdes.
-            // Para visualizar "Pérdida Total Acumulada", mejor que vaya bajando (negativo).
+            // InterpretaciÃ³n: Una linea que baja (o sube en valor absoluto) cada vez que pierdes.
+            // Para visualizar "PÃ©rdida Total Acumulada", mejor que vaya bajando (negativo).
             if (b.result === 'loss') runningLoss += b.profit; // b.profit es negativo (-stake)
             return { name: b.date.slice(5), fullDate: b.date, loss: runningLoss };
           });
 
 
-        // Gráfico Semanal (Weekly Evolution)
+        // GrÃ¡fico Semanal (Weekly Evolution)
         const weeklyMap = {};
         filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
           const d = new Date(b.date);
@@ -1455,7 +1455,7 @@ La página se recargará ahora.`;
           return parseInt(yA) - parseInt(yB) || parseInt(wA) - parseInt(wB);
         });
 
-        // Gráfico Mensual (New V38)
+        // GrÃ¡fico Mensual (New V38)
         const monthlyMap = {};
         filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
           const key = b.date.slice(0, 7); // YYYY-MM
@@ -1593,12 +1593,12 @@ La página se recargará ahora.`;
         reader.onloadend = async () => {
           const base64 = reader.result.split(',')[1];
           const prompt = `Analiza esta imagen de una apuesta deportiva. Extrae los siguientes datos en formato JSON estricto:
-- stake: cantidad apostada (número).
-- totalOdds: cuota total (número).
+- stake: cantidad apostada (nÃºmero).
+- totalOdds: cuota total (nÃºmero).
 - description: resumen de la apuesta (texto breve, incluye equipos y mercado).
 - lines: array de objetos { description: nombre del evento/mercado, odds: cuota individual }.
 - isParlay: booleano, true si detectas multiples lineas o es combinada.
-Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
+Si no encuentras algÃºn dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
           try {
             const data = await analyzeImageWithGemini(base64, prompt);
@@ -1617,7 +1617,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               } else {
                 // setIsMultiLine(false); // No forzamos false para no borrar trabajo manual si el usuario sube foto despues
               }
-              // alert("Datos extraídos por Gemini IA correctamente.");
+              // alert("Datos extraÃ­dos por Gemini IA correctamente.");
             }
           } catch (err) {
             alert("Error analizando imagen: " + err.message);
@@ -1633,15 +1633,15 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         const d = descOverride || formDesc;
         const o = oddsOverride || formOdds;
 
-        if (!d) { alert("No hay descripción para analizar."); return; }
+        if (!d) { alert("No hay descripciÃ³n para analizar."); return; }
 
         setIsAnalyzing(true);
         try {
-          const prompt = `Actúa como experto en apuestas deportivas. Analiza esta apuesta: "${d}" a cuota @${o}. Estima la probabilidad real (%) y calcula si tiene EV+ (Valor Esperado). Responde en formato corto: "Probabilidad: X% | EV: Positivo/Negativo | Consejo: [Frase corta]".`;
+          const prompt = `ActÃºa como experto en apuestas deportivas. Analiza esta apuesta: "${d}" a cuota @${o}. Estima la probabilidad real (%) y calcula si tiene EV+ (Valor Esperado). Responde en formato corto: "Probabilidad: X% | EV: Positivo/Negativo | Consejo: [Frase corta]".`;
           const text = await analyzeTextWithGemini(prompt);
-          alert("🔮 ORACULO GEMINI DICE:\n\n" + text);
+          alert("ðŸ”® ORACULO GEMINI DICE:\n\n" + text);
         } catch (err) {
-          alert("Error Oráculo: " + err.message);
+          alert("Error OrÃ¡culo: " + err.message);
         } finally {
           setIsAnalyzing(false);
         }
@@ -1682,7 +1682,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
       // Goal Seeker State
       const [goalProfit, setGoalProfit] = useState(1000);
-      const [goalMonth, setGoalMonth] = useState('Próximo Mes');
+      const [goalMonth, setGoalMonth] = useState('PrÃ³ximo Mes');
       const [goalResults, setGoalResults] = useState(null);
 
       // Bulk Resolution State (Refactored to use standard ResolutionModal)
@@ -1707,7 +1707,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           });
         }
 
-        if (sourceBets.length === 0) { alert("No hay suficientes datos para calcular estadísticas."); return; }
+        if (sourceBets.length === 0) { alert("No hay suficientes datos para calcular estadÃ­sticas."); return; }
 
         // --- GLOBAL STATS (Common) ---
         const wins = sourceBets.filter(b => b.result === 'win').length;
@@ -1772,7 +1772,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         const expectedProfitPerBet = (stake * (odds - 1) * wr) - (stake * (1 - wr));
 
         if (expectedProfitPerBet <= 0) {
-          setGoalResults({ error: "Matemáticamente imposible con EV actual (Neutro o Negativo)." });
+          setGoalResults({ error: "MatemÃ¡ticamente imposible con EV actual (Neutro o Negativo)." });
         } else {
           const target = parseFloat(goalProfit);
           const betsNeeded = target / expectedProfitPerBet;
@@ -1807,7 +1807,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         if (simAlgo === 'REALISTIC') {
           activePortfolio = simPortfolioConfig.filter(t => t.enabled && parseFloat(t.weight) > 0);
           totalWeight = activePortfolio.reduce((sum, t) => sum + parseFloat(t.weight), 0);
-          if (activePortfolio.length === 0) { alert("¡Selecciona al menos un Tipster activo para la simulación realista!"); return; }
+          if (activePortfolio.length === 0) { alert("Â¡Selecciona al menos un Tipster activo para la simulaciÃ³n realista!"); return; }
         }
 
         for (let i = 0; i < iterations; i++) {
@@ -2229,24 +2229,26 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         e.preventDefault();
 
         // DEBUG ENTRY
-        if (editingBet) alert(`DEBUG ENTRY: Editando ID: ${editingBet.id}\nEs Grupo: ${!!editingBet.isGroup}\nChildren: ${editingBet.children ? editingBet.children.length : 0}`);
+        alert(`DEBUG ENTRY:\nID: ${editingBet ? editingBet.id : 'NEW'}\nEs Grupo: ${editingBet ? !!editingBet.isGroup : 'N/A'}\nSystemType: ${JSON.stringify(systemType)}`);
 
         // VALIDATION
         if (!formTipster) { alert("Selecciona un Tipster"); return; }
+
+
         // System Bet Validation
         if (systemType) {
-          if (!systemStake || parseFloat(systemStake) <= 0) { alert("Introduce un Stake por apuesta válido para el sistema"); return; }
+          if (!systemStake || parseFloat(systemStake) <= 0) { alert("Introduce un Stake por apuesta vÃ¡lido para el sistema"); return; }
           if (betLines.length < systemType.k) { alert(`Necesitas al menos ${systemType.k} selecciones para ${systemType.name}`); return; }
         } else {
-          if (!formStake || parseFloat(formStake) <= 0) { alert("Introduce un Stake válido"); return; }
+          if (!formStake || parseFloat(formStake) <= 0) { alert("Introduce un Stake vÃ¡lido"); return; }
           if ((!formOdds || parseFloat(formOdds) < 1) && !isMultiLine && parseFloat(formStake) > 0) {
-            alert("Introduce una Cuota válida"); return;
+            alert("Introduce una Cuota vÃ¡lida"); return;
           }
         }
 
         // Consolidated Multi logic
         const isMulti = isMultiLine || formTipster === 'Mezcla-Tips';
-        if (isMulti && betLines.length === 0) { alert("¡Añade al menos una línea!"); return; }
+        if (isMulti && betLines.length === 0) { alert("Â¡AÃ±ade al menos una lÃ­nea!"); return; }
 
         const finalDesc = isMulti ? (formDescription + ' | ' + betLines.map(l => l.description).join(' + ')) : formDescription;
         let tagsArray = formTags.split(',').map(t => t.trim().toUpperCase()).filter(t => t); // V3 Tags
@@ -2533,7 +2535,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               setShowCloudModal(false); // Close Cloud/Backup Modal if open
               setImportModalOpen(true);
             } else {
-              alert('Formato de archivo inválido');
+              alert('Formato de archivo invÃ¡lido');
             }
           } catch (err) {
             alert('Error al leer el archivo');
@@ -2544,7 +2546,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       };
 
       const factoryReset = () => {
-        if (confirm("¿ESTÁS SEGURO? Se borrarán TODOS los datos y se volverá al estado inicial. Esta acción no se puede deshacer.")) {
+        if (confirm("Â¿ESTÃS SEGURO? Se borrarÃ¡n TODOS los datos y se volverÃ¡ al estado inicial. Esta acciÃ³n no se puede deshacer.")) {
           localStorage.clear();
           window.location.reload();
         }
@@ -2612,17 +2614,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <h1 className="font-bold text-2xl text-emerald-400 tracking-tight">BET<span className="text-white">MANAGER</span></h1>
               <button onClick={() => setShowBankManager(true)} className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 hover:border-emerald-500 transition-colors group">
                 <div className="text-[10px] uppercase font-bold text-slate-400 group-hover:text-emerald-400">BANK ACTUAL</div>
-                <div className="text-lg font-bold font-mono text-white group-hover:text-emerald-300">{currentGlobalBank.toFixed(2)}€</div>
+                <div className="text-lg font-bold font-mono text-white group-hover:text-emerald-300">{currentGlobalBank.toFixed(2)}â‚¬</div>
               </button>
               {/* CLOUD BUTTON HEADER (PC) */}
-              <button onClick={() => setShowCloudModal(true)} className="flex flex-col items-center justify-center p-2 rounded-lg bg-indigo-900/20 border border-indigo-500/30 hover:bg-indigo-600/20 hover:border-indigo-400 transition-all text-indigo-400 ml-2" title="Sincronización Cloud">
+              <button onClick={() => setShowCloudModal(true)} className="flex flex-col items-center justify-center p-2 rounded-lg bg-indigo-900/20 border border-indigo-500/30 hover:bg-indigo-600/20 hover:border-indigo-400 transition-all text-indigo-400 ml-2" title="SincronizaciÃ³n Cloud">
                 <Cloud size={20} />
                 <span className="text-[9px] font-bold">NUBE</span>
               </button>
             </div>
 
             <div className="flex-1 p-6 overflow-y-auto">
-              <div className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-wider">Navegación</div>
+              <div className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-wider">NavegaciÃ³n</div>
               <nav className="flex-1 px-2 py-4 space-y-2">
                 <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
                 <button onClick={() => { setShowAddBetModal(true); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-emerald-400 hover:bg-slate-800 border border-transparent hover:border-emerald-500/30">
@@ -2630,12 +2632,12 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   <span className="font-bold text-lg">Nueva Apuesta</span>
                 </button>
                 <NavItem id="challenges" icon={Trophy} label="Retos" />
-                <NavItem id="stats" icon={BarChart2} label="Estadísticas" />
+                <NavItem id="stats" icon={BarChart2} label="EstadÃ­sticas" />
                 <NavItem id="history" icon={History} label="Historial" />
                 <NavItem id="simulador" icon={TrendingUp} label="Simulador" />
                 <button onClick={() => { setShowBankManager(true); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-slate-400 hover:bg-slate-800">
                   <PieChart size={24} />
-                  <span className="font-medium text-lg">Gestión de Bank</span>
+                  <span className="font-medium text-lg">GestiÃ³n de Bank</span>
                 </button>
                 <button onClick={() => { setShowCalculator(true); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all mb-2 text-slate-400 hover:bg-slate-800">
                   <Calculator size={24} />
@@ -2644,10 +2646,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               </nav>
             </div>
             <div className="p-6 border-t border-slate-800">
-              <div className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-wider">Gestión de Datos (V3)</div>
+              <div className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-wider">GestiÃ³n de Datos (V3)</div>
               <div className="flex flex-col gap-2">
                 <button onClick={() => setShowCloudModal(true)} className="flex items-center gap-2 text-xs bg-indigo-900/30 hover:bg-indigo-600/30 text-indigo-400 font-bold p-3 rounded mb-2 transition-colors border border-indigo-500/30">
-                  <Cloud size={16} /> <span>☁️ CONFIGURAR NUBE & BACKUPS</span>
+                  <Cloud size={16} /> <span>â˜ï¸ CONFIGURAR NUBE & BACKUPS</span>
                 </button>
 
               </div>
@@ -2678,10 +2680,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 {/* 0. ADD BET FORM MOVED TO MODAL */}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard title="Beneficio Neto" value={`${financialStats.profit >= 0 ? '+' : ''}${financialStats.profit.toFixed(2)}€`} icon={PieChart} colorClass="text-emerald-500" />
+                  <StatCard title="Beneficio Neto" value={`${financialStats.profit >= 0 ? '+' : ''}${financialStats.profit.toFixed(2)}â‚¬`} icon={PieChart} colorClass="text-emerald-500" />
                   <StatCard title="Yield / ROI" value={`${financialStats.yield_val}%`} icon={TrendingUp} colorClass="text-blue-500" />
                   <StatCard title="Win Rate Scout" value={`${scoutStats.length > 0 ? (scoutStats.reduce((acc, s) => acc + parseFloat(s.winRate), 0) / scoutStats.length).toFixed(1) : 0}%`} subtext="Efectividad Media" icon={Target} colorClass="text-purple-500" />
-                  <StatCard title="Riesgo Activo" value={`${pendingBetsList.reduce((a, b) => a + b.stake, 0).toFixed(2)}€`} subtext="En juego" icon={Clock} colorClass="text-yellow-500" />
+                  <StatCard title="Riesgo Activo" value={`${pendingBetsList.reduce((a, b) => a + b.stake, 0).toFixed(2)}â‚¬`} subtext="En juego" icon={Clock} colorClass="text-yellow-500" />
                 </div>
 
                 {pendingBetsList.length > 0 && (
@@ -2710,7 +2712,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   </div>
                                 </div>
                                 <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto mt-2 md:mt-0 gap-2 flex-wrap md:flex-nowrap">
-                                  <div className="text-lg font-bold text-white order-1 md:order-0 w-full md:w-auto text-right md:text-right mb-2 md:mb-0">{item.stake.toFixed(2)}€</div>
+                                  <div className="text-lg font-bold text-white order-1 md:order-0 w-full md:w-auto text-right md:text-right mb-2 md:mb-0">{item.stake.toFixed(2)}â‚¬</div>
                                   <div className="flex flex-wrap justify-end gap-1 order-2 md:order-1 w-full md:w-auto">
                                     <button
                                       onClick={(e) => { e.stopPropagation(); openBulkResolution(item.id, item.children); }}
@@ -2773,15 +2775,15 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                                 className="text-[10px] text-slate-500 hover:text-cyan-400 flex items-center gap-1 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 transition-colors"
                                               >
                                                 {expandedBets.includes(bet.id) ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-                                                {expandedBets.includes(bet.id) ? 'Ocultar' : 'Ver Líneas'}
+                                                {expandedBets.includes(bet.id) ? 'Ocultar' : 'Ver LÃ­neas'}
                                               </button>
                                             </div>
                                             <div className="flex gap-2 text-[10px]">
                                               <span className="bg-slate-800 px-1.5 rounded text-slate-400 border border-slate-700">@{bet.odds.toFixed(2)}</span>
-                                              <span className="text-slate-500 font-bold">{bet.stake.toFixed(2)}€</span>
+                                              <span className="text-slate-500 font-bold">{bet.stake.toFixed(2)}â‚¬</span>
                                               {bet.profit !== 0 && (
                                                 <span className={`font-bold ${bet.profit > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                                  {bet.profit > 0 ? '+' : ''}{bet.profit.toFixed(2)}€
+                                                  {bet.profit > 0 ? '+' : ''}{bet.profit.toFixed(2)}â‚¬
                                                 </span>
                                               )}
                                             </div>
@@ -2796,7 +2798,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                         {/* EXPANDED DETAILS FOR CHILD BET */}
                                         {expandedBets.includes(bet.id) && bet.betLines && (
                                           <div className="mt-1 p-2 bg-slate-950/50 rounded border border-slate-800/50 animate-fade-in">
-                                            <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Composición:</div>
+                                            <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">ComposiciÃ³n:</div>
                                             {bet.betLines.map((line, i) => (
                                               <div key={i} className="flex justify-between items-center text-[10px] border-b border-slate-800/50 last:border-0 py-1">
                                                 <span className="text-slate-300">{line.description}</span>
@@ -2844,7 +2846,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                       {expandedBets.includes(bet.id) ? (
                                         <span className="flex items-center gap-1"><ChevronUp size={12} /> Ocultar Desglose</span>
                                       ) : (
-                                        <span className="flex items-center gap-1"><ChevronDown size={12} /> Ver {(bet.betLines || bet.subPicks).length} Líneas</span>
+                                        <span className="flex items-center gap-1"><ChevronDown size={12} /> Ver {(bet.betLines || bet.subPicks).length} LÃ­neas</span>
                                       )}
                                     </button>
 
@@ -2892,8 +2894,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       <div className="flex items-center gap-4">
                         {/* ATH Badge (Moved here) */}
                         <div className="text-right block">
-                          <div className="text-[10px] text-slate-500 font-bold uppercase">Máx. Histórico</div>
-                          <div className="text-sm font-bold text-emerald-400 font-mono">+{financialStats.maxProfit ? financialStats.maxProfit.toFixed(2) : '0.00'}€</div>
+                          <div className="text-[10px] text-slate-500 font-bold uppercase">MÃ¡x. HistÃ³rico</div>
+                          <div className="text-sm font-bold text-emerald-400 font-mono">+{financialStats.maxProfit ? financialStats.maxProfit.toFixed(2) : '0.00'}â‚¬</div>
                         </div>
 
                         <div className="flex gap-1 bg-slate-950 p-1 rounded border border-slate-800">
@@ -2948,8 +2950,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                               <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                              <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}€`} />
-                              <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}€`, 'Beneficio']} />
+                              <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}â‚¬`} />
+                              <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}â‚¬`, 'Beneficio']} />
                               <Line type="monotone" dataKey="profit" stroke="url(#slopeGradient)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
                             </LineChart>
                           );
@@ -2958,14 +2960,14 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     </div>
                   </div>
                   <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-xl">
-                    <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-400 uppercase tracking-wider"><BarChart2 size={16} /> Evolución Semanal</h3>
+                    <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-400 uppercase tracking-wider"><BarChart2 size={16} /> EvoluciÃ³n Semanal</h3>
                     <div className="h-[250px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={financialStats.weeklyChartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                           <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}€`} />
-                          <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}€`, 'Profit Semanal']} />
+                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}â‚¬`} />
+                          <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}â‚¬`, 'Profit Semanal']} />
                           <Bar dataKey="profit" radius={[4, 4, 4, 4]}>
                             {financialStats.weeklyChartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? '#10b981' : '#ef4444'} />
@@ -2976,7 +2978,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     </div>
                   </div>
                   <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-xl">
-                    <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-400 uppercase tracking-wider"><BarChart2 size={16} /> Rentabilidad Neta (€)</h3>
+                    <h3 className="font-bold text-sm mb-4 flex items-center gap-2 text-slate-400 uppercase tracking-wider"><BarChart2 size={16} /> Rentabilidad Neta (â‚¬)</h3>
                     <div className="h-[250px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={strategyStats} margin={{ bottom: 20 }}>
@@ -3000,8 +3002,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="space-y-6 animate-fade-in relative">
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2"><Trophy className="text-yellow-500" /> Retos & Competición</h2>
-                    <p className="text-sm text-slate-400">Seguimiento de interés compuesto y objetivos.</p>
+                    <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2"><Trophy className="text-yellow-500" /> Retos & CompeticiÃ³n</h2>
+                    <p className="text-sm text-slate-400">Seguimiento de interÃ©s compuesto y objetivos.</p>
                   </div>
                   <div className="flex gap-2">
                     <div className="bg-slate-900 p-1 rounded-lg border border-slate-800 flex">
@@ -3059,17 +3061,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <>
                             <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
                               <div className="text-xs text-slate-500 uppercase font-bold mb-1">Total Invertido</div>
-                              <div className="text-2xl font-mono text-white font-bold">{challengesGlobalStats.totalInvested.toFixed(2)}€</div>
+                              <div className="text-2xl font-mono text-white font-bold">{challengesGlobalStats.totalInvested.toFixed(2)}â‚¬</div>
                             </div>
                             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
                               <div className="text-xs text-slate-500 uppercase font-bold mb-1">Valor Actual</div>
-                              <div className={`text-2xl font-mono font-bold ${challengesGlobalStats.totalCurrentValue >= challengesGlobalStats.totalInvested ? 'text-emerald-400' : 'text-red-400'}`}>{challengesGlobalStats.totalCurrentValue.toFixed(2)}€</div>
+                              <div className={`text-2xl font-mono font-bold ${challengesGlobalStats.totalCurrentValue >= challengesGlobalStats.totalInvested ? 'text-emerald-400' : 'text-red-400'}`}>{challengesGlobalStats.totalCurrentValue.toFixed(2)}â‚¬</div>
                             </div>
                           </>
                         ) : (
                           <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 col-span-2">
                             <div className="text-xs text-slate-500 uppercase font-bold mb-1">Profit Generado ({challengeStatsFilter})</div>
-                            <div className={`text-2xl font-mono font-bold ${stepsProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{stepsProfit > 0 ? '+' : ''}{stepsProfit.toFixed(2)}€</div>
+                            <div className={`text-2xl font-mono font-bold ${stepsProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{stepsProfit > 0 ? '+' : ''}{stepsProfit.toFixed(2)}â‚¬</div>
                           </div>
                         )}
 
@@ -3098,12 +3100,12 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <button onClick={() => setIsCreatingChallenge(false)}><X size={20} className="text-slate-500 hover:text-white" /></button>
                       </div>
                       <form onSubmit={handleCreateChallenge} className="p-6 space-y-4">
-                        <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Título del Reto</label><input type="text" value={newChallengeData.title} onChange={e => setNewChallengeData({ ...newChallengeData, title: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm" placeholder="Ej: Reto Verano 10k" required /></div>
+                        <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">TÃ­tulo del Reto</label><input type="text" value={newChallengeData.title} onChange={e => setNewChallengeData({ ...newChallengeData, title: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm" placeholder="Ej: Reto Verano 10k" required /></div>
                         <div className="grid grid-cols-2 gap-4">
-                          <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Bank Inicial (€)</label><input type="number" step="0.01" value={newChallengeData.bank} onChange={e => setNewChallengeData({ ...newChallengeData, bank: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm" placeholder="100" required /></div>
-                          <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Objetivo Total (€)</label><input type="number" step="1" value={newChallengeData.target} onChange={e => setNewChallengeData({ ...newChallengeData, target: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm" placeholder="10000" required /></div>
+                          <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Bank Inicial (â‚¬)</label><input type="number" step="0.01" value={newChallengeData.bank} onChange={e => setNewChallengeData({ ...newChallengeData, bank: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm" placeholder="100" required /></div>
+                          <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Objetivo Total (â‚¬)</label><input type="number" step="1" value={newChallengeData.target} onChange={e => setNewChallengeData({ ...newChallengeData, target: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm" placeholder="10000" required /></div>
                         </div>
-                        <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Color Tema</label><select value={newChallengeData.color} onChange={e => setNewChallengeData({ ...newChallengeData, color: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm"><option value="emerald">Verde (Default)</option><option value="purple">Púrpura (High Stakes)</option><option value="blue">Azul (Conservador)</option><option value="orange">Naranja (Agresivo)</option></select></div>
+                        <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Color Tema</label><select value={newChallengeData.color} onChange={e => setNewChallengeData({ ...newChallengeData, color: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white text-sm"><option value="emerald">Verde (Default)</option><option value="purple">PÃºrpura (High Stakes)</option><option value="blue">Azul (Conservador)</option><option value="orange">Naranja (Agresivo)</option></select></div>
                         <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded font-bold text-white shadow-lg mt-2">Crear Reto</button>
                       </form>
                     </div>
@@ -3163,7 +3165,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className={`text-3xl font-bold font-mono ${challenge.currentBank >= challenge.initialBank ? 'text-emerald-400' : 'text-red-400'}`}>{challenge.currentBank.toFixed(2)}€</div>
+                              <div className={`text-3xl font-bold font-mono ${challenge.currentBank >= challenge.initialBank ? 'text-emerald-400' : 'text-red-400'}`}>{challenge.currentBank.toFixed(2)}â‚¬</div>
                               <div className="text-xs text-slate-500">Saldo Actual</div>
                             </div>
                           </div>
@@ -3171,7 +3173,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             <div className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-1000`} style={{ width: `${percent}%` }}></div>
                           </div>
                           <div className="flex justify-between mt-2 text-xs font-bold text-slate-500">
-                            <span>Inicio: {challenge.initialBank}€</span>
+                            <span>Inicio: {challenge.initialBank}â‚¬</span>
                             <span>{percent}% Completado</span>
                           </div>
                         </div>
@@ -3198,7 +3200,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 {/* INPUTS: SIMPLE vs MULTI */}
                                 {isChallengeMulti ? (
                                   <div className="bg-slate-900 rounded p-3 border border-slate-800 space-y-2">
-                                    <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold"><span>Líneas ({challengeForm.lines.length})</span> <span>Cuota Total: {challengeForm.lines.reduce((a, b) => a * (parseFloat(b.odds) || 1), 1).toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold"><span>LÃ­neas ({challengeForm.lines.length})</span> <span>Cuota Total: {challengeForm.lines.reduce((a, b) => a * (parseFloat(b.odds) || 1), 1).toFixed(2)}</span></div>
                                     {challengeForm.lines.map((line, idx) => (
                                       <div key={idx} className="flex flex-col gap-1 bg-slate-950/50 p-2 rounded border border-slate-700/50">
                                         <div className="flex gap-2">
@@ -3209,10 +3211,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                           <input type="number" placeholder="@" step="0.01" value={line.odds} onChange={e => updateChallengeLine(idx, 'odds', e.target.value)} className="w-16 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white text-center font-mono" />
                                           <button type="button" onClick={() => removeChallengeLine(idx)} className="text-red-500 hover:bg-red-900/20 p-1 rounded ml-auto"><Trash2 size={12} /></button>
                                         </div>
-                                        <input type="text" placeholder="Descripción línea..." value={line.desc} onChange={e => updateChallengeLine(idx, 'desc', e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-slate-300" />
+                                        <input type="text" placeholder="DescripciÃ³n lÃ­nea..." value={line.desc} onChange={e => updateChallengeLine(idx, 'desc', e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-slate-300" />
                                       </div>
                                     ))}
-                                    <button type="button" onClick={addChallengeLine} className="w-full py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold transition-colors">+ Añadir Línea</button>
+                                    <button type="button" onClick={addChallengeLine} className="w-full py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold transition-colors">+ AÃ±adir LÃ­nea</button>
                                   </div>
                                 ) : (
                                   <div className="grid grid-cols-2 gap-3">
@@ -3235,7 +3237,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                     </select>
                                   </div>
                                   <div className="col-span-2">
-                                    {!isChallengeMulti && <input type="text" placeholder="Descripción (ej: Paso 1 - Madrid)" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm focus:border-emerald-500" required />}
+                                    {!isChallengeMulti && <input type="text" placeholder="DescripciÃ³n (ej: Paso 1 - Madrid)" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm focus:border-emerald-500" required />}
                                   </div>
                                 </div>
 
@@ -3255,7 +3257,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-4">
                                 <div className="flex items-center gap-2 mb-2">
                                   <BarChart2 size={16} className="text-indigo-400" />
-                                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Analítica del Reto</h4>
+                                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">AnalÃ­tica del Reto</h4>
                                 </div>
 
                                 {/* KPIs GRID */}
@@ -3276,12 +3278,12 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                     return (
                                       <>
                                         <div className="bg-slate-900 p-2 rounded border border-slate-800">
-                                          <div className="text-[10px] text-slate-500 uppercase">Inversión Total</div>
-                                          <div className="text-sm font-bold text-white">{invested.toFixed(2)}€</div>
+                                          <div className="text-[10px] text-slate-500 uppercase">InversiÃ³n Total</div>
+                                          <div className="text-sm font-bold text-white">{invested.toFixed(2)}â‚¬</div>
                                         </div>
                                         <div className="bg-slate-900 p-2 rounded border border-slate-800">
                                           <div className="text-[10px] text-slate-500 uppercase">Beneficio Neto</div>
-                                          <div className={`text-sm font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{netProfit >= 0 ? '+' : ''}{netProfit.toFixed(2)}€</div>
+                                          <div className={`text-sm font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{netProfit >= 0 ? '+' : ''}{netProfit.toFixed(2)}â‚¬</div>
                                         </div>
                                         <div className="bg-slate-900 p-2 rounded border border-slate-800">
                                           <div className="text-[10px] text-slate-500 uppercase">ROI Reto</div>
@@ -3327,11 +3329,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <div className="max-h-[300px] overflow-y-auto">
                           <table className="w-full text-left text-sm">
                             <thead className="bg-slate-950 text-slate-500 text-xs uppercase sticky top-0">
-                              <tr><th className="p-3">Detalle</th><th className="p-3 text-center">Stake/Cuota</th><th className="p-3 text-right">Resultado</th><th className="p-3 text-center">Acción</th></tr>
+                              <tr><th className="p-3">Detalle</th><th className="p-3 text-center">Stake/Cuota</th><th className="p-3 text-right">Resultado</th><th className="p-3 text-center">AcciÃ³n</th></tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800">
                               {challenge.history.length === 0 ? (
-                                <tr><td colSpan="4" className="p-6 text-center text-slate-500 text-xs italic">Aún no hay movimientos en este reto.</td></tr>
+                                <tr><td colSpan="4" className="p-6 text-center text-slate-500 text-xs italic">AÃºn no hay movimientos en este reto.</td></tr>
                               ) : (
                                 challenge.history.map(bet => {
                                   const isMulti = bet.betLines && bet.betLines.length > 0;
@@ -3346,9 +3348,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             {bet.description}
                                           </div>
                                           <div className="text-[10px] text-slate-500">{bet.date}</div>
-                                          {isMulti && <div className="text-[9px] text-indigo-400 mt-0.5">{isExpanded ? 'Ocultar líneas' : 'Ver líneas'}</div>}
+                                          {isMulti && <div className="text-[9px] text-indigo-400 mt-0.5">{isExpanded ? 'Ocultar lÃ­neas' : 'Ver lÃ­neas'}</div>}
                                         </td>
-                                        <td className="p-3 text-center text-xs text-slate-300"><div>{bet.stake}€</div><div className="text-slate-500">@{bet.odds}</div></td>
+                                        <td className="p-3 text-center text-xs text-slate-300"><div>{bet.stake}â‚¬</div><div className="text-slate-500">@{bet.odds}</div></td>
                                         <td className="p-3 text-right">
                                           {bet.result === 'pending' ? (
                                             <div className="flex justify-end gap-1">
@@ -3356,7 +3358,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                               <button onClick={() => resolveChallengeBet(challenge.id, bet.id, 'loss')} className="p-1 bg-red-600/20 text-red-400 rounded"><X size={14} /></button>
                                             </div>
                                           ) : (
-                                            <span className={`font-bold text-xs ${bet.result === 'win' ? 'text-emerald-400' : 'text-red-400'}`}>{bet.result === 'win' ? `+${bet.profit.toFixed(2)}€` : `-${bet.stake}€`}</span>
+                                            <span className={`font-bold text-xs ${bet.result === 'win' ? 'text-emerald-400' : 'text-red-400'}`}>{bet.result === 'win' ? `+${bet.profit.toFixed(2)}â‚¬` : `-${bet.stake}â‚¬`}</span>
                                           )}
                                         </td>
                                         <td className="p-3 text-center flex items-center justify-center gap-2">
@@ -3431,7 +3433,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             <th className="p-4 text-center">Bets (W-L-V)</th>
                             <th className="p-4 text-center">Cuota Media</th>
                             <th className="p-4 text-center">Stake Medio</th>
-                            <th className="p-4 text-right">Inversión</th>
+                            <th className="p-4 text-right">InversiÃ³n</th>
                             <th className="p-4 text-right">Beneficio</th>
                             <th className="p-4 text-center">Yield</th>
                             <th className="p-4 text-center">Win %</th>
@@ -3445,10 +3447,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 <span className="text-emerald-400 font-bold">{s.wins}</span>-<span className="text-red-400 font-bold">{s.losses}</span>-<span className="text-slate-500 font-bold">{s.voids}</span>
                               </td>
                               <td className="p-4 text-center text-slate-300 font-mono">@{s.avgOdds}</td>
-                              <td className="p-4 text-center text-slate-300 font-mono">{s.avgStake}€</td>
-                              <td className="p-4 text-right text-slate-300">{s.staked.toFixed(2)}€</td>
+                              <td className="p-4 text-center text-slate-300 font-mono">{s.avgStake}â‚¬</td>
+                              <td className="p-4 text-right text-slate-300">{s.staked.toFixed(2)}â‚¬</td>
                               <td className={`p-4 text-right font-bold font-mono ${s.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {s.profit >= 0 ? '+' : ''}{s.profit.toFixed(2)}€
+                                {s.profit >= 0 ? '+' : ''}{s.profit.toFixed(2)}â‚¬
                               </td>
                               <td className={`p-4 text-center font-bold ${parseFloat(s.yield) > 0 ? 'text-blue-400' : 'text-slate-500'}`}>{s.yield}%</td>
                               <td className="p-4 text-center text-slate-400">
@@ -3481,7 +3483,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             <tr key={i} className="hover:bg-slate-800/50">
                               <td className="p-3 font-bold text-white">{r.label}</td>
                               <td className="p-3 text-center text-slate-400">{r.bets}</td>
-                              <td className={`p-3 text-right font-bold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit.toFixed(2)}€</td>
+                              <td className={`p-3 text-right font-bold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit.toFixed(2)}â‚¬</td>
                               <td className={`p-3 text-center font-bold ${parseFloat(r.yield) > 0 ? 'text-blue-400' : 'text-slate-500'}`}>{r.yield}%</td>
                             </tr>
                           ))}
@@ -3513,7 +3515,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               <td className="p-4 font-bold text-white">{s.name}</td>
                               <td className="p-4 text-center text-slate-300">{s.picks}</td>
                               <td className="p-4 text-center text-slate-300"><span className="text-emerald-400 font-bold">{s.wins}</span> - <span className="text-red-400 font-bold">{s.losses}</span> - {s.voids}</td>
-                              <td className="p-4 text-center text-slate-300 font-mono">{s.avgStake}€</td>
+                              <td className="p-4 text-center text-slate-300 font-mono">{s.avgStake}â‚¬</td>
                               <td className="p-4 text-center"><div className="flex items-center justify-center gap-2"><div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden"><div className={`h-full rounded-full ${parseFloat(s.winRate) > 60 ? 'bg-emerald-500' : 'bg-yellow-500'}`} style={{ width: `${s.winRate}%` }}></div></div><span className="font-mono font-bold">{s.winRate}%</span></div></td>
                             </tr>
                           ))}
@@ -3526,19 +3528,19 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 {/* NEW CHARTS SECTION (V38) */}
                 <section>
                   <header className="mb-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2"><BarChart2 className="text-orange-500" /> Distribución Mensual y Temática</h2>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2"><BarChart2 className="text-orange-500" /> DistribuciÃ³n Mensual y TemÃ¡tica</h2>
                   </header>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* MONTHLY */}
                     <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
-                      <h3 className="text-xs font-bold text-slate-400 uppercase mb-4">Evolución Mensual</h3>
+                      <h3 className="text-xs font-bold text-slate-400 uppercase mb-4">EvoluciÃ³n Mensual</h3>
                       <div className="h-[250px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={financialStats.monthlyChartData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                             <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}€`} />
-                            <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}€`, 'Profit']} />
+                            <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}â‚¬`} />
+                            <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} formatter={(value) => [`${value.toFixed(2)}â‚¬`, 'Profit']} />
                             <Bar dataKey="profit" radius={[4, 4, 4, 4]}>
                               {financialStats.monthlyChartData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? '#10b981' : '#ef4444'} />
@@ -3574,7 +3576,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 {/* NEW: TIPSTER EVOLUTION (V40 Multi-line) */}
                 <section className="mb-8 pl-4 pr-4">
                   <header className="mb-4 flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2"><TrendingUp className="text-blue-500" /> Comparativa de Evolución (Tipsters)</h2>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2"><TrendingUp className="text-blue-500" /> Comparativa de EvoluciÃ³n (Tipsters)</h2>
                     <div className="text-xs text-slate-500 font-mono">
                       {compSelectedTipsters.length}/{financialStats.activeTipsters.length} seleccionados
                     </div>
@@ -3612,7 +3614,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <LineChart data={financialStats.tipsterEvolutionData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                           <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}€`} />
+                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}â‚¬`} />
                           <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }} />
                           <Legend wrapperStyle={{ paddingTop: '20px' }} />
                           {compSelectedTipsters.map((tipster, index) => (
@@ -3667,7 +3669,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     <div className="lg:col-span-2 bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
                       <h3 className="font-bold text-sm mb-4 text-slate-400 uppercase tracking-wider flex justify-between">
                         <span><TrendingUp size={16} className="inline mr-2" /> Drawdown (Profundidad Submarina)</span>
-                        <span className="text-xs text-slate-500">Caída desde Máximo Histórico</span>
+                        <span className="text-xs text-slate-500">CaÃ­da desde MÃ¡ximo HistÃ³rico</span>
                       </h3>
                       <div className="h-[250px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -3724,7 +3726,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                             <XAxis type="number" dataKey="x" name="Cuota" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} unit="x" domain={['auto', 'auto']} />
-                            <YAxis type="number" dataKey="y" name="Profit" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} unit="€" />
+                            <YAxis type="number" dataKey="y" name="Profit" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} unit="â‚¬" />
                             <ZAxis type="number" dataKey="z" range={[60, 60]} />
                             <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} content={({ active, payload }) => {
                               if (active && payload && payload.length) {
@@ -3732,7 +3734,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 return (
                                   <div className="bg-slate-950 border border-slate-700 p-2 rounded shadow-xl text-xs">
                                     <div className="font-bold text-emerald-400">{data.name}</div>
-                                    <div className="text-white">Profit: {data.y}€</div>
+                                    <div className="text-white">Profit: {data.y}â‚¬</div>
                                     <div className="text-slate-400">Cuota: @{data.x}</div>
                                     <div className="text-slate-500 italic max-w-[150px] truncate">{data.desc}</div>
                                   </div>
@@ -3752,11 +3754,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                     {/* ACTIVITY HEATMAP */}
                     <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg flex flex-col">
-                      <h3 className="font-bold text-sm mb-4 text-slate-400 uppercase tracking-wider flex items-center gap-2"><Calendar size={16} /> Actividad Reciente (30 días)</h3>
+                      <h3 className="font-bold text-sm mb-4 text-slate-400 uppercase tracking-wider flex items-center gap-2"><Calendar size={16} /> Actividad Reciente (30 dÃ­as)</h3>
                       <div className="flex-1 flex items-center justify-center p-4">
                         <div className="grid grid-cols-7 gap-2">
                           {heatmapData.map((day, i) => (
-                            <div key={i} title={`${day.date}: ${day.value.toFixed(2)}€`} onClick={() => day.hasActivity && setSelectedDay(day)}
+                            <div key={i} title={`${day.date}: ${day.value.toFixed(2)}â‚¬`} onClick={() => day.hasActivity && setSelectedDay(day)}
                               className={`w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-bold transition-all cursor-pointer
                                             ${!day.hasActivity ? 'bg-slate-800 text-slate-600' :
                                   (day.value > 0 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-500 hover:text-white' :
@@ -3779,8 +3781,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     <p className="text-sm text-slate-300 max-w-3xl mx-auto">
                       Para una cuota media de <span className="text-white font-bold">@{(strategyStats.length > 0 && strategyStats.reduce((a, b) => a + parseFloat(b.avgOdds), 0) / strategyStats.length) || '2.00'}</span>
                       {' '}y un WinRate del <span className="text-white font-bold">{(scoutStats.length > 0 && (scoutStats.reduce((a, s) => a + parseFloat(s.winRate), 0) / scoutStats.length).toFixed(0)) || '50'}%</span>,
-                      tu stake óptimo sugerido (Kelly/4) sería del <span className="text-emerald-400 font-bold">1.5% - 2.5%</span>.
-                      ¡Mantén la disciplina!
+                      tu stake Ã³ptimo sugerido (Kelly/4) serÃ­a del <span className="text-emerald-400 font-bold">1.5% - 2.5%</span>.
+                      Â¡MantÃ©n la disciplina!
                     </p>
                   </div>
 
@@ -3792,7 +3794,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <div>
                             <h3 className="text-lg font-bold text-white flex items-center gap-2"><Calendar size={18} /> {selectedDay.date}</h3>
                             <div className={`text-sm font-mono font-bold ${selectedDay.value >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {selectedDay.value > 0 ? '+' : ''}{selectedDay.value.toFixed(2)}€
+                              {selectedDay.value > 0 ? '+' : ''}{selectedDay.value.toFixed(2)}â‚¬
                             </div>
                           </div>
                           <button onClick={() => setSelectedDay(null)} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"><X size={20} /></button>
@@ -3811,7 +3813,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   </td>
                                   <td className="p-3 text-center text-slate-400 bg-slate-900/50 font-mono">@{bet.odds.toFixed(2)}</td>
                                   <td className={`p-3 text-right font-bold ${bet.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    {bet.profit > 0 ? '+' : ''}{bet.profit.toFixed(2)}€
+                                    {bet.profit > 0 ? '+' : ''}{bet.profit.toFixed(2)}â‚¬
                                   </td>
                                 </tr>
                               ))}
@@ -3827,8 +3829,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
                       <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in">
                         <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-900/20 border-b border-slate-800">
-                          <h3 className="text-xl font-bold text-white mb-1">Resolución Detallada</h3>
-                          <p className="text-sm text-slate-400">Define el resultado de cada línea para el Scout.</p>
+                          <h3 className="text-xl font-bold text-white mb-1">ResoluciÃ³n Detallada</h3>
+                          <p className="text-sm text-slate-400">Define el resultado de cada lÃ­nea para el Scout.</p>
                         </div>
                         <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                           {/* Support V7 Lines */}
@@ -3915,7 +3917,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             setBets(updatedBets);
                             setResolutionBet(null);
                           }} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 transition-all transform active:scale-95">
-                            Confirmar Resolución
+                            Confirmar ResoluciÃ³n
                           </button>
                         </div>
                       </div>
@@ -3932,7 +3934,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       {/* HEADER */}
                       <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-900/30 border-b border-slate-800 flex justify-between items-center">
                         <div>
-                          <div className="text-xs text-indigo-400 font-bold uppercase mb-1">Análisis Detallado</div>
+                          <div className="text-xs text-indigo-400 font-bold uppercase mb-1">AnÃ¡lisis Detallado</div>
                           <h2 className="text-3xl font-bold text-white">{selectedTipsterStats.name}</h2>
                         </div>
                         <button onClick={() => setSelectedTipsterStats(null)} className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-full transition-colors"><X size={24} /></button>
@@ -3943,7 +3945,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                             <div className="text-xs text-slate-500 uppercase font-bold mb-1">Profit Total</div>
-                            <div className={`text-2xl font-bold ${selectedTipsterStats.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{selectedTipsterStats.profit > 0 ? '+' : ''}{selectedTipsterStats.profit ? selectedTipsterStats.profit.toFixed(2) : '0.00'}€</div>
+                            <div className={`text-2xl font-bold ${selectedTipsterStats.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{selectedTipsterStats.profit > 0 ? '+' : ''}{selectedTipsterStats.profit ? selectedTipsterStats.profit.toFixed(2) : '0.00'}â‚¬</div>
                           </div>
                           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                             <div className="text-xs text-slate-500 uppercase font-bold mb-1">Yield</div>
@@ -3955,7 +3957,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           </div>
                           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                             <div className="text-xs text-slate-500 uppercase font-bold mb-1">Stake Medio</div>
-                            <div className="text-2xl font-bold text-purple-400">{selectedTipsterStats.avgStake}€</div>
+                            <div className="text-2xl font-bold text-purple-400">{selectedTipsterStats.avgStake}â‚¬</div>
                           </div>
                         </div>
 
@@ -3967,7 +3969,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               <label className="text-xs text-slate-400 uppercase font-bold mb-2 block">Si tu Stake fijo hubiera sido...</label>
                               <div className="relative">
                                 <input type="number" value={whatIfStake} onChange={e => setWhatIfStake(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 pl-8 text-white font-bold" />
-                                <span className="absolute left-3 top-3 text-slate-500">€</span>
+                                <span className="absolute left-3 top-3 text-slate-500">â‚¬</span>
                               </div>
                             </div>
                             <div className="flex-[2] w-full grid grid-cols-3 gap-4">
@@ -3996,7 +3998,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   <>
                                     <div className="bg-slate-900 p-3 rounded border border-slate-700">
                                       <div className="text-[10px] text-slate-500 uppercase">Nuevo Beneficio</div>
-                                      <div className={`text-xl font-bold ${wiProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{wiProfit.toFixed(2)}€</div>
+                                      <div className={`text-xl font-bold ${wiProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{wiProfit.toFixed(2)}â‚¬</div>
                                     </div>
                                     <div className="bg-slate-900 p-3 rounded border border-slate-700">
                                       <div className="text-[10px] text-slate-500 uppercase">Nuevo Yield</div>
@@ -4004,7 +4006,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                     </div>
                                     <div className="bg-slate-900 p-3 rounded border border-slate-700">
                                       <div className="text-[10px] text-slate-500 uppercase">Diferencia</div>
-                                      <div className={`text-xl font-bold ${diff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{diff > 0 ? '+' : ''}{diff.toFixed(2)}€</div>
+                                      <div className={`text-xl font-bold ${diff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{diff > 0 ? '+' : ''}{diff.toFixed(2)}â‚¬</div>
                                     </div>
                                   </>
                                 );
@@ -4050,16 +4052,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   {/* HEADER */}
                   <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-900/30 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 z-10">
                     <div>
-                      <div className="text-xs text-indigo-400 font-bold uppercase mb-1">Análisis Detallado</div>
+                      <div className="text-xs text-indigo-400 font-bold uppercase mb-1">AnÃ¡lisis Detallado</div>
                       <h2 className="text-3xl font-bold text-white flex items-center gap-2">
                         {selectedTipsterStats.name}
                         <span className={`text-sm px-2 py-1 rounded bg-slate-800 border ${selectedTipsterStats.profit >= 0 ? 'border-emerald-500/30 text-emerald-400' : 'border-red-500/30 text-red-400'}`}>
-                          {selectedTipsterStats.profit >= 0 ? 'Rentable' : 'En Pérdidas'}
+                          {selectedTipsterStats.profit >= 0 ? 'Rentable' : 'En PÃ©rdidas'}
                         </span>
                       </h2>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => alert("🧠 AI Coach: Análisis de " + selectedTipsterStats.name + "\n\nAnalizando racha actual...\nAnalizando yield por tramos...\n\nCONSEJO: Este tipster tiene un alto Yield en cuotas > 2.0 pero sufre en favoritas. Considera subir stake en underdog y reducir en favoritos.")} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-lg flex items-center gap-2 transition-all">
+                      <button onClick={() => alert("ðŸ§  AI Coach: AnÃ¡lisis de " + selectedTipsterStats.name + "\n\nAnalizando racha actual...\nAnalizando yield por tramos...\n\nCONSEJO: Este tipster tiene un alto Yield en cuotas > 2.0 pero sufre en favoritas. Considera subir stake en underdog y reducir en favoritos.")} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-lg flex items-center gap-2 transition-all">
                         <Sparkles size={16} /> AI Coach
                       </button>
                       <button onClick={() => setSelectedTipsterStats(null)} className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-full transition-colors"><X size={24} /></button>
@@ -4071,7 +4073,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                         <div className="text-xs text-slate-500 uppercase font-bold mb-1">Profit Total</div>
-                        <div className={`text-2xl font-bold ${selectedTipsterStats.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{selectedTipsterStats.profit > 0 ? '+' : ''}{selectedTipsterStats.profit ? selectedTipsterStats.profit.toFixed(2) : '0.00'}€</div>
+                        <div className={`text-2xl font-bold ${selectedTipsterStats.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{selectedTipsterStats.profit > 0 ? '+' : ''}{selectedTipsterStats.profit ? selectedTipsterStats.profit.toFixed(2) : '0.00'}â‚¬</div>
                       </div>
                       <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                         <div className="text-xs text-slate-500 uppercase font-bold mb-1">Yield</div>
@@ -4083,7 +4085,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       </div>
                       <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                         <div className="text-xs text-slate-500 uppercase font-bold mb-1">Stake Medio</div>
-                        <div className="text-2xl font-bold text-purple-400">{selectedTipsterStats.avgStake}€</div>
+                        <div className="text-2xl font-bold text-purple-400">{selectedTipsterStats.avgStake}â‚¬</div>
                       </div>
                     </div>
 
@@ -4100,7 +4102,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               { label: 'Seguras (1.0-1.5)', min: 1.0, max: 1.5, bets: 0, profit: 0, staked: 0 },
                               { label: 'Valor (1.51-2.0)', min: 1.51, max: 2.0, bets: 0, profit: 0, staked: 0 },
                               { label: 'Riesgo (2.01-5.0)', min: 2.01, max: 5.0, bets: 0, profit: 0, staked: 0 },
-                              { label: 'Lotería (5.0+)', min: 5.01, max: 999, bets: 0, profit: 0, staked: 0 },
+                              { label: 'LoterÃ­a (5.0+)', min: 5.01, max: 999, bets: 0, profit: 0, staked: 0 },
                             ];
                             const targetName = selectedTipsterStats.name;
                             filteredBets.forEach(b => {
@@ -4115,7 +4117,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               <tr key={i} className="hover:bg-slate-800/30">
                                 <td className="p-3 font-bold text-white">{r.label}</td>
                                 <td className="p-3 text-center text-slate-400">{r.bets}</td>
-                                <td className={`p-3 text-right font-bold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit.toFixed(2)}€</td>
+                                <td className={`p-3 text-right font-bold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit.toFixed(2)}â‚¬</td>
                                 <td className={`p-3 text-center font-bold ${r.staked > 0 ? ((r.profit / r.staked) * 100).toFixed(2) >= 0 ? 'text-blue-400' : 'text-red-400' : 'text-slate-500'}`}>{r.staked > 0 ? ((r.profit / r.staked) * 100).toFixed(2) : 0}%</td>
                               </tr>
                             ));
@@ -4136,13 +4138,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                               <XAxis type="number" dataKey="x" name="Cuota" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} unit="x" domain={['auto', 'auto']} />
-                              <YAxis type="number" dataKey="y" name="Profit" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} unit="€" />
+                              <YAxis type="number" dataKey="y" name="Profit" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} unit="â‚¬" />
                               <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
                                   const data = payload[0].payload;
                                   return (
                                     <div className="bg-slate-950 border border-slate-700 p-2 rounded shadow-xl text-xs">
-                                      <div className={`font-bold ${data.y >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{data.y}€</div>
+                                      <div className={`font-bold ${data.y >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{data.y}â‚¬</div>
                                       <div className="text-slate-400">Cuota: @{data.x}</div>
                                     </div>
                                   );
@@ -4186,7 +4188,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               if (val > 0) color = 'bg-emerald-500';
                               if (val < 0) color = 'bg-red-500';
                               if (val === 0 && map[s] !== undefined) color = 'bg-slate-600'; // Void/0
-                              days.push(<div key={i} title={`${s}: ${val ? val.toFixed(2) : 0}€`} className={`w-3 h-3 rounded-sm ${color}`}></div>);
+                              days.push(<div key={i} title={`${s}: ${val ? val.toFixed(2) : 0}â‚¬`} className={`w-3 h-3 rounded-sm ${color}`}></div>);
                             }
                             return days;
                           })()}
@@ -4227,7 +4229,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <label className="text-xs text-slate-400 uppercase font-bold mb-2 block">Si tu Stake fijo hubiera sido...</label>
                           <div className="relative">
                             <input type="number" value={whatIfStake} onChange={e => setWhatIfStake(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 pl-8 text-white font-bold" />
-                            <span className="absolute left-3 top-3 text-slate-500">€</span>
+                            <span className="absolute left-3 top-3 text-slate-500">â‚¬</span>
                           </div>
                         </div>
                         <div className="flex-[2] w-full grid grid-cols-3 gap-4">
@@ -4256,7 +4258,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               <>
                                 <div className="bg-slate-900 p-3 rounded border border-slate-700">
                                   <div className="text-[10px] text-slate-500 uppercase">Nuevo Beneficio</div>
-                                  <div className={`text-xl font-bold ${wiProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{wiProfit.toFixed(2)}€</div>
+                                  <div className={`text-xl font-bold ${wiProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{wiProfit.toFixed(2)}â‚¬</div>
                                 </div>
                                 <div className="bg-slate-900 p-3 rounded border border-slate-700">
                                   <div className="text-[10px] text-slate-500 uppercase">Nuevo Yield</div>
@@ -4264,7 +4266,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 </div>
                                 <div className="bg-slate-900 p-3 rounded border border-slate-700">
                                   <div className="text-[10px] text-slate-500 uppercase">Diferencia</div>
-                                  <div className={`text-xl font-bold ${diff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{diff > 0 ? '+' : ''}{diff.toFixed(2)}€</div>
+                                  <div className={`text-xl font-bold ${diff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{diff > 0 ? '+' : ''}{diff.toFixed(2)}â‚¬</div>
                                 </div>
                               </>
                             );
@@ -4287,7 +4289,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-400 flex items-center gap-3">
                       <Zap size={36} className="text-emerald-400" /> Laboratorio de Futuros
                     </h2>
-                    <p className="text-slate-400 mt-2 font-light text-lg">Proyecta tu destino con Monte Carlo y Analítica Avanzada.</p>
+                    <p className="text-slate-400 mt-2 font-light text-lg">Proyecta tu destino con Monte Carlo y AnalÃ­tica Avanzada.</p>
                   </div>
                   <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/10 backdrop-blur-md">
                     <button onClick={() => setSimMode('GLOBAL')} className={`px-5 py-2 rounded-lg font-bold transition-all ${simMode === 'GLOBAL' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white'}`}>Global</button>
@@ -4303,7 +4305,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
 
                       <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <Settings size={14} /> Configuración
+                        <Settings size={14} /> ConfiguraciÃ³n
                       </h3>
 
                       {/* ALGORITHM SWITCH */}
@@ -4344,7 +4346,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-slate-300">Datos Base</span>
                           <button onClick={loadRealStats} className="text-[10px] bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded-full text-white font-bold shadow-lg shadow-indigo-500/20 transition-all">
-                            ⚡ Analizar Datos
+                            âš¡ Analizar Datos
                           </button>
                         </div>
 
@@ -4374,12 +4376,12 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                         {simAlgo === 'REALISTIC' ? (
                           <div className="p-4 bg-emerald-900/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-200/80 italic">
-                            Los parámetros (Winrate, Cuota, Stake) se extraen de la configuración individual de cada tipster en la tabla de cartera.
+                            Los parÃ¡metros (Winrate, Cuota, Stake) se extraen de la configuraciÃ³n individual de cada tipster en la tabla de cartera.
                           </div>
                         ) : (
                           <>
                             <div className="space-y-1">
-                              <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase"><span>Bank Inicial</span> <span>€</span></div>
+                              <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase"><span>Bank Inicial</span> <span>â‚¬</span></div>
                               <input type="number" value={simBank} onChange={e => setSimBank(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-2.5 text-white font-bold focus:border-emerald-500 outline-none" />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -4402,14 +4404,14 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                         {/* Staking */}
                         <div className="pt-4 border-t border-white/5">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Gestión de Stake</label>
+                          <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">GestiÃ³n de Stake</label>
                           <div className="flex rounded-lg bg-black/40 p-1 border border-white/5 mb-2">
                             <button onClick={() => setSimStakingMode('FLAT')} className={`flex-1 py-1.5 text-[10px] rounded font-bold transition-all ${simStakingMode === 'FLAT' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}>PLANO</button>
                             <button onClick={() => setSimStakingMode('COMPOUND')} className={`flex-1 py-1.5 text-[10px] rounded font-bold transition-all ${simStakingMode === 'COMPOUND' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>COMPUESTO</button>
                           </div>
                           <div className="relative">
                             <input type="number" value={simStake} onChange={e => setSimStake(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-2.5 text-white font-bold pl-3" />
-                            <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-500">{simStakingMode === 'FLAT' ? '€' : '%'}</span>
+                            <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-500">{simStakingMode === 'FLAT' ? 'â‚¬' : '%'}</span>
                           </div>
                         </div>
                       </div>
@@ -4429,20 +4431,20 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <div className="bg-slate-900/60 backdrop-blur border border-red-500/20 p-4 rounded-2xl relative overflow-hidden group">
                           <div className="absolute -right-4 -top-4 bg-red-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all"></div>
                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Peor Caso (P10)</div>
-                          <div className="text-2xl lg:text-3xl font-bold text-red-400">{simResults.worst.toFixed(0)}€</div>
-                          <div className="text-[10px] text-red-500/60 font-mono mt-1">Drawdown Máx: {simResults.worstMDD}%</div>
+                          <div className="text-2xl lg:text-3xl font-bold text-red-400">{simResults.worst.toFixed(0)}â‚¬</div>
+                          <div className="text-[10px] text-red-500/60 font-mono mt-1">Drawdown MÃ¡x: {simResults.worstMDD}%</div>
                         </div>
                         <div className="bg-slate-900/60 backdrop-blur border border-blue-500/20 p-4 rounded-2xl relative overflow-hidden group">
                           <div className="absolute -right-4 -top-4 bg-blue-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Esperado (Media)</div>
-                          <div className="text-2xl lg:text-3xl font-bold text-blue-400">{simResults.avg.toFixed(0)}€</div>
+                          <div className="text-2xl lg:text-3xl font-bold text-blue-400">{simResults.avg.toFixed(0)}â‚¬</div>
                           <div className="text-[10px] text-blue-500/60 font-mono mt-1">ROI {(((simResults.avg - parseFloat(simBank)) / parseFloat(simBank)) * 100).toFixed(0)}%</div>
                         </div>
                         <div className="bg-slate-900/60 backdrop-blur border border-emerald-500/20 p-4 rounded-2xl relative overflow-hidden group">
                           <div className="absolute -right-4 -top-4 bg-emerald-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mejor Caso (P90)</div>
-                          <div className="text-2xl lg:text-3xl font-bold text-emerald-400">{simResults.best.toFixed(0)}€</div>
-                          <div className="text-[10px] text-emerald-500/60 font-mono mt-1">To The Moon 🚀</div>
+                          <div className="text-2xl lg:text-3xl font-bold text-emerald-400">{simResults.best.toFixed(0)}â‚¬</div>
+                          <div className="text-[10px] text-emerald-500/60 font-mono mt-1">To The Moon ðŸš€</div>
                         </div>
                         <div className="bg-slate-900/60 backdrop-blur border border-orange-500/20 p-4 rounded-2xl relative overflow-hidden group">
                           <div className="absolute -right-4 -top-4 bg-orange-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all"></div>
@@ -4463,7 +4465,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             onClick={() => setSimChartTab(tab)}
                             className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${simChartTab === tab ? 'bg-slate-800 text-white shadow ring-1 ring-white/10' : 'text-slate-500 hover:text-slate-300'}`}
                           >
-                            {tab === 'evolution' ? '📈 Evolución' : tab === 'drawdown' ? '📉 Underwater (Drawdown)' : '📊 Distribución'}
+                            {tab === 'evolution' ? 'ðŸ“ˆ EvoluciÃ³n' : tab === 'drawdown' ? 'ðŸ“‰ Underwater (Drawdown)' : 'ðŸ“Š DistribuciÃ³n'}
                           </button>
                         ))}
                       </div>
@@ -4473,7 +4475,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         {!simResults ? (
                           <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-pulse gap-4">
                             <RefreshCw size={48} className="opacity-20 spin-slow" />
-                            <p className="font-light text-lg">Configura los parámetros y lanza la simulación.</p>
+                            <p className="font-light text-lg">Configura los parÃ¡metros y lanza la simulaciÃ³n.</p>
                           </div>
                         ) : (
                           <ResponsiveContainer width="100%" height={450}>
@@ -4491,7 +4493,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.5} />
                                 <XAxis dataKey="step" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                                 <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }} formatter={(val) => `${val.toFixed(0)}€`} />
+                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }} formatter={(val) => `${val.toFixed(0)}â‚¬`} />
                                 {simResults.paths.map((p, i) => (
                                   <Area key={i} type="monotone" dataKey={`path${i}`} stroke={i === 0 || i === 4 ? '#ef4444' : '#10b981'} fill="url(#gEvo)" strokeWidth={i === 2 ? 3 : 1} strokeOpacity={i === 2 ? 1 : 0.5} fillOpacity={i === 2 ? 1 : 0.1} />
                                 ))}
@@ -4550,7 +4552,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     {/* 3. CONFIG TABLE (Conditional - Bottom of Dashboard) */}
                     {simAlgo === 'REALISTIC' && simPortfolioConfig.length > 0 && (
                       <div className="bg-slate-900/80 backdrop-blur rounded-2xl border border-white/10 p-6 shadow-xl animate-fade-in-up">
-                        <h3 className="text-emerald-400 font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-wider"><Settings size={16} /> Configuración de Cartera ({simPortfolioConfig.filter(t => t.enabled).length} Activos)</h3>
+                        <h3 className="text-emerald-400 font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-wider"><Settings size={16} /> ConfiguraciÃ³n de Cartera ({simPortfolioConfig.filter(t => t.enabled).length} Activos)</h3>
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs text-left">
                             <thead>
@@ -4637,7 +4639,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm min-w-[600px]">
                       <thead className="bg-slate-950 text-slate-400 uppercase text-xs font-bold">
-                        <tr><th className="p-4">Fecha</th><th className="p-4">Tipster / Descripción</th><th className="p-4 text-center">Stake</th><th className="p-4 text-center">Cuota</th><th className="p-4 text-right">P&L</th><th className="p-4 text-center">Acción</th></tr>
+                        <tr><th className="p-4">Fecha</th><th className="p-4">Tipster / DescripciÃ³n</th><th className="p-4 text-center">Stake</th><th className="p-4 text-center">Cuota</th><th className="p-4 text-right">P&L</th><th className="p-4 text-center">AcciÃ³n</th></tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
                         {(() => {
@@ -4764,7 +4766,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                           </button>
                                         </div>
                                       </td>
-                                      <td className="p-4 text-center text-slate-300 font-bold">{item.stake.toFixed(2)}€</td>
+                                      <td className="p-4 text-center text-slate-300 font-bold">{item.stake.toFixed(2)}â‚¬</td>
                                       <td className="p-4 text-center font-mono text-slate-400 text-xs">
                                         {(() => {
                                           const ods = item.children.map(c => c.odds || 0);
@@ -4774,7 +4776,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                         })()}
                                       </td>
                                       <td className={`p-4 text-right font-bold font-mono ${profitColor}`}>
-                                        {item.result === 'pending' ? 'PEND' : (item.profit > 0 ? '+' : '') + item.profit.toFixed(2) + '€'}
+                                        {item.result === 'pending' ? 'PEND' : (item.profit > 0 ? '+' : '') + item.profit.toFixed(2) + 'â‚¬'}
                                       </td>
                                       <td className="p-4 text-center">
                                         <ChevronDown size={16} className={`text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -4787,10 +4789,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                           <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
                                           {child.description}
                                         </td>
-                                        <td className="p-4 text-center text-slate-500 text-xs">{child.stake.toFixed(2)}€</td>
+                                        <td className="p-4 text-center text-slate-500 text-xs">{child.stake.toFixed(2)}â‚¬</td>
                                         <td className="p-4 text-center text-emerald-600 font-mono text-xs">@{child.odds.toFixed(2)}</td>
                                         <td className={`p-4 text-right text-xs font-mono font-bold ${child.result === 'pending' ? 'text-slate-600' : (child.profit >= 0 ? 'text-emerald-500' : 'text-red-500')}`}>
-                                          {child.result === 'pending' ? '---' : (child.profit.toFixed(2) + '€')}
+                                          {child.result === 'pending' ? '---' : (child.profit.toFixed(2) + 'â‚¬')}
                                         </td>
                                         <td className="p-4 text-center">
                                           {/* Actions for child? Maybe delete single line? Complex. Keep simple for now. */}
@@ -4817,16 +4819,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                           <div>
                                             <div className="font-bold text-white flex items-center gap-2">
                                               {bet.tipster}
-                                              {isMulti && <span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 font-normal border border-slate-700">{isExpanded ? 'Ocultar' : 'Ver Líneas'}</span>}
+                                              {isMulti && <span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 font-normal border border-slate-700">{isExpanded ? 'Ocultar' : 'Ver LÃ­neas'}</span>}
                                             </div>
                                             <div className="text-xs text-slate-500 truncate max-w-[250px]">{bet.description}</div>
                                           </div>
                                         </div>
                                       </td>
-                                      <td className="p-4 text-center text-slate-300">{bet.stake.toFixed(2)}€</td>
+                                      <td className="p-4 text-center text-slate-300">{bet.stake.toFixed(2)}â‚¬</td>
                                       <td className="p-4 text-center font-mono text-emerald-400 font-bold">@{bet.odds.toFixed(2)}</td>
                                       <td className={`p-4 text-right font-bold font-mono ${bet.result === 'pending' ? 'text-slate-500' : (bet.profit >= 0 ? 'text-emerald-400' : 'text-red-400')}`}>
-                                        {bet.result === 'pending' ? 'PEND' : (bet.profit >= 0 ? '+' : '') + bet.profit.toFixed(2) + '€'}
+                                        {bet.result === 'pending' ? 'PEND' : (bet.profit >= 0 ? '+' : '') + bet.profit.toFixed(2) + 'â‚¬'}
                                       </td>
                                       <td className="p-4 text-center flex items-center justify-center gap-2">
                                         <button onClick={() => setEditingBet(bet)} className="text-blue-400 hover:text-white p-1.5 rounded bg-blue-900/20 hover:bg-blue-600 transition-colors" title="Editar"><Edit size={14} /></button>
@@ -4878,8 +4880,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
                 <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in">
                   <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-900/20 border-b border-slate-800">
-                    <h3 className="text-xl font-bold text-white mb-1">Resolución Detallada</h3>
-                    <p className="text-sm text-slate-400">Define el resultado de cada línea para el Scout.</p>
+                    <h3 className="text-xl font-bold text-white mb-1">ResoluciÃ³n Detallada</h3>
+                    <p className="text-sm text-slate-400">Define el resultado de cada lÃ­nea para el Scout.</p>
                   </div>
                   <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                     {/* LIVE PREVIEW (Phase 16) */}
@@ -4985,7 +4987,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           </div>
                           <div className="text-right">
                             <div className="text-[10px] uppercase font-bold text-slate-500">Beneficio</div>
-                            <div className={`text-xl font-bold font-mono ${estProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{estProfit > 0 ? '+' : ''}{estProfit.toFixed(2)}€</div>
+                            <div className={`text-xl font-bold font-mono ${estProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{estProfit > 0 ? '+' : ''}{estProfit.toFixed(2)}â‚¬</div>
                           </div>
                         </div>
                       );
@@ -5154,7 +5156,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       setBets(updatedBets);
                       setResolutionBet(null);
                     }} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 transition-all transform active:scale-95">
-                      Confirmar Resolución
+                      Confirmar ResoluciÃ³n
                     </button>
                   </div>
                 </div>
@@ -5166,8 +5168,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
                 <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in">
                   <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-900/20 border-b border-slate-800">
-                    <h3 className="text-xl font-bold text-white mb-1">Resolución Detallada (Reto)</h3>
-                    <p className="text-sm text-slate-400">Define el resultado de cada línea del reto.</p>
+                    <h3 className="text-xl font-bold text-white mb-1">ResoluciÃ³n Detallada (Reto)</h3>
+                    <p className="text-sm text-slate-400">Define el resultado de cada lÃ­nea del reto.</p>
                   </div>
 
                   {/* LIVE PREVIEW (V17) */}
@@ -5205,7 +5207,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           </div>
                           <div className="text-right">
                             <div className="text-[10px] uppercase font-bold text-slate-500">Beneficio</div>
-                            <div className={`text-xl font-bold font-mono ${estProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{estProfit > 0 ? '+' : ''}{estProfit.toFixed(2)}€</div>
+                            <div className={`text-xl font-bold font-mono ${estProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{estProfit > 0 ? '+' : ''}{estProfit.toFixed(2)}â‚¬</div>
                           </div>
                         </div>
                       );
@@ -5214,7 +5216,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     {resolutionChallengeBet.tempLines.map((line, idx) => (
                       <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
                         <div className="flex justify-between">
-                          <span className="font-bold text-indigo-400 text-sm">Línea #{idx + 1}</span>
+                          <span className="font-bold text-indigo-400 text-sm">LÃ­nea #{idx + 1}</span>
                           <span className="text-slate-500 text-xs text-right">@{line.odds}</span>
                         </div>
                         <div className="text-sm text-slate-300">{line.desc}</div>
@@ -5276,7 +5278,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       setChallenges(updatedChallenges);
                       setResolutionChallengeBet(null);
                     }} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 transition-all transform active:scale-95">
-                      Confirmar Resolución
+                      Confirmar ResoluciÃ³n
                     </button>
                   </div>
                 </div>
@@ -5293,7 +5295,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowCalculator(false)}>
                 <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
                   <div className="p-6 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><Calculator className="text-indigo-500" /> Calculadora Rápida</h3>
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><Calculator className="text-indigo-500" /> Calculadora RÃ¡pida</h3>
                     <button onClick={() => setShowCalculator(false)} className="text-slate-500 hover:text-white"><X size={20} /></button>
                   </div>
                   <div className="p-6 space-y-4">
@@ -5308,7 +5310,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake (€)</label>
+                            <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake (â‚¬)</label>
                             <input type="number" value={calculatorData.stake} onChange={e => {
                               const stake = parseFloat(e.target.value) || 0;
                               const odds = parseFloat(calculatorData.odds) || 0;
@@ -5326,7 +5328,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         </div>
                         <div className="bg-slate-950 p-4 rounded border border-slate-800 text-center">
                           <div className="text-xs font-bold text-slate-500 uppercase mb-1">Beneficio Neto</div>
-                          <div className="text-3xl font-mono font-bold text-emerald-400">{calculatorData.profit || '0.00'}€</div>
+                          <div className="text-3xl font-mono font-bold text-emerald-400">{calculatorData.profit || '0.00'}â‚¬</div>
                         </div>
                       </div>
                     ) : (
@@ -5357,7 +5359,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             </div>
                           ))}
                         </div>
-                        <button onClick={() => setCalculatorData({ ...calculatorData, lines: [...calculatorData.lines, { odds: '', desc: '', void: false }] })} className="w-full py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded hover:bg-slate-700 flex items-center justify-center gap-2"><Plus size={14} /> AÑADIR LÍNEA</button>
+                        <button onClick={() => setCalculatorData({ ...calculatorData, lines: [...calculatorData.lines, { odds: '', desc: '', void: false }] })} className="w-full py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded hover:bg-slate-700 flex items-center justify-center gap-2"><Plus size={14} /> AÃ‘ADIR LÃNEA</button>
 
                         {/* STATS */}
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
@@ -5369,7 +5371,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           </div>
                           <div className="bg-slate-950 p-3 rounded border border-slate-800">
                             <input type="number" value={calculatorData.stake} onChange={e => setCalculatorData({ ...calculatorData, stake: e.target.value })} className="w-full bg-transparent text-right text-white font-mono font-bold focus:outline-none mb-1 border-b border-slate-700 pb-1" placeholder="Stake" />
-                            <div className="text-[10px] font-bold text-slate-500 uppercase text-right">Benef: {((parseFloat(calculatorData.stake) || 0) * (calculatorData.lines.filter(l => !l.void).reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1) - 1)).toFixed(2)}€</div>
+                            <div className="text-[10px] font-bold text-slate-500 uppercase text-right">Benef: {((parseFloat(calculatorData.stake) || 0) * (calculatorData.lines.filter(l => !l.void).reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1) - 1)).toFixed(2)}â‚¬</div>
                           </div>
                         </div>
                       </div>
@@ -5388,25 +5390,25 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowBankManager(false)}>
                 <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
                   <div className="p-6 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><PieChart className="text-emerald-500" /> Gestión de Fondos</h3>
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><PieChart className="text-emerald-500" /> GestiÃ³n de Fondos</h3>
                     <button onClick={() => setShowBankManager(false)} className="text-slate-500 hover:text-white"><X size={20} /></button>
                   </div>
                   <div className="p-6 space-y-6">
                     <div className="bg-slate-800/50 p-4 rounded-lg flex justify-between items-center border border-slate-700">
                       <div>
                         <div className="text-xs font-bold text-slate-400 uppercase">Bank Actual (Calculado)</div>
-                        <div className="text-3xl font-bold font-mono text-white">{currentGlobalBank.toFixed(2)}€</div>
+                        <div className="text-3xl font-bold font-mono text-white">{currentGlobalBank.toFixed(2)}â‚¬</div>
                       </div>
                       <div className="text-right text-xs text-slate-500">
-                        <div>Inversión: {bankTransactions.filter(t => t.type !== 'withdraw').reduce((a, b) => a + parseFloat(b.amount || 0), 0).toFixed(2)}€</div>
-                        <div>Retiros: {bankTransactions.filter(t => t.type === 'withdraw').reduce((a, b) => a + parseFloat(b.amount || 0), 0).toFixed(2)}€</div>
-                        <div className={financialStats.profit >= 0 ? "text-emerald-500" : "text-red-500"}>Beneficio: {financialStats.profit >= 0 ? '+' : ''}{financialStats.profit.toFixed(2)}€</div>
+                        <div>InversiÃ³n: {bankTransactions.filter(t => t.type !== 'withdraw').reduce((a, b) => a + parseFloat(b.amount || 0), 0).toFixed(2)}â‚¬</div>
+                        <div>Retiros: {bankTransactions.filter(t => t.type === 'withdraw').reduce((a, b) => a + parseFloat(b.amount || 0), 0).toFixed(2)}â‚¬</div>
+                        <div className={financialStats.profit >= 0 ? "text-emerald-500" : "text-red-500"}>Beneficio: {financialStats.profit >= 0 ? '+' : ''}{financialStats.profit.toFixed(2)}â‚¬</div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <button onClick={() => {
-                        const amount = prompt("Introduce Bank Inicial (€):");
+                        const amount = prompt("Introduce Bank Inicial (â‚¬):");
                         if (amount && !isNaN(amount)) {
                           const newTrans = { id: Date.now(), date: new Date().toISOString(), type: 'initial', amount: parseFloat(amount), note: 'Bank Inicial' };
                           // Filter out old initial if exists? Usually one initial.
@@ -5416,15 +5418,15 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <Target size={16} /> FIJAR INICIAL
                       </button>
                       <button onClick={() => {
-                        const amount = prompt("Cantidad a Ingresar (€):");
+                        const amount = prompt("Cantidad a Ingresar (â‚¬):");
                         if (amount && !isNaN(amount)) {
-                          setBankTransactions([...bankTransactions, { id: Date.now(), date: new Date().toISOString(), type: 'deposit', amount: parseFloat(amount), note: 'Depósito' }]);
+                          setBankTransactions([...bankTransactions, { id: Date.now(), date: new Date().toISOString(), type: 'deposit', amount: parseFloat(amount), note: 'DepÃ³sito' }]);
                         }
                       }} className="p-3 bg-emerald-600/20 hover:bg-emerald-600/30 rounded border border-emerald-500/50 text-sm font-bold text-emerald-400 flex items-center justify-center gap-2 transition-colors">
                         <TrendingUp size={16} /> INGRESAR
                       </button>
                       <button onClick={() => {
-                        const amount = prompt("Cantidad a Retirar (€):");
+                        const amount = prompt("Cantidad a Retirar (â‚¬):");
                         if (amount && !isNaN(amount)) {
                           setBankTransactions([...bankTransactions, { id: Date.now(), date: new Date().toISOString(), type: 'withdraw', amount: parseFloat(amount), note: 'Retiro' }]);
                         }
@@ -5432,7 +5434,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <TrendingDown size={16} /> RETIRAR
                       </button>
                       <button onClick={() => {
-                        if (confirm("¿Borrar historial de transacciones?")) setBankTransactions([]);
+                        if (confirm("Â¿Borrar historial de transacciones?")) setBankTransactions([]);
                       }} className="p-3 bg-slate-900 hover:bg-red-900/20 rounded border border-slate-700 hover:border-red-500/30 text-sm font-bold text-slate-500 hover:text-red-400 flex items-center justify-center gap-2 transition-colors">
                         <Trash2 size={16} /> RESET
                       </button>
@@ -5448,7 +5450,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               <span className="text-slate-300 font-bold uppercase">{t.type}</span>
                               <span className="text-slate-500">{new Date(t.date).toLocaleDateString()}</span>
                             </div>
-                            <div className="font-mono font-bold text-white">{t.amount.toFixed(2)}€</div>
+                            <div className="font-mono font-bold text-white">{t.amount.toFixed(2)}â‚¬</div>
                           </div>
                         ))}
                         {bankTransactions.length === 0 && <div className="text-center text-slate-600 italic py-2">Sin movimientos registrados.</div>}
@@ -5498,7 +5500,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           </div>
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake Total (€)</label>
+                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Stake Total (â‚¬)</label>
                           <input type="number" step="0.01" value={formStake} onChange={e => {
                             const newStake = e.target.value;
                             setFormStake(newStake);
@@ -5515,11 +5517,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       {/* 2. DESCRIPTION & TAGS */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción General</label>
+                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">DescripciÃ³n General</label>
                           <input type="text" value={formDescription} onChange={e => setFormDescription(e.target.value)} placeholder="Ej: Real Madrid vs Barcelona" className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-emerald-500" />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Etiqueta Principal (Selector Dinámico)</label>
+                          <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Etiqueta Principal (Selector DinÃ¡mico)</label>
                           <div className="relative group">
                             <input
                               list="tags-list"
@@ -5541,7 +5543,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       {/* 3. MULTI-LINE BUILDER (Always On) */}
                       <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/50 space-y-3">
                         <div className="flex justify-between items-center">
-                          <div className="text-xs font-bold text-indigo-400 uppercase flex items-center gap-2"><Layers size={14} /> Líneas de Apuesta (Multi/Mezcla)</div>
+                          <div className="text-xs font-bold text-indigo-400 uppercase flex items-center gap-2"><Layers size={14} /> LÃ­neas de Apuesta (Multi/Mezcla)</div>
                           <button type="button" onClick={() => setIsMultiLine(!isMultiLine)} className="text-[10px] text-slate-500 hover:text-white underline">{isMultiLine ? 'Ocultar Constructor' : 'Mostrar Constructor'}</button>
                         </div>
 
@@ -5549,7 +5551,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <div className="space-y-2 animate-fade-in">
                             {betLines.map((line, idx) => (
                               <div key={idx} className="flex flex-col md:flex-row gap-2 items-start md:items-center bg-slate-900/50 p-3 rounded border border-slate-700">
-                                {/* EDICIÓN: SELECTOR RESULTADO LÍNEA (V35) */}
+                                {/* EDICIÃ“N: SELECTOR RESULTADO LÃNEA (V35) */}
                                 {editingBet && (
                                   <div className="md:w-24 shrink-0">
                                     <select
@@ -5602,13 +5604,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             const current = line.tipster ? line.tipster : '';
                                             updateBetLine(idx, 'tipster', current + (current ? ' + ' : '') + ''); // Append empty slot
                                           }} className="self-start text-[10px] text-emerald-400 hover:text-white bg-emerald-900/20 px-2 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1 mt-0.5">
-                                            <Plus size={10} /> Añadir Co-Tipster
+                                            <Plus size={10} /> AÃ±adir Co-Tipster
                                           </button>
                                         </div>
                                       ) : null}
                                     </div>
                                   </div>
-                                  <input type="text" placeholder="Descripción selección..." value={line.description || ''} onChange={e => updateBetLine(idx, 'description', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-indigo-500" />
+                                  <input type="text" placeholder="DescripciÃ³n selecciÃ³n..." value={line.description || ''} onChange={e => updateBetLine(idx, 'description', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-indigo-500" />
                                 </div>
                                 <div className="flex gap-2 w-full md:w-auto">
                                   <input type="number" placeholder="@" step="0.01" value={line.odds || ''} onChange={e => updateBetLine(idx, 'odds', e.target.value)} className="w-20 bg-slate-950 border border-slate-700 rounded p-2 text-sm text-center font-bold text-white focus:border-indigo-500" />
@@ -5617,12 +5619,12 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               </div>
                             ))}
                             <button type="button" onClick={addBetLine} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 text-xs rounded hover:bg-slate-800 hover:text-indigo-400 transition-colors flex justify-center items-center gap-2">
-                              <Plus size={14} /> AÑADIR LÍNEA
+                              <Plus size={14} /> AÃ‘ADIR LÃNEA
                             </button>
                           </div>
                         )}
                         {/* Auto-enable if empty */}
-                        {betLines.length === 0 && <div className="text-center text-xs text-slate-500 italic py-2 cursor-pointer hover:text-indigo-400" onClick={addBetLine}>Haga clic para añadir líneas detalladas</div>}
+                        {betLines.length === 0 && <div className="text-center text-xs text-slate-500 italic py-2 cursor-pointer hover:text-indigo-400" onClick={addBetLine}>Haga clic para aÃ±adir lÃ­neas detalladas</div>}
                       </div>
 
                       {/* SYSTEM BETS SECTION (V42) */}
@@ -5667,7 +5669,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               <div className="animate-fade-in p-3 bg-cyan-900/10 border border-cyan-500/30 rounded-lg">
                                 <div className="flex justify-between items-center mb-2">
                                   <label className="text-xs font-bold text-cyan-200 uppercase">Stake por apuesta</label>
-                                  <span className="text-[10px] text-cyan-500 font-mono">Total: {((parseFloat(systemStake) || 0) * systemType.count).toFixed(2)}€</span>
+                                  <span className="text-[10px] text-cyan-500 font-mono">Total: {((parseFloat(systemStake) || 0) * systemType.count).toFixed(2)}â‚¬</span>
                                 </div>
                                 <input
                                   type="number"
@@ -5678,7 +5680,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white font-mono focus:border-cyan-500"
                                 />
                                 <p className="text-[10px] text-slate-400 mt-1 italic">
-                                  Se crearán <strong>{systemType.count}</strong> apuestas de <strong>{systemType.name}</strong>.
+                                  Se crearÃ¡n <strong>{systemType.count}</strong> apuestas de <strong>{systemType.name}</strong>.
                                 </p>
                                 {/* SYSTEM PREVIEW (V44) */}
                                 <div className="mt-3">
@@ -5719,7 +5721,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             </div>
                                             <div className="text-right">
                                               <div className="font-mono text-cyan-400">@{pb.odds.toFixed(2)}</div>
-                                              <div className="text-emerald-500 font-bold">+{pb.profit > 0 ? pb.profit.toFixed(2) : '0.00'}€</div>
+                                              <div className="text-emerald-500 font-bold">+{pb.profit > 0 ? pb.profit.toFixed(2) : '0.00'}â‚¬</div>
                                             </div>
                                           </div>
                                         ));
@@ -5752,7 +5754,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-xl font-bold font-mono focus:border-emerald-500" placeholder="1.00" />
                           </div>
                           <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">O Ganancia Neta (€)</label>
+                            <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">O Ganancia Neta (â‚¬)</label>
                             <div className="relative">
                               <input type="number" step="0.01" value={manualProfit} onChange={e => {
                                 const val = e.target.value;
@@ -5794,20 +5796,20 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         </div>
                       )}
 
-                      {/* EDICIÓN: BOTONES RESULTADO GENERAL (V35 - Refined) */}
+                      {/* EDICIÃ“N: BOTONES RESULTADO GENERAL (V35 - Refined) */}
                       {editingBet && (
                         <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 flex flex-col gap-2">
                           <label className="text-xs font-bold text-slate-400 uppercase text-center">Estado Final de la Apuesta</label>
                           <div className="grid grid-cols-4 gap-2">
-                            <button type="button" onClick={() => setFormResult('pending')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'pending' ? 'bg-blue-900/40 text-blue-400 border-blue-500' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-blue-500/50'}`}>PENDIENTE ⏳</button>
-                            <button type="button" onClick={() => setFormResult('win')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'win' ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-emerald-500/50'}`}>GANADA ✅</button>
-                            <button type="button" onClick={() => setFormResult('loss')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'loss' ? 'bg-red-900/40 text-red-400 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-red-500/50'}`}>PERDIDA ❌</button>
-                            <button type="button" onClick={() => setFormResult('void')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'void' ? 'bg-slate-700 text-slate-300 border-slate-500' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-500/50'}`}>ANULADA 🚫</button>
+                            <button type="button" onClick={() => setFormResult('pending')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'pending' ? 'bg-blue-900/40 text-blue-400 border-blue-500' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-blue-500/50'}`}>PENDIENTE â³</button>
+                            <button type="button" onClick={() => setFormResult('win')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'win' ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-emerald-500/50'}`}>GANADA âœ…</button>
+                            <button type="button" onClick={() => setFormResult('loss')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'loss' ? 'bg-red-900/40 text-red-400 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-red-500/50'}`}>PERDIDA âŒ</button>
+                            <button type="button" onClick={() => setFormResult('void')} className={`p-2 rounded font-bold text-xs transition-colors border ${formResult === 'void' ? 'bg-slate-700 text-slate-300 border-slate-500' : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-500/50'}`}>ANULADA ðŸš«</button>
                           </div>
                           <p className="text-[10px] text-slate-500 text-center italic">
-                            {formResult === 'win' && `Ganancia: +${((parseFloat(formStake) * parseFloat(formOdds)) - parseFloat(formStake)).toFixed(2)}€ (Aprox)`}
-                            {formResult === 'loss' && `Pérdida: -${parseFloat(formStake).toFixed(2)}€`}
-                            {formResult === 'void' && `Reembolso: 0.00€`}
+                            {formResult === 'win' && `Ganancia: +${((parseFloat(formStake) * parseFloat(formOdds)) - parseFloat(formStake)).toFixed(2)}â‚¬ (Aprox)`}
+                            {formResult === 'loss' && `PÃ©rdida: -${parseFloat(formStake).toFixed(2)}â‚¬`}
+                            {formResult === 'void' && `Reembolso: 0.00â‚¬`}
                             {formResult === 'pending' && `Esperando resultado...`}
                           </p>
                         </div>
@@ -5829,13 +5831,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowTipsterManager(false)}>
                 <div className="bg-slate-900 w-full max-w-2xl rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
                   <div className="p-6 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><Users className="text-blue-500" /> Gestión de Tipsters</h3>
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><Users className="text-blue-500" /> GestiÃ³n de Tipsters</h3>
                     <button onClick={() => setShowTipsterManager(false)} className="text-slate-500 hover:text-white"><X size={20} /></button>
                   </div>
                   <div className="p-6 max-h-[60vh] overflow-y-auto">
                     <div className="flex gap-2 mb-6">
                       <input type="text" id="newTipsterName" placeholder="Nombre del Tipster..." className="flex-1 bg-slate-800 border border-slate-700 rounded p-3 text-white focus:border-blue-500" />
-                      <input type="number" id="newTipsterStake" placeholder="Stake Def (€)..." className="w-32 bg-slate-800 border border-slate-700 rounded p-3 text-white focus:border-blue-500" />
+                      <input type="number" id="newTipsterStake" placeholder="Stake Def (â‚¬)..." className="w-32 bg-slate-800 border border-slate-700 rounded p-3 text-white focus:border-blue-500" />
                       <button onClick={() => {
                         const nameEl = document.getElementById('newTipsterName');
                         const stakeEl = document.getElementById('newTipsterStake');
@@ -5844,7 +5846,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           nameEl.value = '';
                           stakeEl.value = '';
                         }
-                      }} className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 rounded flex items-center gap-2"><Plus size={18} /> Añadir</button>
+                      }} className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 rounded flex items-center gap-2"><Plus size={18} /> AÃ±adir</button>
                     </div>
 
                     <div className="space-y-2">
@@ -5854,7 +5856,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-slate-300">{t.name.charAt(0)}</div>
                             <div>
                               <div className="font-bold text-white">{t.name}</div>
-                              <div className="text-xs text-slate-500">Stake Base: {t.defaultStake}€</div>
+                              <div className="text-xs text-slate-500">Stake Base: {t.defaultStake}â‚¬</div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -5870,7 +5872,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                               const newName = prompt(label, t.name);
                               if (newName !== null) {
-                                const newStake = prompt("Editar Stake Base (€):", t.defaultStake);
+                                const newStake = prompt("Editar Stake Base (â‚¬):", t.defaultStake);
                                 if (newStake !== null) {
                                   handleEditTipster(t.id, newName || t.name, newStake || t.defaultStake);
                                 }
@@ -5905,14 +5907,14 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción del Paso</label>
+                      <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">DescripciÃ³n del Paso</label>
                       <input type="text" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white focus:border-yellow-500" required placeholder="Ej: Paso 1 - Real Madrid vs..." />
                     </div>
 
                     {/* CHALLENGE MULTI-LINE BUILDER */}
                     {isChallengeMulti && (
                       <div className="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50 space-y-2">
-                        <div className="text-[10px] font-bold text-indigo-400 uppercase flex items-center gap-2"><Layers size={12} /> Líneas del Reto</div>
+                        <div className="text-[10px] font-bold text-indigo-400 uppercase flex items-center gap-2"><Layers size={12} /> LÃ­neas del Reto</div>
                         {challengeForm.lines.map((line, idx) => (
                           <div key={idx} className="flex flex-col gap-2 bg-slate-900/50 p-2 rounded border border-slate-700">
                             {/* TIPSTER SELECT V30 */}
@@ -5924,7 +5926,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               <ChevronRight className="absolute right-2 top-2.5 text-slate-500 rotate-90 pointer-events-none" size={14} />
                             </div>
 
-                            <input type="text" placeholder="Descripción..." value={line.desc} onChange={e => updateChallengeLine(idx, 'desc', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" />
+                            <input type="text" placeholder="DescripciÃ³n..." value={line.desc} onChange={e => updateChallengeLine(idx, 'desc', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" />
                             <div className="flex gap-2">
                               <input type="number" placeholder="@" step="0.01" value={line.odds} onChange={e => updateChallengeLine(idx, 'odds', e.target.value)} className="w-20 bg-slate-950 border border-slate-700 rounded p-2 text-xs font-bold text-center text-white" />
                               <button type="button" onClick={() => removeChallengeLine(idx)} className="p-2 text-red-400 hover:bg-red-900/20 rounded"><Trash2 size={14} /></button>
@@ -5932,7 +5934,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           </div>
                         ))}
                         <button type="button" onClick={addChallengeLine} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 text-xs rounded hover:bg-slate-800 hover:text-indigo-400 flex justify-center items-center gap-2">
-                          <Plus size={12} /> Añadir Línea
+                          <Plus size={12} /> AÃ±adir LÃ­nea
                         </button>
                       </div>
                     )}
@@ -5940,7 +5942,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex justify-between">
-                          <span>Stake (€)</span>
+                          <span>Stake (â‚¬)</span>
                           {/* ALL IN BUTTON V30 */}
                           <button type="button" onClick={() => {
                             const currentCh = challenges.find(c => c.id === activeChallengeId);
@@ -5966,7 +5968,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setShowCloudModal(false)}>
                 <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-indigo-500/50 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                   <div className="p-4 bg-indigo-950/30 border-b border-indigo-900/30 flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Cloud className="text-indigo-400" /> Sincronización en la Nube</h3>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2"><Cloud className="text-indigo-400" /> SincronizaciÃ³n en la Nube</h3>
                     <button onClick={() => setShowCloudModal(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
                   </div>
 
@@ -5980,8 +5982,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       {cloudStatus === 'idle' && 'Listo para sincronizar'}
                       {cloudStatus === 'uploading' && 'Subiendo datos a la nube...'}
                       {cloudStatus === 'downloading' && 'Descargando datos de la nube...'}
-                      {cloudStatus === 'success' && '¡Operación Completada!'}
-                      {cloudStatus === 'error' && 'Error en la operación'}
+                      {cloudStatus === 'success' && 'Â¡OperaciÃ³n Completada!'}
+                      {cloudStatus === 'error' && 'Error en la operaciÃ³n'}
                     </div>
 
                     {/* SYNC ACTIONS */}
@@ -6000,10 +6002,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                     {/* CONFIGURATION */}
                     <div className="border-t border-slate-800 pt-4">
-                      <div className="text-xs font-bold text-slate-500 uppercase mb-2">Configuración de Conexión</div>
+                      <div className="text-xs font-bold text-slate-500 uppercase mb-2">ConfiguraciÃ³n de ConexiÃ³n</div>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-[10px] text-slate-400 block mb-1">ID Sincronización (Tu Contraseña Secreta)</label>
+                          <label className="text-[10px] text-slate-400 block mb-1">ID SincronizaciÃ³n (Tu ContraseÃ±a Secreta)</label>
                           <input type="text" value={cloudConfig.syncId} onChange={e => setCloudConfig({ ...cloudConfig, syncId: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white font-mono text-xs focus:border-indigo-500" />
                           <p className="text-[9px] text-slate-500 mt-1">Usa la misma ID en todos tus dispositivos para compartir datos.</p>
                         </div>
@@ -6012,7 +6014,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <input type="checkbox" checked={cloudConfig.autoSync} onChange={e => setCloudConfig({ ...cloudConfig, autoSync: e.target.checked })} className="rounded bg-slate-800 border-slate-600 text-indigo-500 focus:ring-0" />
                           <div>
                             <label className="text-xs font-bold text-white block">Auto-Guardado en Nube</label>
-                            <p className="text-[9px] text-slate-400">Sube cambios automáticamente tras 3 segundos de inactividad.</p>
+                            <p className="text-[9px] text-slate-400">Sube cambios automÃ¡ticamente tras 3 segundos de inactividad.</p>
                           </div>
                         </div>
                         <details className="group">
@@ -6042,7 +6044,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <Activity size={12} /> Rescatar Memoria
                         </button>
                         <button onClick={factoryReset} className="flex-1 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-400 hover:text-red-400 p-2 rounded text-[10px] font-bold flex items-center justify-center gap-2">
-                          <Trash2 size={12} /> Reset Fábrica
+                          <Trash2 size={12} /> Reset FÃ¡brica
                         </button>
                       </div>
                     </div>
@@ -6058,13 +6060,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setShowRecoveryModal(false)}>
                 <div className="bg-slate-900 w-full max-w-2xl rounded-xl border border-red-900/50 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                   <div className="p-4 bg-red-950/30 border-b border-red-900/30 flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">🚑 Recuperación de Datos (Storage)</h3>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">ðŸš‘ RecuperaciÃ³n de Datos (Storage)</h3>
                     <button onClick={() => setShowRecoveryModal(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
                   </div>
                   <div className="p-6">
                     <div className="bg-blue-900/20 border border-blue-900/40 p-3 rounded mb-4 text-xs text-blue-300">
-                      <p className="font-bold mb-1">ℹ️ Instrucciones:</p>
-                      <p>Busca en la lista una clave con un tamaño grande. Si perdiste "Retos", busca claves antiguas o backups. Pulsa "Restaurar" para cargar esos datos.</p>
+                      <p className="font-bold mb-1">â„¹ï¸ Instrucciones:</p>
+                      <p>Busca en la lista una clave con un tamaÃ±o grande. Si perdiste "Retos", busca claves antiguas o backups. Pulsa "Restaurar" para cargar esos datos.</p>
                     </div>
                     <div className="max-h-[50vh] overflow-y-auto space-y-2">
                       {recoveryKeys.length === 0 ? (
@@ -6074,7 +6076,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <div key={idx} className="bg-slate-950 p-3 rounded border border-slate-800 flex flex-col md:flex-row gap-3 justify-between items-center">
                             <div className="overflow-hidden w-full md:w-auto">
                               <div className="font-mono text-xs font-bold text-yellow-500 break-all">{item.key}</div>
-                              <div className="text-[10px] text-slate-500 mt-1">Tamaño: {item.size} chars | {item.preview}</div>
+                              <div className="text-[10px] text-slate-500 mt-1">TamaÃ±o: {item.size} chars | {item.preview}</div>
                             </div>
                             <div className="flex gap-2 shrink-0">
                               <button
@@ -6109,7 +6111,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               <div className="bg-slate-900 w-full max-w-lg rounded-xl border-2 border-emerald-500 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
                   <div>
-                    <h3 className="font-bold text-white uppercase text-sm flex items-center gap-2"><DownloadCloud size={16} className="text-indigo-400" /> Restauración Selectiva</h3>
+                    <h3 className="font-bold text-white uppercase text-sm flex items-center gap-2"><DownloadCloud size={16} className="text-indigo-400" /> RestauraciÃ³n Selectiva</h3>
                     <div className="text-[10px] text-slate-500">Backup del: {new Date(pendingImportData.timestamp || Date.now()).toLocaleString()}</div>
                   </div>
                   <button onClick={() => { setImportModalOpen(false); setPendingImportData(null); }}><X size={20} className="text-slate-500 hover:text-white" /></button>
@@ -6118,7 +6120,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 <div className="p-6">
                   <div className="bg-blue-900/20 text-blue-300 p-3 rounded mb-4 text-xs border border-blue-500/30 flex items-start gap-2">
                     <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                    <span>Selecciona qué datos quieres restaurar. Los datos no seleccionados se mantendrán tal como están ahora en tu navegador.</span>
+                    <span>Selecciona quÃ© datos quieres restaurar. Los datos no seleccionados se mantendrÃ¡n tal como estÃ¡n ahora en tu navegador.</span>
                   </div>
 
                   <form onSubmit={(e) => {
@@ -6137,7 +6139,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <input type="checkbox" name="includeBets" defaultChecked className="w-4 h-4 accent-emerald-500" />
                         <div>
                           <div className="font-bold text-white text-sm">Apuestas (Portfolio)</div>
-                          <div className="text-[10px] text-slate-500">Historial principal y estadísticas</div>
+                          <div className="text-[10px] text-slate-500">Historial principal y estadÃ­sticas</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -6165,7 +6167,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <input type="checkbox" name="includeTipsters" defaultChecked className="w-4 h-4 accent-emerald-500" />
                         <div>
                           <div className="font-bold text-white text-sm">Lista de Tipsters</div>
-                          <div className="text-[10px] text-slate-500">Configuración de Tipsters y Stakes</div>
+                          <div className="text-[10px] text-slate-500">ConfiguraciÃ³n de Tipsters y Stakes</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -6178,7 +6180,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       <div className="flex items-center gap-3">
                         <input type="checkbox" name="includeConfig" defaultChecked className="w-4 h-4 accent-emerald-500" />
                         <div>
-                          <div className="font-bold text-white text-sm">Configuración y Bank</div>
+                          <div className="font-bold text-white text-sm">ConfiguraciÃ³n y Bank</div>
                           <div className="text-[10px] text-slate-500">Etiquetas personalizadas y Transacciones Bank</div>
                         </div>
                       </div>
@@ -6190,7 +6192,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                     <div className="pt-4 flex gap-3">
                       <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold shadow-lg shadow-emerald-900/20 text-sm">
-                        Confirmar Restauración
+                        Confirmar RestauraciÃ³n
                       </button>
                       <button type="button" onClick={() => { setImportModalOpen(false); setPendingImportData(null); }} className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-sm">
                         Cancelar
@@ -6212,7 +6214,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<PortfolioManager />);
 
-    // Inicializar iconos Lucide (por si acaso se usan fuera de React, aunque aquí no debería hacer falta si se usan como componentes)
+    // Inicializar iconos Lucide (por si acaso se usan fuera de React, aunque aquÃ­ no deberÃ­a hacer falta si se usan como componentes)
     lucide.createIcons();
   </script>
 </body>
