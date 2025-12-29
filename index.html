@@ -2491,31 +2491,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               console.error(err);
             }
 
-            if (systemType) {
-              // Block 2195 just created `allCombinations`.
-              // We need to verify where they are saved.
-              // Line 2270 (not visible but inferred) probably iterates or saves `createdBets`.
-              // Let's assume `createdBets` is the array of new bet objects.
 
-              if (editingBet && editingBet.isGroup) {
-                const betsWithoutOld = bets.filter(b => !editingBet.oldIds.includes(b.id));
-                setBets([...betsWithoutOld, ...createdBets]);
-                setEditingBet(null);
-              } else {
-                setBets([...bets, ...createdBets]);
-              }
-              // SKIP SINGLE BET CREATION LOGIC BELOW
-              setShowAddBetModal(false);
-              setFormDescription('');
-              setFormStake('');
-              setFormOdds('');
-              setBetLines([]);
-              setSystemType(null);
-              setSystemStake('');
-              setFormTag('');
-              setActiveSection('dashboard');
-              return; // EXIT HERE
-            }
           }
 
           // RESET FORM
