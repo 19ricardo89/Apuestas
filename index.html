@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>BetManager</title>
 
-<!-- ICONS: Favicon SVG (Data URI) y Apple Touch Icon -->
+  <!-- ICONS: Favicon SVG (Data URI) y Apple Touch Icon -->
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230f172a%22/><path d=%22M20 70 L40 50 L60 60 L80 30%22 stroke=%22%2310b981%22 stroke-width=%228%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><circle cx=%2280%22 cy=%2230%22 r=%226%22 fill=%22%2310b981%22/></svg>">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2622/2622312.png">
@@ -14,63 +14,63 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BetManager">
 
-<!-- Tailwind CSS -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- React & ReactDOM -->
+  <!-- React & ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-<!-- Babel -->
+  <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<!-- Prop-types (Dependencies) -->
+  <!-- Prop-types (Dependencies) -->
   <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
 
-<!-- Recharts (CDNjs) -->
+  <!-- Recharts (CDNjs) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
   <!-- SUPABASE JS (V32) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Lucide -->
+  <!-- Lucide -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-<style>
+  <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
-body {
+    body {
       font-family: 'Inter', sans-serif;
     }
 
-/* Custom Scrollbar */
+    /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 8px;
     }
 
-::-webkit-scrollbar-track {
+    ::-webkit-scrollbar-track {
       background: #0f172a;
     }
 
-::-webkit-scrollbar-thumb {
+    ::-webkit-scrollbar-thumb {
       background: #334155;
       border-radius: 4px;
     }
 
-::-webkit-scrollbar-thumb:hover {
+    ::-webkit-scrollbar-thumb:hover {
       background: #475569;
     }
 
-.animate-fade-in {
+    .animate-fade-in {
       animation: fadeIn 0.5s ease-out;
     }
 
-@keyframes fadeIn {
+    @keyframes fadeIn {
       from {
         opacity: 0;
         transform: translateY(10px);
       }
 
-to {
+      to {
         opacity: 1;
         transform: translateY(0);
       }
@@ -80,9 +80,9 @@ to {
 
 <body class="bg-slate-950 text-slate-100 h-screen overflow-hidden">
 
-<div id="root" class="h-full"></div>
+  <div id="root" class="h-full"></div>
 
-<script type="text/babel" data-presets="react">
+  <script type="text/babel" data-presets="react">
     // --- IMPORTS GLOBALIZADOS ---
     const { useState, useEffect, useMemo, useRef } = React;
 
@@ -107,7 +107,7 @@ to {
           body: JSON.stringify(payload)
         });
 
-if (!response.ok) {
+        if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
           throw new Error(`Error API ${response.status}: ${errData.error?.message || response.statusText}`);
         }
@@ -145,9 +145,9 @@ if (!response.ok) {
     const getSystemOptions = (n) => {
       const options = [];
 
-if (n < 2) return [];
+      if (n < 2) return [];
 
-// 1. Generic N-folds (from 2 up to N-1)
+      // 1. Generic N-folds (from 2 up to N-1)
       // We exclude N because that's just a normal parlay (already handled)
       for (let k = 2; k < n; k++) {
         // Spanish naming for low numbers, numeric for high
@@ -165,7 +165,7 @@ if (n < 2) return [];
         const nFact = (num) => { let r = 1; for (let i = 2; i <= num; i++) r *= i; return r; };
         const count = Math.round(nFact(n) / (nFact(k) * nFact(n - k)));
 
-options.push({ name: name, k: k, count: count });
+        options.push({ name: name, k: k, count: count });
       }
 
       // 2. Named Full Cover Systems (All-in logic)
@@ -205,7 +205,7 @@ options.push({ name: name, k: k, count: count });
         options.push({ name: `All-in (${n} sel)`, type: 'named', count: total, composition: comp });
       }
 
-return options;
+      return options;
     };
 
     // --- ORACLE HELPER (TEXT ONLY) ---
@@ -234,7 +234,7 @@ return options;
       const iconDef = lucide.icons[name];
       if (!iconDef) { console.warn(`Icono ${name} no encontrado en lucide.icons`); return null; }
 
-return React.createElement('svg', {
+      return React.createElement('svg', {
         xmlns: "http://www.w3.org/2000/svg",
         width: size,
         height: size,
@@ -315,7 +315,7 @@ return React.createElement('svg', {
 
     function PortfolioManager() {
 
-    const [activeSection, setActiveSection] = useState('dashboard');
+      const [activeSection, setActiveSection] = useState('dashboard');
       const [sidebarOpen, setSidebarOpen] = useState(false);
 
       // V18: GLOBAL BANK MANAGEMENT (Moved to top to fix ReferenceError)
@@ -366,7 +366,7 @@ return React.createElement('svg', {
         }
       }, []);
 
-useEffect(() => {
+      useEffect(() => {
         localStorage.setItem('betPortfolioV29_bank', JSON.stringify({ transactions: bankTransactions }));
       }, [bankTransactions]);
 
@@ -475,7 +475,7 @@ useEffect(() => {
         return localStorage.getItem('betPortfolio_eraResetDate') ? 'AFTER' : 'ALL';
       });
 
-useEffect(() => {
+      useEffect(() => {
         if (eraResetDate) localStorage.setItem('betPortfolio_eraResetDate', eraResetDate);
         else localStorage.removeItem('betPortfolio_eraResetDate');
       }, [eraResetDate]);
@@ -494,7 +494,7 @@ useEffect(() => {
         // Strict timestamp comparison
         const splitTime = new Date(eraResetDate).getTime();
 
-return items.filter(item => {
+        return items.filter(item => {
           // Robust date parsing
           let d = item[dateField];
           // Handle 'today', 'yesterday' if they exist? No, standard is ISO YYYY-MM-DD usually.
@@ -504,7 +504,7 @@ return items.filter(item => {
           // Simplest: Compare strings if ISO? No, compare times.
           const itemTime = new Date(d).getTime();
 
-if (eraFilter === 'BEFORE') return itemTime < splitTime;
+          if (eraFilter === 'BEFORE') return itemTime < splitTime;
           // AFTER includes the split moment and future
           return itemTime >= splitTime;
         });
@@ -694,11 +694,11 @@ if (eraFilter === 'BEFORE') return itemTime < splitTime;
       const confirmImport = (selection) => {
         if (!pendingImportData) return;
 
-try {
+        try {
           // Backup current state before overwriting (Safety Net)
           localStorage.setItem('betPortfolioV29_backup_pre_import_' + Date.now(), JSON.stringify({ bets, challenges, tipsters, userTags }));
 
-if (selection.includeBets && pendingImportData.bets) {
+          if (selection.includeBets && pendingImportData.bets) {
             setBets(pendingImportData.bets);
             localStorage.setItem('betPortfolioV29_bets', JSON.stringify(pendingImportData.bets));
           }
@@ -735,7 +735,7 @@ if (selection.includeBets && pendingImportData.bets) {
 La página se recargará ahora.`;
           alert(msg);
 
-setImportModalOpen(false);
+          setImportModalOpen(false);
           setPendingImportData(null);
           window.location.reload(); // Force reload to ensure clean state
         } catch (e) {
@@ -774,7 +774,7 @@ setImportModalOpen(false);
       const [showCloudModal, setShowCloudModal] = useState(false);
       const [cloudStatus, setCloudStatus] = useState('idle'); // idle, uploading, downloading, success, error
 
-useEffect(() => {
+      useEffect(() => {
         localStorage.setItem('betPortfolioV32_cloudConfig', JSON.stringify(cloudConfig));
       }, [cloudConfig]);
 
@@ -798,14 +798,14 @@ useEffect(() => {
           lastUpdated: new Date().toISOString()
         };
 
-try {
+        try {
           const { error } = await supabase
             .from('portfolios')
             .upsert({ id: cloudConfig.syncId, data: payload });
 
-if (error) throw error;
+          if (error) throw error;
 
-if (!silent) {
+          if (!silent) {
             setCloudStatus('success');
             alert("✅ ¡Datos subidos a la Nube correctamente!");
             setTimeout(() => setCloudStatus('idle'), 2000);
@@ -833,14 +833,14 @@ if (!silent) {
         if (!supabase) return alert("Faltan credenciales de Supabase");
         setCloudStatus('downloading');
 
-try {
+        try {
           const { data, error } = await supabase
             .from('portfolios')
             .select('data')
             .eq('id', cloudConfig.syncId)
             .single();
 
-if (error) throw error;
+          if (error) throw error;
           if (!data || !data.data) throw new Error("No se encontraron datos para este ID de Sincronización.");
 
           // V45: OPEN MODAL INSTEAD OF AUTO-APPLY
@@ -852,7 +852,7 @@ if (error) throw error;
           console.log("Cloud Data Received, Opening Modal...", data.data);
           if (!data.data) throw new Error("Datos vacíos en la nube.");
 
-setPendingImportData(data.data);
+          setPendingImportData(data.data);
           // setShowCloudModal(false); // USER REQUEST: Don't close Cloud Modal, open Import on top
 
           // Force Modal Open with slightly larger timeout and explicit check
@@ -862,7 +862,7 @@ setPendingImportData(data.data);
           }, 200);
           setCloudStatus('idle');
 
-} catch (err) {
+        } catch (err) {
           console.error("Download error:", err);
           setCloudStatus('error');
           alert("Error al descargar de la nube: " + err.message);
@@ -926,7 +926,7 @@ setPendingImportData(data.data);
           newOdds = activeLines.reduce((acc, l) => acc * parseFloat(l.odds), 1);
         }
 
-setEditingBet({ ...editingBet, betLines: newLines, odds: parseFloat(newOdds.toFixed(2)) });
+        setEditingBet({ ...editingBet, betLines: newLines, odds: parseFloat(newOdds.toFixed(2)) });
       };
 
       // LÃ“GICA DE RETOS (V9)
@@ -997,14 +997,14 @@ setEditingBet({ ...editingBet, betLines: newLines, odds: parseFloat(newOdds.toFi
           currentBank: recalculateChallengeBank(c)
         }));
 
-setChallenges(correctedChallenges);
+        setChallenges(correctedChallenges);
       }, []);
 
-useEffect(() => {
+      useEffect(() => {
         if (bets.length > 0) localStorage.setItem('betPortfolioV29_bets', JSON.stringify(bets));
       }, [bets]);
 
-useEffect(() => {
+      useEffect(() => {
         if (challenges.length > 0) localStorage.setItem('betPortfolioV29_challenges', JSON.stringify(challenges));
       }, [challenges]);
 
@@ -1097,9 +1097,9 @@ useEffect(() => {
               if (combinedOdds > 1) odds = combinedOdds;
             }
 
-if (!odds || isNaN(odds)) { alert("Introduce Cuota o Ganancia válida"); return c; }
+            if (!odds || isNaN(odds)) { alert("Introduce Cuota o Ganancia válida"); return c; }
 
-// EDIT EXISTING OR CREATE NEW
+            // EDIT EXISTING OR CREATE NEW
             let updatedHistory;
             if (editingChallengeBet) {
               updatedHistory = c.history.map(b => {
@@ -1136,7 +1136,7 @@ if (!odds || isNaN(odds)) { alert("Introduce Cuota o Ganancia válida"); return 
             // User request: ONLY wants to edit Tipster/Description mostly. But if odds change, profit changes.
             // Let's recalculate profit if it was already settled.
 
-updatedHistory = updatedHistory.map(b => {
+            updatedHistory = updatedHistory.map(b => {
               if (b.id === editingChallengeBet?.id && b.result !== 'pending') {
                 let newProf = b.profit;
                 if (b.result === 'win') newProf = (b.stake * b.odds) - b.stake;
@@ -1151,7 +1151,7 @@ updatedHistory = updatedHistory.map(b => {
             // history is usually reverse chronological in array, so we should sum carefully or just sum all profits
             const totalProfit = updatedHistory.reduce((sum, b) => sum + (b.result !== 'pending' ? b.profit : 0), 0);
 
-return { ...c, history: updatedHistory, currentBank: parseFloat((c.initialBank + totalProfit).toFixed(2)) };
+            return { ...c, history: updatedHistory, currentBank: parseFloat((c.initialBank + totalProfit).toFixed(2)) };
           }
           return c;
         });
@@ -1249,7 +1249,7 @@ return { ...c, history: updatedHistory, currentBank: parseFloat((c.initialBank +
         // Step 1: Era Filter (Already applied in betsByEra, but let's use it)
         const source = betsByEra;
 
-if (filterTag === 'ALL') return source;
+        if (filterTag === 'ALL') return source;
         return source.filter(b => b.tags && b.tags.includes(filterTag));
       }, [betsByEra, filterTag]); // Changed dependnecy from bets to betsByEra
 
@@ -1383,7 +1383,7 @@ if (filterTag === 'ALL') return source;
         let totalCurrentValue = 0;
         let allSteps = [];
 
-challenges.forEach(c => {
+        challenges.forEach(c => {
           // Initial Bank is investment
           let cInvested = c.initialBank;
           // Add deposits
@@ -1398,7 +1398,7 @@ challenges.forEach(c => {
         const totalNetProfit = totalCurrentValue - totalInvested;
         const totalRoi = totalInvested > 0 ? ((totalNetProfit / totalInvested) * 100).toFixed(2) : 0;
 
-return { totalChallenges, active, completed, failed, totalInvested, totalCurrentValue, totalNetProfit, totalRoi, allSteps };
+        return { totalChallenges, active, completed, failed, totalInvested, totalCurrentValue, totalNetProfit, totalRoi, allSteps };
       }, [challenges]);
 
       // 1. Drawdown Chart Data
@@ -1410,7 +1410,7 @@ return { totalChallenges, active, completed, failed, totalInvested, totalCurrent
         // Ordenar apuestas cronologicamente para simular la evolucion
         const sorted = [...filteredBets].filter(b => b.result !== 'pending' && b.result !== 'void').sort((a, b) => a.id - b.id);
 
-sorted.forEach(bet => {
+        sorted.forEach(bet => {
           currentBank += bet.profit;
           if (currentBank > peak) peak = currentBank;
           const dd = ((currentBank - peak) / peak) * 100;
@@ -1428,7 +1428,7 @@ sorted.forEach(bet => {
         let maxWin = 0, maxLoss = 0, current = 0;
         const sorted = [...filteredBets].filter(b => b.result !== 'pending' && b.result !== 'void').sort((a, b) => a.id - b.id);
 
-sorted.forEach(b => {
+        sorted.forEach(b => {
           if (b.result === 'win') {
             if (current < 0) current = 0;
             current++;
@@ -1471,7 +1471,7 @@ sorted.forEach(b => {
             return { name: b.date.slice(5), fullDate: b.date, profit: runningProfit };
           });
 
-          // Gráfico acumulativo PÃ‰RDIDAS (Solo suma los rojos)
+        // Gráfico acumulativo PÃ‰RDIDAS (Solo suma los rojos)
         let runningLoss = 0;
         const lossChartData = [...filteredBets]
           .filter(b => b.result !== 'pending')
@@ -1485,7 +1485,7 @@ sorted.forEach(b => {
             return { name: b.date.slice(5), fullDate: b.date, loss: runningLoss };
           });
 
-          // Gráfico Semanal (Weekly Evolution)
+        // Gráfico Semanal (Weekly Evolution)
         const weeklyMap = {};
         filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
           const d = new Date(b.date);
@@ -1493,7 +1493,7 @@ sorted.forEach(b => {
           const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7);
           const key = `W${week}-${d.getFullYear().toString().slice(2)}`; // W42-24
 
-if (!weeklyMap[key]) weeklyMap[key] = 0;
+          if (!weeklyMap[key]) weeklyMap[key] = 0;
           weeklyMap[key] += b.profit;
         });
 
@@ -1541,11 +1541,11 @@ if (!weeklyMap[key]) weeklyMap[key] = 0;
             const tName = b.tipster;
             activeTipsters.add(tName);
 
-if (!tipsterDailyMap[d][tName]) tipsterDailyMap[d][tName] = 0;
+            if (!tipsterDailyMap[d][tName]) tipsterDailyMap[d][tName] = 0;
             tipsterDailyMap[d][tName] += b.profit;
           });
 
-          const sortedDays = Object.values(tipsterDailyMap).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
+        const sortedDays = Object.values(tipsterDailyMap).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
         const tipsterRunning = {};
         const tipsterEvolutionData = sortedDays.map(dayObj => {
           const newPoint = { ...dayObj };
@@ -1582,7 +1582,7 @@ if (!tipsterDailyMap[d][tName]) tipsterDailyMap[d][tName] = 0;
         // MAX PROFIT (ATH) Logic - SAFE (Reduce instead of Spread)
         const maxProfit = chartData.length > 0 ? chartData.reduce((max, d) => (d.profit > max ? d.profit : max), -Infinity) : 0;
 
-return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters).filter(Boolean), oddsEfficiencyData, maxProfit };
+        return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters).filter(Boolean), oddsEfficiencyData, maxProfit };
       }, [filteredBets]);
 
       // Auto-select all active tipsters when financialStats updates (only if empty to respect user selection)
@@ -1636,7 +1636,7 @@ return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData
         const file = e.target.files[0];
         if (!file) return;
 
-setIsAnalyzing(true);
+        setIsAnalyzing(true);
         const reader = new FileReader();
         reader.onloadend = async () => {
           const base64 = reader.result.split(',')[1];
@@ -1648,14 +1648,14 @@ setIsAnalyzing(true);
 - isParlay: booleano, true si detectas multiples lineas o es combinada.
 Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
-try {
+          try {
             const data = await analyzeImageWithGemini(base64, prompt);
             if (data) {
               if (data.stake) setFormStake(data.stake);
               if (data.totalOdds) setFormOdds(data.totalOdds);
               if (data.description) setFormDesc(data.description);
 
-if (data.isParlay && data.lines && data.lines.length > 0) {
+              if (data.isParlay && data.lines && data.lines.length > 0) {
                 setIsMultiLine(true);
                 setBetLines(data.lines.map(l => ({ odds: l.odds || 1.0, description: l.description || '' })));
                 if (formTipster !== 'Mezcla-Tips') {
@@ -1681,9 +1681,9 @@ if (data.isParlay && data.lines && data.lines.length > 0) {
         const d = descOverride || formDesc;
         const o = oddsOverride || formOdds;
 
-if (!d) { alert("No hay descripción para analizar."); return; }
+        if (!d) { alert("No hay descripción para analizar."); return; }
 
-setIsAnalyzing(true);
+        setIsAnalyzing(true);
         try {
           const prompt = `Actúa como experto en apuestas deportivas. Analiza esta apuesta: "${d}" a cuota @${o}. Estima la probabilidad real (%) y calcula si tiene EV+ (Valor Esperado). Responde en formato corto: "Probabilidad: X% | EV: Positivo/Negativo | Consejo: [Frase corta]".`;
           const text = await analyzeTextWithGemini(prompt);
@@ -1745,7 +1745,7 @@ setIsAnalyzing(true);
           sourceBets = filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void' && b.tipster === simSelectedTipster);
         }
 
-if (excludeFunbets) {
+        if (excludeFunbets) {
           sourceBets = sourceBets.filter(b => {
             const d = (b.description || '').toLowerCase();
             const t = (b.tipster || '').toLowerCase();
@@ -1754,9 +1754,9 @@ if (excludeFunbets) {
           });
         }
 
-if (sourceBets.length === 0) { alert("No hay suficientes datos para calcular estadísticas."); return; }
+        if (sourceBets.length === 0) { alert("No hay suficientes datos para calcular estadísticas."); return; }
 
-// --- GLOBAL STATS (Common) ---
+        // --- GLOBAL STATS (Common) ---
         const wins = sourceBets.filter(b => b.result === 'win').length;
         const losses = sourceBets.filter(b => b.result === 'loss').length;
         const wr = (wins / sourceBets.length) * 100;
@@ -1771,7 +1771,7 @@ if (sourceBets.length === 0) { alert("No hay suficientes datos para calcular est
           avgOdds: avgOdds.toFixed(2)
         });
 
-setSimWinRate(wr.toFixed(1));
+        setSimWinRate(wr.toFixed(1));
         setSimAvgOdds(avgOdds.toFixed(2));
 
         // --- REALISTIC PORTFOLIO STATS (Mode B) ---
@@ -1779,11 +1779,11 @@ setSimWinRate(wr.toFixed(1));
           const statsByTipster = {};
           let totalVolume = 0;
 
-sourceBets.forEach(b => {
+          sourceBets.forEach(b => {
             const tName = b.tipster;
             if (!statsByTipster[tName]) statsByTipster[tName] = { name: tName, wins: 0, count: 0, oddsSum: 0, stakeSum: 0 };
 
-statsByTipster[tName].count++;
+            statsByTipster[tName].count++;
             statsByTipster[tName].stakeSum += b.stake;
             if (b.result !== 'void') {
               statsByTipster[tName].oddsSum += b.odds;
@@ -1801,7 +1801,7 @@ statsByTipster[tName].count++;
             enabled: true
           })).sort((a, b) => parseFloat(b.weight) - parseFloat(a.weight));
 
-setSimPortfolioConfig(config);
+          setSimPortfolioConfig(config);
           // Removed Alert to be less intrusive
         } else {
           // Removed Alert
@@ -1818,7 +1818,7 @@ setSimPortfolioConfig(config);
 
         const expectedProfitPerBet = (stake * (odds - 1) * wr) - (stake * (1 - wr));
 
-if (expectedProfitPerBet <= 0) {
+        if (expectedProfitPerBet <= 0) {
           setGoalResults({ error: "Matemáticamente imposible con EV actual (Neutro o Negativo)." });
         } else {
           const target = parseFloat(goalProfit);
@@ -1857,7 +1857,7 @@ if (expectedProfitPerBet <= 0) {
           if (activePortfolio.length === 0) { alert("¡Selecciona al menos un Tipster activo para la simulación realista!"); return; }
         }
 
-for (let i = 0; i < iterations; i++) {
+        for (let i = 0; i < iterations; i++) {
           let currentBank = parseFloat(simBank);
           let peakBank = currentBank;
           let maxDD = 0; // Max Drawdown % for this run
@@ -1867,14 +1867,14 @@ for (let i = 0; i < iterations; i++) {
 
           let bankrupted = false;
 
-for (let b = 1; b <= simNumBets; b++) {
+          for (let b = 1; b <= simNumBets; b++) {
 
-// --- DETERMINISTIC PARAMS FOR THIS BET ---
+            // --- DETERMINISTIC PARAMS FOR THIS BET ---
             let betWinRate = parseFloat(simWinRate);
             let betOdds = parseFloat(simAvgOdds);
             let betStakeBase = parseFloat(simStake);
 
-if (simAlgo === 'REALISTIC') {
+            if (simAlgo === 'REALISTIC') {
               // Weighted Random Selection
               const r = Math.random() * totalWeight;
               let cum = 0;
@@ -1892,7 +1892,7 @@ if (simAlgo === 'REALISTIC') {
             const won = Math.random() * 100 < betWinRate;
             let stake = 0;
 
-if (simStakingMode === 'FLAT') {
+            if (simStakingMode === 'FLAT') {
               stake = betStakeBase;
             } else {
               // Compound: % of CURRENT bank
@@ -1900,11 +1900,11 @@ if (simStakingMode === 'FLAT') {
               else stake = 0;
             }
 
-if (currentBank <= 0 && !bankrupted) {
+            if (currentBank <= 0 && !bankrupted) {
               bankrupted = true;
             }
 
-if (currentBank > 0) {
+            if (currentBank > 0) {
               if (won) {
                 currentBank += stake * (betOdds - 1);
               } else {
@@ -1917,17 +1917,17 @@ if (currentBank > 0) {
             const dd = peakBank > 0 ? (peakBank - currentBank) / peakBank : 0;
             if (dd > maxDD) maxDD = dd;
 
-if (i < 5 && b % 10 === 0) {
+            if (i < 5 && b % 10 === 0) {
               path.push({ x: b, y: Number(currentBank.toFixed(2)) });
             }
           } // End Bet Loop
 
-if (i < 5) visualPaths.push({ name: `Sim ${i + 1}`, data: path });
+          if (i < 5) visualPaths.push({ name: `Sim ${i + 1}`, data: path });
 
-finals.push({ val: currentBank, mdd: maxDD, pathFragment: path }); // Store rich obj temporarily
+          finals.push({ val: currentBank, mdd: maxDD, pathFragment: path }); // Store rich obj temporarily
           if (currentBank <= 0) bankruptcies++;
 
-totalResult += currentBank;
+          totalResult += currentBank;
           if (currentBank < minResult) minResult = currentBank;
           if (currentBank > maxResult) maxResult = currentBank;
         } // End Iteration Loop
@@ -1955,7 +1955,7 @@ totalResult += currentBank;
           return { range: `${(start / 1000).toFixed(1)}k-${(end / 1000).toFixed(1)}k`, count: 0, sortKey: start };
         });
 
-finals.forEach(f => {
+        finals.forEach(f => {
           let bIdx = Math.floor((f.val - minResult) / step);
           if (bIdx >= bucketCount) bIdx = bucketCount - 1;
           histogramData[bIdx].count++;
@@ -1970,7 +1970,7 @@ finals.forEach(f => {
         const avgMDD = finals.reduce((acc, f) => acc + (f.mdd * 100), 0) / iterations;
         const worstMDD = finals.reduce((acc, f) => Math.max(acc, f.mdd * 100), 0);
 
-setSimResults({
+        setSimResults({
           best: p90,
           worst: p10,
           avg: avg,
@@ -2032,7 +2032,7 @@ setSimResults({
           setFormDate(editingBet.date);
           setFormResult(editingBet.result || 'pending');
 
-if (editingBet.tag) setFormTag(editingBet.tag);
+          if (editingBet.tag) setFormTag(editingBet.tag);
           if (editingBet.tags) setUserTags(prev => [...new Set([...prev, ...editingBet.tags])]);
 
           // 2. Handle System / Group Bets
@@ -2087,7 +2087,7 @@ if (editingBet.tag) setFormTag(editingBet.tag);
               }
             }
 
-} else if (editingBet.betLines && editingBet.betLines.length > 0) {
+          } else if (editingBet.betLines && editingBet.betLines.length > 0) {
             // 3. Normal Parlay
             setIsMultiLine(true);
             setBetLines(editingBet.betLines.map(l => ({
@@ -2108,7 +2108,7 @@ if (editingBet.tag) setFormTag(editingBet.tag);
             setSystemType(null);
           }
 
-setShowAddBetModal(true);
+          setShowAddBetModal(true);
         }
       }, [editingBet]);
 
@@ -2143,7 +2143,7 @@ setShowAddBetModal(true);
           let sysStake = 0;
           let sysType = null;
 
-if (bet.children) {
+          if (bet.children) {
             // From Group Header (Dashboard/History) (ROBUST)
             const uniqueInfo = new Map();
             try {
@@ -2166,7 +2166,7 @@ if (bet.children) {
               });
             } catch (err) { console.error("Error extracting repeat lines:", err); }
 
-linesToRestore = Array.from(uniqueInfo.values()).map(l => ({
+            linesToRestore = Array.from(uniqueInfo.values()).map(l => ({
               description: l.description || '',
               odds: l.odds || '',
               result: 'pending', // Reset result for Repeat
@@ -2186,7 +2186,7 @@ linesToRestore = Array.from(uniqueInfo.values()).map(l => ({
               if (found) sysType = found;
             }
 
-} else {
+          } else {
             // From Single Child of System (Restoring full system from one child is harder without siblings context)
             // Best effort: Just restore this specific line as a single bet or try to find siblings?
             // Let's assume user wants to repeat THIS specific bet configuration.
@@ -2210,7 +2210,7 @@ linesToRestore = Array.from(uniqueInfo.values()).map(l => ({
             }
           }
 
-if (linesToRestore.length > 0) {
+          if (linesToRestore.length > 0) {
             setIsMultiLine(true);
             setBetLines(linesToRestore);
             if (sysType) {
@@ -2219,7 +2219,7 @@ if (linesToRestore.length > 0) {
             }
           }
 
-} else if (bet.betLines && bet.betLines.length > 0) {
+        } else if (bet.betLines && bet.betLines.length > 0) {
           // Normal Parlay
           setIsMultiLine(true);
           setBetLines(bet.betLines);
@@ -2236,7 +2236,7 @@ if (linesToRestore.length > 0) {
           setSystemType(null);
         }
 
-setActiveSection('dashboard');
+        setActiveSection('dashboard');
         setShowAddBetModal(true);
       };
 
@@ -2275,7 +2275,8 @@ setActiveSection('dashboard');
         e.preventDefault();
 
         // DEBUG ENTRY
-        alert(`DEBUG ENTRY:\nID: ${editingBet ? editingBet.id : 'NEW'}\nEs Grupo: ${editingBet ? !!editingBet.isGroup : 'N/A'}\nSystemType: ${JSON.stringify(systemType)}`);
+        // DEBUG ENTRY REMOVED
+
 
         // VALIDATION
         if (!formTipster) { alert("Selecciona un Tipster"); return; }
@@ -2295,7 +2296,8 @@ setActiveSection('dashboard');
         const isMulti = isMultiLine || formTipster === 'Mezcla-Tips';
         if (isMulti && betLines.length === 0) { alert("¡Añade al menos una línea!"); return; }
 
-        const finalDesc = isMulti ? (formDescription + ' | ' + betLines.map(l => l.description).join(' + ')) : formDescription;
+        // FIXED: Do not concatenate lines to description
+        const finalDesc = formDescription;
         let tagsArray = formTags.split(',').map(t => t.trim().toUpperCase()).filter(t => t); // V3 Tags
 
         // 6. DYNAMIC TAGS AUTO-ADD (V33)
@@ -2323,7 +2325,7 @@ setActiveSection('dashboard');
           const st = parseFloat(formStake);
           const od = parseFloat(formOdds);
 
-if (formResult === 'loss') {
+          if (formResult === 'loss') {
             finalProfit = -st;
           } else if (formResult === 'void') {
             finalProfit = 0;
@@ -2346,13 +2348,13 @@ if (formResult === 'loss') {
 
             let allCombinations = [];
 
-if (systemType.type === 'named' && systemType.composition) {
+            if (systemType.type === 'named' && systemType.composition) {
               // Generate combos for each part of the composition with specific names
               systemType.composition.forEach(part => {
                 const partCombos = getCombinations(betLines, part.k);
                 const partName = part.k === 2 ? 'Dobles' : part.k === 3 ? 'Triples' : part.k === 4 ? 'Cuatros' : part.k === 5 ? 'Cincos' : `${part.k} Selecciones`;
 
-partCombos.forEach((combo, cIdx) => {
+                partCombos.forEach((combo, cIdx) => {
                   allCombinations.push({
                     lines: combo,
                     description: `${partName} ${cIdx + 1}/${partCombos.length}`
@@ -2364,7 +2366,7 @@ partCombos.forEach((combo, cIdx) => {
               const combos = getCombinations(betLines, systemType.k);
               const partName = systemType.k === 2 ? 'Dobles' : systemType.k === 3 ? 'Triples' : `${systemType.k} Selecciones`;
 
-combos.forEach((combo, cIdx) => {
+              combos.forEach((combo, cIdx) => {
                 allCombinations.push({
                   lines: combo,
                   description: `${partName} ${cIdx + 1}/${combos.length}`
@@ -2378,7 +2380,7 @@ combos.forEach((combo, cIdx) => {
               // Description: just the specific part name (e.g. "Dobles 1/3")
               // Group Title will be stored in 'groupTitle' (using formDescription)
 
-return {
+              return {
                 id: Date.now() + idx,
                 date: formDate ? formDate : new Date().toISOString().split('T')[0],
                 tipster: formTipster,
@@ -2399,25 +2401,29 @@ return {
               };
             });
 
-if (editingBet) {
+            if (editingBet) {
               // DEBUG ALERT FOR SYSTEM
-              alert(`DEBUG SYSTEM: Guardando Sistema.\nTipster Form: ${formTipster}`);
+              // ALERT FOR SYSTEM SAVE
+              const sysSummary = `✅ Sistema Guardado\n\n📄 ${formDescription || systemType.name}\n📦 Tipo: ${systemType.name}\n💰 Stake Total: ${newBets.reduce((a, b) => a + b.stake, 0).toFixed(2)}€`;
+              alert(sysSummary);
 
               // REMOVE OLD GROUP MEMBERS
               const idsToRemove = new Set();
               if (editingBet.children) editingBet.children.forEach(c => idsToRemove.add(c.id));
               else idsToRemove.add(editingBet.id);
 
-setBets(prevBets => {
+              setBets(prevBets => {
                 const betsWithoutOld = prevBets.filter(b => !idsToRemove.has(b.id));
                 return [...betsWithoutOld, ...newBets];
               });
               setEditingBet(null);
             } else {
               setBets(prevBets => [...prevBets, ...newBets]);
+              const sysSummaryNew = `✅ Sistema Creado\n\n📄 ${formDescription || systemType.name}\n📦 Tipo: ${systemType.name}\n💰 Stake Total: ${newBets.reduce((a, b) => a + b.stake, 0).toFixed(2)}€`;
+              alert(sysSummaryNew);
             }
 
-} else {
+          } else {
             // --- NORMAL SINGLE/PARLAY BET ---
             try {
               const isMulti = isMultiLine || betLines.length > 0 || formTipster === 'Mezcla-Tips';
@@ -2444,7 +2450,7 @@ setBets(prevBets => {
               if (newBet.result === 'void') newBet.profit = 0;
               if (newBet.result === 'pending') newBet.profit = 0;
 
-if (editingBet) {
+              if (editingBet) {
                 if (editingBet.isGroup || (editingBet.children && editingBet.children.length > 0)) {
                   // Determine IDs to remove (Robust)
                   const idsToRemove = new Set();
@@ -2460,26 +2466,31 @@ if (editingBet) {
                 } else {
                   // Update Single Bet (Loose ID Match for safety)
                   // WARNING: DEBUG ALERT ACTIVE
-                  alert(`DEBUG: Intentando Guardar.\nTipster Nuevo: ${newBet.tipster}\nTipster Form: ${formTipster}`);
+                  // WARNING: DEBUG DETECTED - REPLACED WITH USER FEEDBACK
+                  // Create Summary
+                  const summary = `✅ Apuesta Editada Correctamente\n\n📄 ${newBet.description}\n💰 Stake: ${newBet.stake}€\n📈 Cuota: @${newBet.odds}\n👤 Tipster: ${newBet.tipster}`;
+                  alert(summary);
 
-setBets(prevBets => prevBets.map(b => String(b.id) === String(editingBet.id) ? newBet : b));
+                  setBets(prevBets => prevBets.map(b => String(b.id) === String(editingBet.id) ? newBet : b));
                   setEditingBet(null);
                 }
               } else {
                 setBets(prevBets => [...prevBets, newBet]);
+                const summaryNew = `✅ Apuesta Creada\n\n📄 ${newBet.description}\n💰 Stake: ${newBet.stake}€\n📈 Cuota: @${newBet.odds}\n👤 Tipster: ${newBet.tipster}`;
+                alert(summaryNew);
               }
             } catch (err) {
               alert("ERROR CRASH: " + err.message);
               console.error(err);
             }
 
-if (systemType) {
+            if (systemType) {
               // Block 2195 just created `allCombinations`.
               // We need to verify where they are saved.
               // Line 2270 (not visible but inferred) probably iterates or saves `createdBets`.
               // Let's assume `createdBets` is the array of new bet objects.
 
-if (editingBet && editingBet.isGroup) {
+              if (editingBet && editingBet.isGroup) {
                 const betsWithoutOld = bets.filter(b => !editingBet.oldIds.includes(b.id));
                 setBets([...betsWithoutOld, ...createdBets]);
                 setEditingBet(null);
@@ -2637,11 +2648,11 @@ if (editingBet && editingBet.isGroup) {
         </button>
       );
 
-return (
+      return (
         <div className="h-screen bg-slate-950 text-slate-100 font-sans flex flex-col md:flex-row overflow-hidden">
           {/* ... (Header y Sidebar sin cambios) ... */}
 
-{/* HEADER MOBILE */}
+          {/* HEADER MOBILE */}
           <div className="md:hidden bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center z-50 sticky top-0 shadow-lg">
             <div className="font-bold text-xl text-emerald-400 tracking-tight">BET<span className="text-white">MANAGER</span></div>
             <div className="flex items-center gap-3">
@@ -2650,7 +2661,7 @@ return (
             </div>
           </div>
 
-{/* SIDEBAR */}
+          {/* SIDEBAR */}
           <div className={`fixed inset-0 bg-slate-950/95 z-40 transform transition-transform duration-300 md:relative md:translate-x-0 md:w-72 md:bg-slate-900 md:border-r md:border-slate-800 flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             {/* HEADING PRO (V18: Bank Badge) */}
             <div className="hidden md:flex p-6 border-b border-slate-800 items-center justify-between">
@@ -2679,7 +2690,7 @@ return (
                 </div>
               )}
 
-<button onClick={() => setShowBankManager(true)} className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 hover:border-emerald-500 transition-colors group">
+              <button onClick={() => setShowBankManager(true)} className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 hover:border-emerald-500 transition-colors group">
                 <div className="text-[10px] uppercase font-bold text-slate-400 group-hover:text-emerald-400">BANK ACTUAL</div>
                 <div className="text-lg font-bold font-mono text-white group-hover:text-emerald-300">{currentGlobalBank.toFixed(2)}€</div>
               </button>
@@ -2690,7 +2701,7 @@ return (
               </button>
             </div>
 
-<div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex-1 p-6 overflow-y-auto">
               <div className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-wider">Navegación</div>
               <nav className="flex-1 px-2 py-4 space-y-2">
                 <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
@@ -2719,15 +2730,15 @@ return (
                   <Cloud size={16} /> <span>â˜ï¸ CONFIGURAR NUBE & BACKUPS</span>
                 </button>
 
-</div>
+              </div>
               <div className="mt-4 text-center text-[10px] text-slate-600">v29.1 PRO - Local Storage</div>
             </div>
           </div>
 
-{/* MAIN CONTENT */}
+          {/* MAIN CONTENT */}
           <div className="flex-1 overflow-y-auto bg-slate-950 p-4 md:p-8 pb-20">
 
-{/* 1. DASHBOARD */}
+            {/* 1. DASHBOARD */}
             {activeSection === 'dashboard' && (
               <div className="space-y-6 animate-fade-in">
                 {/* TAG FILTER UI (V3 - Updated V33) */}
@@ -2742,17 +2753,17 @@ return (
                   </div>
                 )}
 
-{/* 0. ADD BET FORM (RESTORED V20) */}
+                {/* 0. ADD BET FORM (RESTORED V20) */}
                 {/* 0. ADD BET FORM MOVED TO MODAL */}
 
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatCard title="Beneficio Neto" value={`${financialStats.profit >= 0 ? '+' : ''}${financialStats.profit.toFixed(2)}€`} icon={PieChart} colorClass="text-emerald-500" />
                   <StatCard title="Yield / ROI" value={`${financialStats.yield_val}%`} icon={TrendingUp} colorClass="text-blue-500" />
                   <StatCard title="Win Rate Scout" value={`${scoutStats.length > 0 ? (scoutStats.reduce((acc, s) => acc + parseFloat(s.winRate), 0) / scoutStats.length).toFixed(1) : 0}%`} subtext="Efectividad Media" icon={Target} colorClass="text-purple-500" />
                   <StatCard title="Riesgo Activo" value={`${pendingBetsList.reduce((a, b) => a + b.stake, 0).toFixed(2)}€`} subtext="En juego" icon={Clock} colorClass="text-yellow-500" />
                 </div>
 
-{pendingBetsList.length > 0 && (
+                {pendingBetsList.length > 0 && (
                   <div className="bg-slate-900 rounded-xl border-l-4 border-yellow-500 p-4 shadow-xl">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="font-bold text-lg flex items-center gap-2 text-white"><AlertCircle className="text-yellow-500" /> Apuestas Activas ({pendingBetsList.length})</h3>
@@ -2799,7 +2810,7 @@ return (
                                         <Edit size={12} />
                                       </button>
 
-<button
+                                      <button
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleRepeatBet({ ...item, isGroup: true });
@@ -2827,7 +2838,7 @@ return (
                                 </div>
                               </div>
 
-{
+                              {
                                 isExpanded && (
                                   <div className="bg-slate-950/50 border-t border-slate-800 p-2 space-y-2 animate-fade-in">
                                     {item.children.map(bet => (
@@ -2861,7 +2872,7 @@ return (
                                           </div>
                                         </div>
 
-{/* EXPANDED DETAILS FOR CHILD BET */}
+                                        {/* EXPANDED DETAILS FOR CHILD BET */}
                                         {expandedBets.includes(bet.id) && bet.betLines && (
                                           <div className="mt-1 p-2 bg-slate-950/50 rounded border border-slate-800/50 animate-fade-in">
                                             <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Composición:</div>
@@ -2892,7 +2903,7 @@ return (
                                 </div>
                                 <p className="text-sm font-medium text-slate-200 mb-1">{bet.description}</p>
 
-{/* TAGS / HASHTAGS ROW */}
+                                {/* TAGS / HASHTAGS ROW */}
                                 {((bet.tags && bet.tags.length > 0) || (bet.description.match(/#[a-z0-9_]+/gi))) && (
                                   <div className="flex flex-wrap gap-1 mb-2">
                                     {(bet.tags || []).filter(t => t !== bet.tag && t !== 'ALL').map((t, idx) => (
@@ -2901,7 +2912,7 @@ return (
                                   </div>
                                 )}
 
-{/* MULTI-LINE PREVIEW COLLAPSIBLE (DASHBOARD) */}
+                                {/* MULTI-LINE PREVIEW COLLAPSIBLE (DASHBOARD) */}
                                 {((bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0)) && (
                                   <div className="mt-2">
                                     <button
@@ -2916,7 +2927,7 @@ return (
                                       )}
                                     </button>
 
-{expandedBets.includes(bet.id) && (
+                                    {expandedBets.includes(bet.id) && (
                                       <div className="space-y-1 bg-slate-900/50 p-2 rounded border border-slate-800 animate-fade-in">
                                         {(bet.betLines || bet.subPicks).map((line, i) => (
                                           <div key={i} className="flex justify-between items-center text-xs">
@@ -2947,24 +2958,24 @@ return (
                         }
                       })}
 
-</div>
+                    </div>
                   </div>
                 )
                 }
 
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                   <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-xl col-span-1 lg:col-span-2">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="font-bold text-sm flex items-center gap-2 text-slate-400 uppercase tracking-wider"><Activity size={16} /> Curva de Ganancias</h3>
 
-<div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4">
                         {/* ATH Badge (Moved here) */}
                         <div className="text-right block">
                           <div className="text-[10px] text-slate-500 font-bold uppercase">Máx. Histórico</div>
                           <div className="text-sm font-bold text-emerald-400 font-mono">+{financialStats.maxProfit ? financialStats.maxProfit.toFixed(2) : '0.00'}€</div>
                         </div>
 
-<div className="flex gap-1 bg-slate-950 p-1 rounded border border-slate-800">
+                        <div className="flex gap-1 bg-slate-950 p-1 rounded border border-slate-800">
                           {['7D', '30D', '3M', 'ALL'].map(range => (
                             <button key={range} onClick={() => setChartTimeRange(range)} className={`px-2 py-1 text-[10px] font-bold rounded transition-colors ${chartTimeRange === range ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'}`}>{range}</button>
                           ))}
@@ -2973,7 +2984,7 @@ return (
                     </div>
                     <div className="h-[250px] w-full relative">
 
-<ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%">
                         {(() => {
                           // 1. Filter Data based on Range
                           let displayData = financialStats.chartData;
@@ -2986,9 +2997,9 @@ return (
                             displayData = financialStats.chartData.filter(d => new Date(d.fullDate) >= cutoff);
                           }
 
-if (!displayData || displayData.length === 0) return <div className="h-full flex items-center justify-center text-slate-500 text-xs">Sin datos para mostrar</div>;
+                          if (!displayData || displayData.length === 0) return <div className="h-full flex items-center justify-center text-slate-500 text-xs">Sin datos para mostrar</div>;
 
-// 2. Generate Slope Gradient
+                          // 2. Generate Slope Gradient
                           // We want GREEN if current point >= previous point, RED if < previous point.
                           const generateSlopeGradient = () => {
                             if (displayData.length < 2) return <stop offset="0" stopColor="#10b981" />;
@@ -3007,7 +3018,7 @@ if (!displayData || displayData.length === 0) return <div className="h-full flex
                             return steps;
                           };
 
-return (
+                          return (
                             <LineChart data={displayData}>
                               <defs>
                                 <linearGradient id="slopeGradient" x1="0" y1="0" x2="1" y2="0">
@@ -3062,7 +3073,7 @@ return (
               </div>
             )}
 
-{/* 2. CHALLENGES */}
+            {/* 2. CHALLENGES */}
             {/* 2. CHALLENGES (IMPROVED V9) */}
             {activeSection === 'challenges' && (
               <div className="space-y-6 animate-fade-in relative">
@@ -3080,7 +3091,7 @@ return (
                   </div>
                 </header>
 
-{/* CHALLENGES GLOBAL ANALYTICS DASHBOARD (V14) */}
+                {/* CHALLENGES GLOBAL ANALYTICS DASHBOARD (V14) */}
                 <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-8 shadow-2xl relative overflow-hidden">
                   <div className="flex justify-between items-start mb-6 z-10 relative">
                     <div className="flex items-center gap-3">
@@ -3107,7 +3118,7 @@ return (
                     </div>
                   </div>
 
-{/* CALCULATE FILTERED STATS ON THE FLY */}
+                  {/* CALCULATE FILTERED STATS ON THE FLY */}
                   {(() => {
                     const allSteps = challengesGlobalStats.allSteps.filter(s => challengeStatsFilter === 'ALL' || s.tipster === challengeStatsFilter);
 
@@ -3120,10 +3131,10 @@ return (
                     const winRate = stepsTotal > 0 ? ((stepsWon / stepsTotal) * 100).toFixed(1) : 0;
                     const stepsProfit = allSteps.reduce((sum, s) => sum + (s.profit || 0), 0);
 
-return (
+                    return (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 relative">
 
-{challengeStatsFilter === 'ALL' ? (
+                        {challengeStatsFilter === 'ALL' ? (
                           <>
                             <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
                               <div className="text-xs text-slate-500 uppercase font-bold mb-1">Total Invertido</div>
@@ -3141,7 +3152,7 @@ return (
                           </div>
                         )}
 
-<div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                        <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
                           <div className="text-xs text-slate-500 uppercase font-bold mb-1">Pasos Ganados</div>
                           <div className="text-2xl font-mono text-indigo-400 font-bold">{stepsWon}/{stepsTotal} <span className="text-sm text-slate-500">({winRate}%)</span></div>
                         </div>
@@ -3153,11 +3164,11 @@ return (
                     );
                   })()}
 
-{/* Background Decor */}
+                  {/* Background Decor */}
                   <div className="absolute top-0 right-0 -mr-10 -mt-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
                 </div>
 
-{/* MODAL CREAR RETO */}
+                {/* MODAL CREAR RETO */}
                 {isCreatingChallenge && (
                   <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={() => setIsCreatingChallenge(false)}>
                     <div className="bg-slate-900 w-full max-w-md rounded-xl border border-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -3178,7 +3189,7 @@ return (
                   </div>
                 )}
 
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {challenges.filter(c => (challengeTab === 'active' ? (!c.status || c.status === 'active') : (c.status === 'won' || c.status === 'lost'))).map(challenge => {
                     const percent = Math.min(100, (challenge.currentBank / challenge.targetBank) * 100).toFixed(1);
                     const isAdding = challengeForm.id === challenge.id;
@@ -3193,12 +3204,12 @@ return (
                     const isWon = challenge.status === 'won';
                     const isLost = challenge.status === 'lost';
 
-return (
+                    return (
                       <div key={challenge.id} className={`bg-slate-900 rounded-xl border ${isWon ? 'border-emerald-500/50' : (isLost ? 'border-red-500/50' : 'border-slate-800')} shadow-xl overflow-hidden relative`}>
                         {isWon && <div className="absolute top-4 right-4 z-10 text-emerald-500 font-black text-6xl opacity-10 rotate-12 pointer-events-none">WIN</div>}
                         {isLost && <div className="absolute top-4 right-4 z-10 text-red-500 font-black text-6xl opacity-10 rotate-12 pointer-events-none">LOST</div>}
 
-<div className={`p-6 border-b border-slate-800 bg-gradient-to-r ${headerColor}`}>
+                        <div className={`p-6 border-b border-slate-800 bg-gradient-to-r ${headerColor}`}>
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
                               <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -3244,7 +3255,7 @@ return (
                           </div>
                         </div>
 
-{challengeTab === 'active' && (
+                        {challengeTab === 'active' && (
                           activeChallengeId === challenge.id ? (
                             <div id={`challenge-form-${challenge.id}`} className={`p-4 bg-slate-950 border-b ${editingChallengeBet && editingChallengeBet.id ? 'border-amber-500/50' : 'border-slate-800'} animate-fade-in`}>
                               <div className="flex justify-between items-center mb-3">
@@ -3256,14 +3267,14 @@ return (
                                 </button>
                               </div>
 
-<form onSubmit={(e) => addChallengeBet(e, challenge.id)} className="space-y-3">
+                              <form onSubmit={(e) => addChallengeBet(e, challenge.id)} className="space-y-3">
                                 {/* Stake */}
                                 <div className="relative">
                                   <input type="number" placeholder="Stake" step="0.01" value={challengeForm.stake} onChange={e => setChallengeForm({ ...challengeForm, stake: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm pr-12 focus:border-emerald-500 transition-colors" required />
                                   <button type="button" onClick={() => setChallengeForm({ ...challengeForm, stake: challenge.currentBank })} className="absolute right-1 top-1 bottom-1 text-[10px] font-bold text-emerald-500 hover:bg-emerald-900/30 px-2 rounded">ALL-IN</button>
                                 </div>
 
-{/* INPUTS: SIMPLE vs MULTI */}
+                                {/* INPUTS: SIMPLE vs MULTI */}
                                 {isChallengeMulti ? (
                                   <div className="bg-slate-900 rounded p-3 border border-slate-800 space-y-2">
                                     <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold"><span>Líneas ({challengeForm.lines.length})</span> <span>Cuota Total: {challengeForm.lines.reduce((a, b) => a * (parseFloat(b.odds) || 1), 1).toFixed(2)}</span></div>
@@ -3295,7 +3306,7 @@ return (
                                   </div>
                                 )}
 
-<div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-3 gap-3">
                                   <div className="col-span-1">
                                     <select value={challengeForm.tipster} onChange={e => setChallengeForm({ ...challengeForm, tipster: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-xs outline-none focus:border-emerald-500">
                                       <option value="">Personal</option>
@@ -3307,7 +3318,7 @@ return (
                                   </div>
                                 </div>
 
-<div className="flex gap-2 pt-2">
+                                <div className="flex gap-2 pt-2">
                                   <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 rounded font-bold text-sm hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transform active:scale-95 transition-all">Guardar Paso</button>
                                   <button type="button" onClick={() => { setActiveChallengeId(null); setChallengeForm({ id: null, stake: '', odds: '', profit: '', desc: '', lines: [] }); setIsChallengeMulti(false); }} className="px-3 bg-slate-800 text-slate-400 rounded hover:bg-slate-700 font-bold text-sm">Cancelar</button>
                                 </div>
@@ -3319,14 +3330,14 @@ return (
                                 <Plus size={18} /> Registrar Nuevo Paso
                               </button>
 
-{/* CHALLENGE ANALYTICS DASHBOARD (V13) */}
+                              {/* CHALLENGE ANALYTICS DASHBOARD (V13) */}
                               <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-4">
                                 <div className="flex items-center gap-2 mb-2">
                                   <BarChart2 size={16} className="text-indigo-400" />
                                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Analítica del Reto</h4>
                                 </div>
 
-{/* KPIs GRID */}
+                                {/* KPIs GRID */}
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                                   {(() => {
                                     const invested = challenge.initialBank + challenge.history.filter(h => h.result === 'deposit').reduce((sum, d) => sum + d.profit, 0);
@@ -3341,7 +3352,7 @@ return (
                                       else if (h.result === 'loss') currentStreak = 0;
                                     });
 
-return (
+                                    return (
                                       <>
                                         <div className="bg-slate-900 p-2 rounded border border-slate-800">
                                           <div className="text-[10px] text-slate-500 uppercase">Inversión Total</div>
@@ -3364,7 +3375,7 @@ return (
                                   })()}
                                 </div>
 
-{/* BANK EVOLUTION CHART */}
+                                {/* BANK EVOLUTION CHART */}
                                 <div className="h-32 w-full mt-4">
                                   <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={[
@@ -3392,7 +3403,7 @@ return (
                           )
                         )}
 
-<div className="max-h-[300px] overflow-y-auto">
+                        <div className="max-h-[300px] overflow-y-auto">
                           <table className="w-full text-left text-sm">
                             <thead className="bg-slate-950 text-slate-500 text-xs uppercase sticky top-0">
                               <tr><th className="p-3">Detalle</th><th className="p-3 text-center">Stake/Cuota</th><th className="p-3 text-right">Resultado</th><th className="p-3 text-center">Acción</th></tr>
@@ -3405,7 +3416,7 @@ return (
                                   const isMulti = bet.betLines && bet.betLines.length > 0;
                                   const isExpanded = expandedChallengeSteps.includes(bet.id);
 
-return (
+                                  return (
                                     <React.Fragment key={bet.id}>
                                       <tr className={`hover:bg-slate-800/50 ${isExpanded ? 'bg-slate-800/30' : ''}`}>
                                         <td className="p-3 cursor-pointer" onClick={() => isMulti && toggleChallengeExpansion(bet.id)}>
@@ -3447,7 +3458,7 @@ return (
                                             const formEl = document.getElementById(`challenge-form-${challenge.id}`);
                                             if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
 
-}} className="text-slate-600 hover:text-blue-400"><Edit size={14} /></button>
+                                          }} className="text-slate-600 hover:text-blue-400"><Edit size={14} /></button>
                                           <button onClick={() => deleteChallengeBet(challenge.id, bet.id)} className="text-slate-600 hover:text-red-400"><Trash2 size={14} /></button>
                                         </td>
                                       </tr>
@@ -3482,7 +3493,7 @@ return (
               </div>
             )}
 
-{/* 3. STATS (CON CUOTA MEDIA Y W/L/V) */}
+            {/* 3. STATS (CON CUOTA MEDIA Y W/L/V) */}
             {activeSection === 'stats' && (
               <div className="space-y-8 animate-fade-in">
                 <section>
@@ -3591,7 +3602,7 @@ return (
                   </div>
                 </section>
 
-{/* NEW CHARTS SECTION (V38) */}
+                {/* NEW CHARTS SECTION (V38) */}
                 <section>
                   <header className="mb-4">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2"><BarChart2 className="text-orange-500" /> Distribución Mensual y Temática</h2>
@@ -3617,7 +3628,7 @@ return (
                       </div>
                     </div>
 
-{/* TAGS */}
+                    {/* TAGS */}
                     <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
                       <h3 className="text-xs font-bold text-slate-400 uppercase mb-4">Profit por Etiqueta/Deporte</h3>
                       <div className="h-[250px] w-full">
@@ -3639,7 +3650,7 @@ return (
                   </div>
                 </section>
 
-{/* NEW: TIPSTER EVOLUTION (V40 Multi-line) */}
+                {/* NEW: TIPSTER EVOLUTION (V40 Multi-line) */}
                 <section className="mb-8 pl-4 pr-4">
                   <header className="mb-4 flex justify-between items-center">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2"><TrendingUp className="text-blue-500" /> Comparativa de Evolución (Tipsters)</h2>
@@ -3648,7 +3659,7 @@ return (
                     </div>
                   </header>
 
-{/* FILTER BAR */}
+                  {/* FILTER BAR */}
                   <div className="flex flex-wrap gap-2 mb-4 bg-slate-900/50 p-2 rounded-lg border border-slate-800">
                     <button
                       onClick={() => setCompSelectedTipsters(compSelectedTipsters.length === financialStats.activeTipsters.length ? [] : financialStats.activeTipsters)}
@@ -3674,7 +3685,7 @@ return (
                     ))}
                   </div>
 
-<div className="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
+                  <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
                     <div className="h-[400px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={financialStats.tipsterEvolutionData}>
@@ -3701,7 +3712,7 @@ return (
                   </div>
                 </section>
 
-{/* NEW: ODDS EFFICIENCY (V40 Agent Choice) */}
+                {/* NEW: ODDS EFFICIENCY (V40 Agent Choice) */}
                 <section className="mb-8">
                   <header className="mb-4">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2"><Target className="text-emerald-500" /> Eficiencia por Cuota (Win Rate %)</h2>
@@ -3725,11 +3736,11 @@ return (
                   </div>
                 </section>
 
-{/* --- DEEP ANALYTICS MODULES (SIA-Pro) --- */}
+                {/* --- DEEP ANALYTICS MODULES (SIA-Pro) --- */}
                 <div className="pt-8 border-t border-slate-800">
                   <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2"><Activity className="text-pink-500" /> Deep Analytics (SIA-Pro)</h2>
 
-{/* 1. BANKROLL HEALTH: DRAWDOWN & STREAKS */}
+                  {/* 1. BANKROLL HEALTH: DRAWDOWN & STREAKS */}
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     {/* CHART */}
                     <div className="lg:col-span-2 bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
@@ -3756,7 +3767,7 @@ return (
                       </div>
                     </div>
 
-{/* STREAKS KPIs */}
+                    {/* STREAKS KPIs */}
                     <div className="space-y-4">
                       <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 border-l-4 border-l-emerald-500 shadow-lg">
                         <div className="text-slate-400 text-xs uppercase font-bold mb-1">Mejor Racha Ganadora</div>
@@ -3782,7 +3793,7 @@ return (
                     </div>
                   </div>
 
-{/* 2. SNIPER & HEATMAP */}
+                  {/* 2. SNIPER & HEATMAP */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* SNIPER CHART */}
                     <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
@@ -3818,7 +3829,7 @@ return (
                       </div>
                     </div>
 
-{/* ACTIVITY HEATMAP */}
+                    {/* ACTIVITY HEATMAP */}
                     <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg flex flex-col">
                       <h3 className="font-bold text-sm mb-4 text-slate-400 uppercase tracking-wider flex items-center gap-2"><Calendar size={16} /> Actividad Reciente (30 días)</h3>
                       <div className="flex-1 flex items-center justify-center p-4">
@@ -3841,7 +3852,7 @@ return (
                     </div>
                   </div>
 
-{/* KELLY CRITERION (BONUS) */}
+                  {/* KELLY CRITERION (BONUS) */}
                   <div className="mt-6 bg-gradient-to-r from-indigo-900/20 to-purple-900/20 p-4 rounded-xl border border-indigo-500/30 text-center">
                     <div className="text-xs font-bold text-indigo-400 uppercase mb-2">Consejo Money Management (Kelly Simplificado)</div>
                     <p className="text-sm text-slate-300 max-w-3xl mx-auto">
@@ -3852,7 +3863,7 @@ return (
                     </p>
                   </div>
 
-{/* HEATMAP DETAILS MODAL (V6) */}
+                  {/* HEATMAP DETAILS MODAL (V6) */}
                   {selectedDay && (
                     <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={() => setSelectedDay(null)}>
                       <div className="bg-slate-900 w-full max-w-md rounded-xl border border-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -3890,7 +3901,7 @@ return (
                     </div>
                   )}
 
-{/* RESOLUTION MODAL (V7 - GRANULAR) */}
+                  {/* RESOLUTION MODAL (V7 - GRANULAR) */}
                   {resolutionBet && (
                     <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
                       <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in">
@@ -3924,7 +3935,7 @@ return (
                             </div>
                           ))}
 
-{/* Support V3 SubPicks (Legacy) */}
+                          {/* Support V3 SubPicks (Legacy) */}
                           {(!resolutionBet.tempLines || resolutionBet.tempLines.length === 0) && resolutionBet.tempSubPicks && resolutionBet.tempSubPicks.map((sub, idx) => (
                             <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
                               <div className="flex justify-between">
@@ -3960,7 +3971,7 @@ return (
                             const anyLoss = isV7 ? lines.some(l => l.result === 'loss') : lines.some(l => l.status === 'loss');
                             const allVoid = isV7 ? lines.every(l => l.result === 'void') : false;
 
-if (anyLoss) {
+                            if (anyLoss) {
                               parentResult = 'loss';
                               parentProfit = -resolutionBet.stake;
                             } else if (allVoid) {
@@ -3991,7 +4002,7 @@ if (anyLoss) {
                   )}
                 </div>
 
-{/* INDIVIDUAL STATS MODAL (V38) */}
+                {/* INDIVIDUAL STATS MODAL (V38) */}
                 {selectedTipsterStats && (
                   <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={() => setSelectedTipsterStats(null)}>
                     <div className="bg-slate-900 w-full max-w-4xl rounded-xl border border-slate-700 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -4004,7 +4015,7 @@ if (anyLoss) {
                         <button onClick={() => setSelectedTipsterStats(null)} className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-full transition-colors"><X size={24} /></button>
                       </div>
 
-<div className="p-6 space-y-8">
+                      <div className="p-6 space-y-8">
                         {/* 1. KEY METRICS GRID */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
@@ -4025,7 +4036,7 @@ if (anyLoss) {
                           </div>
                         </div>
 
-{/* 2. WHAT-IF CALCULATOR */}
+                        {/* 2. WHAT-IF CALCULATOR */}
                         <div className="bg-indigo-900/10 border border-indigo-500/30 p-6 rounded-xl">
                           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Sparkles className="text-indigo-400" /> Calculadora "What If?"</h3>
                           <div className="flex flex-col md:flex-row gap-6 items-center">
@@ -4044,11 +4055,11 @@ if (anyLoss) {
                                 let wiInvested = 0;
                                 const targetName = selectedTipsterStats.name;
 
-filteredBets.forEach(b => {
+                                filteredBets.forEach(b => {
                                   // Robust Matching
                                   const isMatch = b.tipster === targetName || b.tipster.startsWith(targetName) || (b.subPicks && b.subPicks.some(s => s.tipster.startsWith(targetName)));
 
-if (isMatch && b.result !== 'pending' && b.result !== 'void') {
+                                  if (isMatch && b.result !== 'pending' && b.result !== 'void') {
                                     wiInvested += stake;
                                     if (b.result === 'win') wiProfit += (stake * b.odds) - stake;
                                     if (b.result === 'loss') wiProfit -= stake;
@@ -4058,7 +4069,7 @@ if (isMatch && b.result !== 'pending' && b.result !== 'void') {
                                 const wiYield = wiInvested > 0 ? ((wiProfit / wiInvested) * 100).toFixed(2) : 0;
                                 const diff = wiProfit - (selectedTipsterStats.profit || 0);
 
-return (
+                                return (
                                   <>
                                     <div className="bg-slate-900 p-3 rounded border border-slate-700">
                                       <div className="text-[10px] text-slate-500 uppercase">Nuevo Beneficio</div>
@@ -4079,7 +4090,7 @@ return (
                           </div>
                         </div>
 
-{/* 3. PROFIT EVOLUTION CHART */}
+                        {/* 3. PROFIT EVOLUTION CHART */}
                         <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 h-[300px]">
                           <h3 className="text-xs font-bold text-slate-400 uppercase mb-4">Curva de Beneficio ({selectedTipsterStats.name})</h3>
                           <ResponsiveContainer width="100%" height="100%">
@@ -4108,12 +4119,12 @@ return (
               </div>
             )}
 
-{/* INDIVIDUAL STATS MODAL (V39 - Expanded) */}
+            {/* INDIVIDUAL STATS MODAL (V39 - Expanded) */}
             {selectedTipsterStats && (
               <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={() => setSelectedTipsterStats(null)}>
                 <div className="bg-slate-900 w-full max-w-5xl rounded-xl border border-slate-700 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
-{/* HEADER */}
+                  {/* HEADER */}
                   <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-900/30 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 z-10">
                     <div>
                       <div className="text-xs text-indigo-400 font-bold uppercase mb-1">Análisis Detallado</div>
@@ -4132,7 +4143,7 @@ return (
                     </div>
                   </div>
 
-<div className="p-6 space-y-8">
+                  <div className="p-6 space-y-8">
                     {/* 1. KEY METRICS GRID */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
@@ -4153,7 +4164,7 @@ return (
                       </div>
                     </div>
 
-{/* 2. ODDS RANGE BREAKDOWN (New V39) */}
+                    {/* 2. ODDS RANGE BREAKDOWN (New V39) */}
                     <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-lg">
                       <div className="p-4 bg-slate-950 border-b border-slate-800 font-bold text-slate-400 text-xs uppercase">Rendimiento por Rango de Cuota</div>
                       <table className="w-full text-left text-sm">
@@ -4190,10 +4201,10 @@ return (
                       </table>
                     </div>
 
-{/* 3. CHARTS GRID (Sniper & Heatmap & Curve) */}
+                    {/* 3. CHARTS GRID (Sniper & Heatmap & Curve) */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-{/* SNIPER CHART (Individual) */}
+                      {/* SNIPER CHART (Individual) */}
                       <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
                         <h3 className="font-bold text-xs mb-4 text-slate-400 uppercase tracking-wider flex items-center gap-2"><Target size={14} /> Sniper: Aciertos vs Cuota</h3>
                         <div className="h-[250px] w-full">
@@ -4229,7 +4240,7 @@ return (
                         </div>
                       </div>
 
-{/* HEATMAP (Activity) */}
+                      {/* HEATMAP (Activity) */}
                       <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
                         <h3 className="font-bold text-xs mb-4 text-slate-400 uppercase tracking-wider flex items-center gap-2"><Calendar size={14} /> Actividad Reciente</h3>
                         <div className="flex flex-wrap gap-1 justify-center align-start h-[250px] overflow-y-auto content-start">
@@ -4258,9 +4269,9 @@ return (
                         </div>
                       </div>
 
-</div>
+                    </div>
 
-{/* PROFIT EVOLUTION CHART (Large) */}
+                    {/* PROFIT EVOLUTION CHART (Large) */}
                     <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 h-[300px]">
                       <h3 className="text-xs font-bold text-slate-400 uppercase mb-4">Curva de Beneficio Acumulado</h3>
                       <ResponsiveContainer width="100%" height="100%">
@@ -4284,7 +4295,7 @@ return (
                       </ResponsiveContainer>
                     </div>
 
-{/* 4. WHAT-IF CALCULATOR */}
+                    {/* 4. WHAT-IF CALCULATOR */}
                     <div className="bg-indigo-900/10 border border-indigo-500/30 p-6 rounded-xl">
                       <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Sparkles className="text-indigo-400" /> Calculadora "What If?"</h3>
                       <div className="flex flex-col md:flex-row gap-6 items-center">
@@ -4303,11 +4314,11 @@ return (
                             let wiInvested = 0;
                             const targetName = selectedTipsterStats.name;
 
-filteredBets.forEach(b => {
+                            filteredBets.forEach(b => {
                               // Robust Matching
                               const isMatch = b.tipster === targetName || b.tipster.startsWith(targetName) || (b.subPicks && b.subPicks.some(s => s.tipster.startsWith(targetName)));
 
-if (isMatch && b.result !== 'pending' && b.result !== 'void') {
+                              if (isMatch && b.result !== 'pending' && b.result !== 'void') {
                                 wiInvested += stake;
                                 if (b.result === 'win') wiProfit += (stake * b.odds) - stake;
                                 if (b.result === 'loss') wiProfit -= stake;
@@ -4317,7 +4328,7 @@ if (isMatch && b.result !== 'pending' && b.result !== 'void') {
                             const wiYield = wiInvested > 0 ? ((wiProfit / wiInvested) * 100).toFixed(2) : 0;
                             const diff = wiProfit - (selectedTipsterStats.profit || 0);
 
-return (
+                            return (
                               <>
                                 <div className="bg-slate-900 p-3 rounded border border-slate-700">
                                   <div className="text-[10px] text-slate-500 uppercase">Nuevo Beneficio</div>
@@ -4338,12 +4349,12 @@ return (
                       </div>
                     </div>
 
-</div>
+                  </div>
                 </div>
               </div>
             )}
 
-{/* SUPER SIMULATOR V2 (Premium Redesign) */}
+            {/* SUPER SIMULATOR V2 (Premium Redesign) */}
             {activeSection === 'simulador' && (
               <div className="space-y-6 animate-fade-in pb-20">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
@@ -4359,18 +4370,18 @@ return (
                   </div>
                 </header>
 
-<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-{/* --- LEFT SIDEBAR: CONTROL STATION (Col 3) --- */}
+                  {/* --- LEFT SIDEBAR: CONTROL STATION (Col 3) --- */}
                   <div className="lg:col-span-3 space-y-6">
                     <div className="bg-slate-900/80 backdrop-blur-xl p-6 rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
 
-<h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                         <Settings size={14} /> Configuración
                       </h3>
 
-{/* ALGORITHM SWITCH */}
+                      {/* ALGORITHM SWITCH */}
                       {simMode === 'GLOBAL' && (
                         <div className="mb-6">
                           <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Modo de Motor</label>
@@ -4381,7 +4392,7 @@ return (
                         </div>
                       )}
 
-{simMode === 'TIPSTER' && (
+                      {simMode === 'TIPSTER' && (
                         <div className="mb-6">
                           <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Tipster Objetivo</label>
                           <select value={simSelectedTipster} onChange={e => setSimSelectedTipster(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-3 text-white text-sm focus:border-purple-500 outline-none transition-all">
@@ -4391,7 +4402,7 @@ return (
                         </div>
                       )}
 
-{/* DATA SETTINGS & FILTERS */}
+                      {/* DATA SETTINGS & FILTERS */}
                       <div className="mb-4 space-y-3">
                         <div className="flex items-center justify-between">
                           <label className="flex items-center gap-2 cursor-pointer group">
@@ -4404,7 +4415,7 @@ return (
                         </div>
                       </div>
 
-<div className="space-y-4">
+                      <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-slate-300">Datos Base</span>
                           <button onClick={loadRealStats} className="text-[10px] bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded-full text-white font-bold shadow-lg shadow-indigo-500/20 transition-all">
@@ -4412,7 +4423,7 @@ return (
                           </button>
                         </div>
 
-{/* SOURCE STATS PANEL */}
+                        {/* SOURCE STATS PANEL */}
                         {sourceStats && (
                           <div className="bg-black/30 rounded-lg p-3 border border-white/5 space-y-2 animate-fade-in">
                             <div className="text-[10px] text-slate-500 uppercase font-bold text-center mb-1">Muestra Analizada</div>
@@ -4436,7 +4447,7 @@ return (
                           </div>
                         )}
 
-{simAlgo === 'REALISTIC' ? (
+                        {simAlgo === 'REALISTIC' ? (
                           <div className="p-4 bg-emerald-900/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-200/80 italic">
                             Los parámetros (Winrate, Cuota, Stake) se extraen de la configuración individual de cada tipster en la tabla de cartera.
                           </div>
@@ -4459,12 +4470,12 @@ return (
                           </>
                         )}
 
-<div className="space-y-1">
+                        <div className="space-y-1">
                           <div className="text-[10px] text-slate-500 font-bold uppercase">Horizonte (Apuestas)</div>
                           <input type="number" value={simNumBets} onChange={e => setSimNumBets(e.target.value)} className="w-full bg-black/40 border border-slate-700/50 rounded-lg p-2.5 text-white font-mono text-center focus:border-indigo-500 outline-none" />
                         </div>
 
-{/* Staking */}
+                        {/* Staking */}
                         <div className="pt-4 border-t border-white/5">
                           <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Gestión de Stake</label>
                           <div className="flex rounded-lg bg-black/40 p-1 border border-white/5 mb-2">
@@ -4478,16 +4489,16 @@ return (
                         </div>
                       </div>
 
-<button onClick={runSimulation} className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-900/40 transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group">
+                      <button onClick={runSimulation} className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-900/40 transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group">
                         <Zap size={20} className="group-hover:text-yellow-300 transition-colors" /> <span className="tracking-wide">SIMULAR AHORA</span>
                       </button>
                     </div>
                   </div>
 
-{/* --- RIGHT DASHBOARD: VISUALIZATION (Col 9) --- */}
+                  {/* --- RIGHT DASHBOARD: VISUALIZATION (Col 9) --- */}
                   <div className="lg:col-span-9 space-y-6">
 
-{/* 1. METRICS ROW */}
+                    {/* 1. METRICS ROW */}
                     {simResults && (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in-up">
                         <div className="bg-slate-900/60 backdrop-blur border border-red-500/20 p-4 rounded-2xl relative overflow-hidden group">
@@ -4517,7 +4528,7 @@ return (
                       </div>
                     )}
 
-{/* 2. MAIN CHART AREA */}
+                    {/* 2. MAIN CHART AREA */}
                     <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden min-h-[500px] flex flex-col">
                       {/* Chart Tabs */}
                       <div className="flex border-b border-white/5 p-2 bg-black/20">
@@ -4532,7 +4543,7 @@ return (
                         ))}
                       </div>
 
-{/* Chart Canvas */}
+                      {/* Chart Canvas */}
                       <div className="flex-1 p-6 relative">
                         {!simResults ? (
                           <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-pulse gap-4">
@@ -4562,7 +4573,7 @@ return (
                               </AreaChart>
                             )}
 
-{simChartTab === 'drawdown' && (
+                            {simChartTab === 'drawdown' && (
                               <AreaChart data={simResults.paths[2]?.data.map((pt, idx) => {
                                 // Calculate DD for the Median Path (Index 2 usually represents typical if sorted? No, visualPaths are 0..4 chronological)
                                 // Actually visualPaths are just first 5 sims. Let's use Sim 0 as representative or Avg of them?
@@ -4593,7 +4604,7 @@ return (
                               </AreaChart>
                             )}
 
-{simChartTab === 'distribution' && (
+                            {simChartTab === 'distribution' && (
                               <BarChart data={simResults.histogram}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.5} />
                                 <XAxis dataKey="range" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} angle={-45} textAnchor="end" height={60} />
@@ -4611,7 +4622,7 @@ return (
                       </div>
                     </div>
 
-{/* 3. CONFIG TABLE (Conditional - Bottom of Dashboard) */}
+                    {/* 3. CONFIG TABLE (Conditional - Bottom of Dashboard) */}
                     {simAlgo === 'REALISTIC' && simPortfolioConfig.length > 0 && (
                       <div className="bg-slate-900/80 backdrop-blur rounded-2xl border border-white/10 p-6 shadow-xl animate-fade-in-up">
                         <h3 className="text-emerald-400 font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-wider"><Settings size={16} /> Configuración de Cartera ({simPortfolioConfig.filter(t => t.enabled).length} Activos)</h3>
@@ -4652,12 +4663,12 @@ return (
                       </div>
                     )}
 
-</div>
+                  </div>
                 </div>
               </div>
             )}
 
-{/* 5. HISTORY */}
+            {/* 5. HISTORY */}
             {activeSection === 'history' && (
               <div className="space-y-6 animate-fade-in">
                 {/* TOOLBAR HISTORIAL 2.0 */}
@@ -4667,7 +4678,7 @@ return (
                     <p className="text-xs text-slate-400">Consulta y analiza tu registro detallado.</p>
                   </div>
 
-<div className="flex flex-wrap gap-2 w-full xl:w-auto">
+                  <div className="flex flex-wrap gap-2 w-full xl:w-auto">
                     {/* FILTRO FECHA */}
                     <div className="flex bg-slate-950 rounded border border-slate-800 p-1">
                       {['today', 'week', 'month', 'all'].map(r => (
@@ -4677,16 +4688,16 @@ return (
                       ))}
                     </div>
 
-{/* FILTRO CUSTOM DATE */}
+                    {/* FILTRO CUSTOM DATE */}
                     <input type="date" value={historyFilters.customDate} onChange={e => setHistoryFilters({ ...historyFilters, range: 'custom', customDate: e.target.value })} className={`bg-slate-950 border border-slate-800 rounded px-2 text-xs text-white focus:border-blue-500 ${historyFilters.range === 'custom' ? 'border-blue-500' : ''}`} />
 
-{/* FILTRO TIPSTER */}
+                    {/* FILTRO TIPSTER */}
                     <select value={historyFilters.tipster} onChange={e => setHistoryFilters({ ...historyFilters, tipster: e.target.value })} className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white font-bold focus:border-blue-500">
                       <option value="ALL">TODOS LOS TIPSTERS</option>
                       {tipsters.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
                     </select>
 
-{/* FILTRO CUOTA */}
+                    {/* FILTRO CUOTA */}
                     <select value={historyFilters.odds} onChange={e => setHistoryFilters({ ...historyFilters, odds: e.target.value })} className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 font-bold focus:border-blue-500">
                       <option value="ALL">Cualquier Cuota</option>
                       <option value="low">Baja (1.0 - 1.5)</option>
@@ -4697,7 +4708,7 @@ return (
                   </div>
                 </div>
 
-<div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-xl">
+                <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-xl">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm min-w-[600px]">
                       <thead className="bg-slate-950 text-slate-400 uppercase text-xs font-bold">
@@ -4741,21 +4752,21 @@ return (
                               if (historyFilters.odds === 'lotto' && o <= 3.0) return false;
                             }
 
-return true;
+                            return true;
                           });
 
-if (filtered.length === 0) return <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No hay registros con estos filtros</td></tr>;
+                          if (filtered.length === 0) return <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No hay registros con estos filtros</td></tr>;
 
-return (() => {
+                          return (() => {
                             // GROUPING LOGIC (V42)
                             const sorted = filtered.sort((a, b) => b.id - a.id);
                             const groupedList = [];
                             const processedIds = new Set();
 
-sorted.forEach(bet => {
+                            sorted.forEach(bet => {
                               if (processedIds.has(bet.id)) return;
 
-if (bet.groupId) {
+                              if (bet.groupId) {
                                 const groupMembers = sorted.filter(b => b.groupId === bet.groupId);
                                 groupMembers.forEach(m => processedIds.add(m.id));
 
@@ -4770,7 +4781,7 @@ if (bet.groupId) {
                                 const oddsList = groupMembers.map(b => b.odds).sort((a, b) => a - b);
                                 const oddsDisplay = oddsList.length > 1 ? `${oddsList[0].toFixed(2)} - ${oddsList[oddsList.length - 1].toFixed(2)}` : oddsList[0].toFixed(2);
 
-groupedList.push({
+                                groupedList.push({
                                   type: 'group',
                                   id: bet.groupId,
                                   date: bet.date,
@@ -4787,12 +4798,12 @@ groupedList.push({
                               }
                             });
 
-return groupedList.map(item => {
+                            return groupedList.map(item => {
                               if (item.type === 'group') {
                                 const isExpanded = expandedBets.includes(item.id);
                                 const profitColor = item.result === 'pending' ? 'text-slate-500' : (item.profit >= 0 ? 'text-emerald-400' : 'text-red-400');
 
-return (
+                                return (
                                   <React.Fragment key={item.id}>
                                     <tr className={`hover:bg-slate-800/50 transition-colors border-l-4 border-l-cyan-500/50 bg-cyan-900/10 cursor-pointer`} onClick={() => toggleHistoryExpansion(item.id)}>
                                       <td className="p-4 text-slate-400 text-xs whitespace-nowrap">{item.date}</td>
@@ -4869,7 +4880,7 @@ return (
                                 const isMulti = (bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0);
                                 const isExpanded = expandedBets.includes(bet.id);
 
-return (
+                                return (
                                   <React.Fragment key={bet.id}>
                                     <tr className={`hover:bg-slate-800/50 transition-colors ${isExpanded ? 'bg-slate-800/30' : ''}`}>
                                       <td className="p-4 text-slate-400 text-xs whitespace-nowrap">{bet.date}</td>
@@ -4937,7 +4948,7 @@ return (
               </div>
             )}
 
-{/* RESOLUTION MODAL (V7 - GRANULAR) */}
+            {/* RESOLUTION MODAL (V7 - GRANULAR) */}
             {resolutionBet && (
               <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
                 <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in">
@@ -4956,13 +4967,13 @@ return (
                       let status = 'WIN';
                       let statusColor = 'text-emerald-400';
 
-if (resolutionBet.isGroup && resolutionBet.children) {
+                      if (resolutionBet.isGroup && resolutionBet.children) {
                         // --- GROUP SIMULATION ---
                         estProfit = 0;
                         let totalStake = 0;
                         let anyPending = false;
 
-resolutionBet.children.forEach(child => {
+                        resolutionBet.children.forEach(child => {
                           totalStake += parseFloat(child.stake);
                           const childLines = child.betLines || [];
 
@@ -4987,7 +4998,7 @@ resolutionBet.children.forEach(child => {
                           const isLoss = resolvedChildLines.some(l => l.result === 'loss');
                           const isVoid = resolvedChildLines.every(l => l.result === 'void');
 
-if (isLoss) {
+                          if (isLoss) {
                             estProfit -= parseFloat(child.stake);
                           } else if (isVoid) {
                             // Void = Stake returned (Profit 0)
@@ -5002,7 +5013,7 @@ if (isLoss) {
                           }
                         });
 
-if (anyPending) {
+                        if (anyPending) {
                           status = 'PENDING';
                           statusColor = 'text-yellow-400';
                           effOdds = 0; // Not relevant
@@ -5012,17 +5023,17 @@ if (anyPending) {
                           if (estProfit < 0 && estProfit > -totalStake) status = 'PARTIAL LOSS';
                           if (estProfit === -totalStake) status = 'LOSS';
 
-statusColor = estProfit >= 0 ? 'text-emerald-400' : 'text-red-400';
+                          statusColor = estProfit >= 0 ? 'text-emerald-400' : 'text-red-400';
                           // effOdds is tricky for systems, maybe implied odds? (Profit + Stake) / Stake
                           effOdds = (estProfit + totalStake) / totalStake;
                         }
 
-} else {
+                      } else {
                         // --- SINGLE BET SIMULATION (Existing) ---
                         const anyLoss = isV7 ? lines.some(l => l.result === 'loss') : lines.some(l => l.status === 'loss');
                         const allVoid = isV7 ? lines.every(l => l.result === 'void') : false;
 
-if (anyLoss) { status = 'LOSS'; estProfit = -resolutionBet.stake; statusColor = 'text-red-400'; effOdds = 0; }
+                        if (anyLoss) { status = 'LOSS'; estProfit = -resolutionBet.stake; statusColor = 'text-red-400'; effOdds = 0; }
                         else if (allVoid) { status = 'VOID'; estProfit = 0; statusColor = 'text-slate-400'; effOdds = 1.00; }
                         else if (isV7) {
                           const winningLines = lines.filter(l => l.result !== 'void');
@@ -5037,7 +5048,7 @@ if (anyLoss) { status = 'LOSS'; estProfit = -resolutionBet.stake; statusColor = 
                         }
                       }
 
-return (
+                      return (
                         <div className="bg-slate-950/50 rounded-lg border border-slate-700 p-4 mb-4 flex justify-between items-center animate-pulse-slow">
                           <div>
                             <div className="text-[10px] uppercase font-bold text-slate-500">Resultado Estimado</div>
@@ -5055,7 +5066,7 @@ return (
                       );
                     })()}
 
-{/* Support V7 Lines */}
+                    {/* Support V7 Lines */}
                     {resolutionBet.tempLines && resolutionBet.tempLines.length > 0 && resolutionBet.tempLines.map((line, idx) => (
                       <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
                         <div className="flex justify-between">
@@ -5080,7 +5091,7 @@ return (
                       </div>
                     ))}
 
-{/* Support V3 SubPicks (Legacy) */}
+                    {/* Support V3 SubPicks (Legacy) */}
                     {(!resolutionBet.tempLines || resolutionBet.tempLines.length === 0) && resolutionBet.tempSubPicks && resolutionBet.tempSubPicks.map((sub, idx) => (
                       <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
                         <div className="flex justify-between">
@@ -5142,7 +5153,7 @@ return (
                             const allVoid = resolvedChildLines.every(l => l.result === 'void');
                             const anyPending = resolvedChildLines.some(l => !l.result || l.result === 'pending');
 
-if (anyPending) {
+                            if (anyPending) {
                               childResult = 'pending';
                               childOdds = 1.0; // Placeholder
                             } else if (anyLoss) {
@@ -5160,7 +5171,7 @@ if (anyPending) {
 
                             const childProfit = childResult === 'win' ? (b.stake * childOdds) - b.stake : (childResult === 'loss' ? -b.stake : 0);
 
-return {
+                            return {
                               ...b,
                               result: childResult,
                               profit: parseFloat(childProfit.toFixed(2)),
@@ -5183,7 +5194,7 @@ return {
                       const anyLoss = isV7 ? lines.some(l => l.result === 'loss') : lines.some(l => l.status === 'loss');
                       const allVoid = isV7 ? lines.every(l => l.result === 'void') : false;
 
-if (anyLoss) {
+                      if (anyLoss) {
                         parentResult = 'loss';
                         parentProfit = -resolutionBet.stake;
                       } else if (allVoid) {
@@ -5225,7 +5236,7 @@ if (anyLoss) {
               </div>
             )}
 
-{/* RESOLUTION CHALLENGE MODAL (V17) */}
+            {/* RESOLUTION CHALLENGE MODAL (V17) */}
             {resolutionChallengeBet && (
               <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
                 <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden animate-scale-in">
@@ -5234,7 +5245,7 @@ if (anyLoss) {
                     <p className="text-sm text-slate-400">Define el resultado de cada línea del reto.</p>
                   </div>
 
-{/* LIVE PREVIEW (V17) */}
+                  {/* LIVE PREVIEW (V17) */}
                   <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                     {(() => {
                       const lines = resolutionChallengeBet.tempLines || [];
@@ -5246,7 +5257,7 @@ if (anyLoss) {
                       const anyLoss = lines.some(l => l.result === 'loss');
                       const allVoid = lines.every(l => l.result === 'void');
 
-if (anyLoss) { status = 'LOSS'; estProfit = -resolutionChallengeBet.stake; statusColor = 'text-red-400'; effOdds = 0; }
+                      if (anyLoss) { status = 'LOSS'; estProfit = -resolutionChallengeBet.stake; statusColor = 'text-red-400'; effOdds = 0; }
                       else if (allVoid) { status = 'VOID'; estProfit = 0; statusColor = 'text-slate-400'; effOdds = 1.00; }
                       else {
                         const winningLines = lines.filter(l => l.result !== 'void');
@@ -5257,7 +5268,7 @@ if (anyLoss) { status = 'LOSS'; estProfit = -resolutionChallengeBet.stake; statu
                         estProfit = (resolutionChallengeBet.stake * effOdds) - resolutionChallengeBet.stake;
                       }
 
-return (
+                      return (
                         <div className="bg-slate-950/50 rounded-lg border border-slate-700 p-4 mb-4 flex justify-between items-center animate-pulse-slow">
                           <div>
                             <div className="text-[10px] uppercase font-bold text-slate-500">Resultado Estimado</div>
@@ -5275,7 +5286,7 @@ return (
                       );
                     })()}
 
-{resolutionChallengeBet.tempLines.map((line, idx) => (
+                    {resolutionChallengeBet.tempLines.map((line, idx) => (
                       <div key={idx} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-2">
                         <div className="flex justify-between">
                           <span className="font-bold text-indigo-400 text-sm">Línea #{idx + 1}</span>
@@ -5300,7 +5311,7 @@ return (
                     ))}
                   </div>
 
-<div className="p-6 border-t border-slate-800 flex justify-end gap-3 bg-slate-900">
+                  <div className="p-6 border-t border-slate-800 flex justify-end gap-3 bg-slate-900">
                     <button onClick={() => setResolutionChallengeBet(null)} className="px-4 py-2 text-slate-400 hover:text-white font-bold transition-colors">Cancelar</button>
                     <button onClick={() => {
                       // APPLY LOGIC TO CHALLENGES
@@ -5312,7 +5323,7 @@ return (
                       const anyLoss = lines.some(l => l.result === 'loss');
                       const allVoid = lines.every(l => l.result === 'void');
 
-if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.stake; }
+                      if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.stake; }
                       else if (allVoid) { parentResult = 'void'; parentProfit = 0; }
                       else {
                         const winningLines = lines.filter(l => l.result !== 'void');
@@ -5347,9 +5358,9 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
               </div>
             )}
 
-</div>
+          </div>
 
-{/* CALCULATOR MODAL (V18 - RECOVERED) */}
+          {/* CALCULATOR MODAL (V18 - RECOVERED) */}
           {
             showCalculator && (
               <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowCalculator(false)}>
@@ -5360,13 +5371,13 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                   </div>
                   <div className="p-6 space-y-4">
 
-{/* TABS */}
+                    {/* TABS */}
                     <div className="flex p-1 bg-slate-800 rounded-lg mb-4">
                       <button onClick={() => setCalculatorData({ ...calculatorData, mode: 'simple' })} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${calculatorData.mode === 'simple' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>Simple</button>
                       <button onClick={() => setCalculatorData({ ...calculatorData, mode: 'combo' })} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${calculatorData.mode === 'combo' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>Combinada</button>
                     </div>
 
-{calculatorData.mode === 'simple' ? (
+                    {calculatorData.mode === 'simple' ? (
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -5406,13 +5417,13 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                                 }} className={`w-full bg-slate-800 border-slate-700 rounded p-2 text-white text-sm ${line.void ? 'opacity-50 line-through' : ''}`} disabled={line.void} />
                               </div>
 
-<button onClick={() => {
+                              <button onClick={() => {
                                 const newLines = [...calculatorData.lines];
                                 newLines[idx].void = !newLines[idx].void;
                                 setCalculatorData({ ...calculatorData, lines: newLines });
                               }} className={`p-2 mb-0.5 rounded border ${line.void ? 'bg-slate-600 text-white border-slate-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'}`} title="Marcar Nula">VOID</button>
 
-<button onClick={() => {
+                              <button onClick={() => {
                                 const newLines = calculatorData.lines.filter((_, i) => i !== idx);
                                 setCalculatorData({ ...calculatorData, lines: newLines });
                               }} className="p-2 mb-0.5 rounded bg-red-900/20 text-red-400 border border-red-900/30 hover:bg-red-900/40"><Trash2 size={16} /></button>
@@ -5421,7 +5432,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                         </div>
                         <button onClick={() => setCalculatorData({ ...calculatorData, lines: [...calculatorData.lines, { odds: '', desc: '', void: false }] })} className="w-full py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded hover:bg-slate-700 flex items-center justify-center gap-2"><Plus size={14} /> AÑADIR LÍNEA</button>
 
-{/* STATS */}
+                        {/* STATS */}
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
                           <div className="bg-slate-950 p-3 rounded border border-slate-800">
                             <div className="text-[10px] font-bold text-slate-500 uppercase">Cuota Total</div>
@@ -5442,7 +5453,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
             )
           }
 
-{/* BANK MANAGER MODAL (V18) */}
+          {/* BANK MANAGER MODAL (V18) */}
           {
             showBankManager && (
               <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowBankManager(false)}>
@@ -5464,7 +5475,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                       </div>
                     </div>
 
-<div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <button onClick={() => {
                         const amount = prompt("Introduce Bank Inicial (€):");
                         if (amount && !isNaN(amount)) {
@@ -5498,7 +5509,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                       </button>
                     </div>
 
-<div className="space-y-2">
+                    <div className="space-y-2">
                       <h4 className="text-xs font-bold text-slate-500 uppercase">Historial de Movimientos</h4>
                       <div className="max-h-[150px] overflow-y-auto space-y-1 pr-1">
                         {bankTransactions.sort((a, b) => b.id - a.id).map(t => (
@@ -5520,7 +5531,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
             )
           }
 
-{/* ADD BET MODAL - REFACTORED V30 */}
+          {/* ADD BET MODAL - REFACTORED V30 */}
           {
             showAddBetModal && (
               <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => { setShowAddBetModal(false); setEditingBet(null); }}>
@@ -5538,10 +5549,10 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                     </div>
                   </div>
 
-<div className="p-6 overflow-y-auto custom-scrollbar">
+                  <div className="p-6 overflow-y-auto custom-scrollbar">
                     <form onSubmit={handleAddBet} className="space-y-6 relative z-10">
 
-{/* 1. TIPSTER & STAKE (Top Row) */}
+                      {/* 1. TIPSTER & STAKE (Top Row) */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="relative z-20">
                           <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Tipster Principal</label>
@@ -5572,7 +5583,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                         </div>
                       </div>
 
-{/* 2. DESCRIPTION & TAGS */}
+                      {/* 2. DESCRIPTION & TAGS */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción General</label>
@@ -5598,14 +5609,14 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                         </div>
                       </div>
 
-{/* 3. MULTI-LINE BUILDER (Always On) */}
+                      {/* 3. MULTI-LINE BUILDER (Always On) */}
                       <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/50 space-y-3">
                         <div className="flex justify-between items-center">
                           <div className="text-xs font-bold text-indigo-400 uppercase flex items-center gap-2"><Layers size={14} /> Líneas de Apuesta (Multi/Mezcla)</div>
                           <button type="button" onClick={() => setIsMultiLine(!isMultiLine)} className="text-[10px] text-slate-500 hover:text-white underline">{isMultiLine ? 'Ocultar Constructor' : 'Mostrar Constructor'}</button>
                         </div>
 
-{(isMultiLine || betLines.length > 0) && (
+                        {(isMultiLine || betLines.length > 0) && (
                           <div className="space-y-2 animate-fade-in">
                             {betLines.map((line, idx) => (
                               <div key={idx} className="flex flex-col md:flex-row gap-2 items-start md:items-center bg-slate-900/50 p-3 rounded border border-slate-700">
@@ -5685,7 +5696,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                         {betLines.length === 0 && <div className="text-center text-xs text-slate-500 italic py-2 cursor-pointer hover:text-indigo-400" onClick={addBetLine}>Haga clic para añadir líneas detalladas</div>}
                       </div>
 
-{/* SYSTEM BETS SECTION (V42) */}
+                      {/* SYSTEM BETS SECTION (V42) */}
                       {betLines.length >= 2 && (
                         <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/50 space-y-3">
                           <div className="flex justify-between items-center cursor-pointer" onClick={() => !systemType && setSystemType({ k: betLines.length, name: 'Combi', count: 1 })}>
@@ -5693,7 +5704,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                             {systemType && <button type="button" onClick={(e) => { e.stopPropagation(); setSystemType(null); }} className="text-[10px] text-red-400 hover:text-red-300">Cancelar Sistema</button>}
                           </div>
 
-<div className="space-y-2">
+                          <div className="space-y-2">
                             {/* Main Accordion / List */}
                             <div className="p-2 bg-slate-950 rounded border border-slate-800">
                               <div className="text-xs text-slate-500 mb-2">Opciones disponibles para {betLines.length} selecciones:</div>
@@ -5707,7 +5718,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                                   <span>x{parseFloat(formOdds).toFixed(2)}</span>
                                 </button>
 
-{/* SYSTEM OPTIONS */}
+                                {/* SYSTEM OPTIONS */}
                                 {getSystemOptions(betLines.length).map((sys, idx) => (
                                   <button
                                     key={idx}
@@ -5722,7 +5733,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                               </div>
                             </div>
 
-{/* INPUT STAKE PER BET */}
+                            {/* INPUT STAKE PER BET */}
                             {systemType && (
                               <div className="animate-fade-in p-3 bg-cyan-900/10 border border-cyan-500/30 rounded-lg">
                                 <div className="flex justify-between items-center mb-2">
@@ -5771,7 +5782,7 @@ if (anyLoss) { parentResult = 'loss'; parentProfit = -resolutionChallengeBet.sta
                                           });
                                         }
 
-return previewBets.map((pb, i) => (
+                                        return previewBets.map((pb, i) => (
                                           <div key={i} className="flex justify-between items-center text-[10px] p-1 hover:bg-slate-800 rounded">
                                             <div className="flex flex-col">
                                               <span className="font-bold text-slate-300">{pb.name}</span>
@@ -5793,7 +5804,7 @@ return previewBets.map((pb, i) => (
                         </div>
                       )}
 
-{/* 4. ODDS & PROFIT CALCULATOR (Hidden if System Selected) */}
+                      {/* 4. ODDS & PROFIT CALCULATOR (Hidden if System Selected) */}
                       {!systemType && (
                         <div className="grid grid-cols-2 gap-4 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
                           <div>
@@ -5821,7 +5832,7 @@ return previewBets.map((pb, i) => (
                                 const s = parseFloat(formStake);
                                 const p = parseFloat(val);
 
-if (s > 0 && p > 0) {
+                                if (s > 0 && p > 0) {
                                   const targetTotalOdds = (p + s) / s;
 
                                   // 1. Update Global Odds Display
@@ -5854,7 +5865,7 @@ if (s > 0 && p > 0) {
                         </div>
                       )}
 
-{/* EDICIÃ“N: BOTONES RESULTADO GENERAL (V35 - Refined) */}
+                      {/* EDICIÃ“N: BOTONES RESULTADO GENERAL (V35 - Refined) */}
                       {editingBet && (
                         <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 flex flex-col gap-2">
                           <label className="text-xs font-bold text-slate-400 uppercase text-center">Estado Final de la Apuesta</label>
@@ -5873,7 +5884,7 @@ if (s > 0 && p > 0) {
                         </div>
                       )}
 
-<button type="submit" className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 py-4 rounded-xl font-bold text-white shadow-lg shadow-emerald-900/20 text-lg transition-all transform active:scale-95 flex items-center justify-center gap-3">
+                      <button type="submit" className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 py-4 rounded-xl font-bold text-white shadow-lg shadow-emerald-900/20 text-lg transition-all transform active:scale-95 flex items-center justify-center gap-3">
                         <Save size={20} /> REGISTRAR APUESTA (DEBUG)
                       </button>
                     </form>
@@ -5883,7 +5894,7 @@ if (s > 0 && p > 0) {
             )
           }
 
-{/* TIPSTER MANAGER MODAL (V30) */}
+          {/* TIPSTER MANAGER MODAL (V30) */}
           {
             showTipsterManager && (
               <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setShowTipsterManager(false)}>
@@ -5907,7 +5918,7 @@ if (s > 0 && p > 0) {
                       }} className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 rounded flex items-center gap-2"><Plus size={18} /> Añadir</button>
                     </div>
 
-<div className="space-y-2">
+                    <div className="space-y-2">
                       {tipsters.map(t => (
                         <div key={t.id} className="flex items-center justify-between bg-slate-800/50 p-3 rounded border border-slate-700 hover:border-slate-500 transition-colors">
                           <div className="flex items-center gap-4">
@@ -5924,11 +5935,11 @@ if (s > 0 && p > 0) {
                                 ? t.originalName
                                 : DEFAULT_TIPSTERS.find(dt => dt.id === t.id)?.name; // Fallback for really old defaults if strict mode fails
 
-                                const label = (originalLabel && originalLabel !== t.name)
+                              const label = (originalLabel && originalLabel !== t.name)
                                 ? `Editar Nombre (Original: ${originalLabel}):`
                                 : "Editar Nombre del Tipster:";
 
-                                const newName = prompt(label, t.name);
+                              const newName = prompt(label, t.name);
                               if (newName !== null) {
                                 const newStake = prompt("Editar Stake Base (€):", t.defaultStake);
                                 if (newStake !== null) {
@@ -5947,7 +5958,7 @@ if (s > 0 && p > 0) {
             )
           }
 
-{/* CHALLENGE BET MODAL - BUGFIX V30 */}
+          {/* CHALLENGE BET MODAL - BUGFIX V30 */}
           {
             activeChallengeId && (
               <div className="fixed inset-0 bg-black/90 z-[95] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={() => setActiveChallengeId(null)}>
@@ -5964,12 +5975,12 @@ if (s > 0 && p > 0) {
                       </button>
                     </div>
 
-<div>
+                    <div>
                       <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Descripción del Paso</label>
                       <input type="text" value={challengeForm.desc} onChange={e => setChallengeForm({ ...challengeForm, desc: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded p-3 text-white focus:border-yellow-500" required placeholder="Ej: Paso 1 - Real Madrid vs..." />
                     </div>
 
-{/* CHALLENGE MULTI-LINE BUILDER */}
+                    {/* CHALLENGE MULTI-LINE BUILDER */}
                     {isChallengeMulti && (
                       <div className="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50 space-y-2">
                         <div className="text-[10px] font-bold text-indigo-400 uppercase flex items-center gap-2"><Layers size={12} /> Líneas del Reto</div>
@@ -5984,7 +5995,7 @@ if (s > 0 && p > 0) {
                               <ChevronRight className="absolute right-2 top-2.5 text-slate-500 rotate-90 pointer-events-none" size={14} />
                             </div>
 
-<input type="text" placeholder="Descripción..." value={line.desc} onChange={e => updateChallengeLine(idx, 'desc', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" />
+                            <input type="text" placeholder="Descripción..." value={line.desc} onChange={e => updateChallengeLine(idx, 'desc', e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white" />
                             <div className="flex gap-2">
                               <input type="number" placeholder="@" step="0.01" value={line.odds} onChange={e => updateChallengeLine(idx, 'odds', e.target.value)} className="w-20 bg-slate-950 border border-slate-700 rounded p-2 text-xs font-bold text-center text-white" />
                               <button type="button" onClick={() => removeChallengeLine(idx)} className="p-2 text-red-400 hover:bg-red-900/20 rounded"><Trash2 size={14} /></button>
@@ -5997,7 +6008,7 @@ if (s > 0 && p > 0) {
                       </div>
                     )}
 
-<div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex justify-between">
                           <span>Stake (€)</span>
@@ -6030,7 +6041,7 @@ if (s > 0 && p > 0) {
                     <button onClick={() => setShowCloudModal(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
                   </div>
 
-<div className="p-6 space-y-6">
+                  <div className="p-6 space-y-6">
                     {/* STATUS INDICATOR */}
                     <div className={`p-3 rounded-lg border text-center font-bold ${cloudStatus === 'error' ? 'bg-red-900/20 border-red-500 text-red-500' :
                       cloudStatus === 'success' ? 'bg-emerald-900/20 border-emerald-500 text-emerald-500' :
@@ -6044,7 +6055,7 @@ if (s > 0 && p > 0) {
                       {cloudStatus === 'error' && 'Error en la operación'}
                     </div>
 
-{/* SYNC ACTIONS */}
+                    {/* SYNC ACTIONS */}
                     <div className="grid grid-cols-2 gap-4">
                       <button onClick={handleCloudUpload} disabled={cloudStatus !== 'idle' && cloudStatus !== 'success' && cloudStatus !== 'error'} className="flex flex-col items-center justify-center gap-2 p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition-all group">
                         <UploadCloud size={32} className="text-indigo-400 group-hover:scale-110 transition-transform" />
@@ -6058,7 +6069,7 @@ if (s > 0 && p > 0) {
                       </button>
                     </div>
 
-{/* CONFIGURATION */}
+                    {/* CONFIGURATION */}
                     <div className="border-t border-slate-800 pt-4">
                       <div className="text-xs font-bold text-slate-500 uppercase mb-2">Configuración de Conexión</div>
                       <div className="space-y-3">
@@ -6068,13 +6079,13 @@ if (s > 0 && p > 0) {
                           <p className="text-[9px] text-slate-500 mt-1">Usa la misma ID en todos tus dispositivos para compartir datos.</p>
                         </div>
 
-<label className="flex items-center gap-2 cursor-pointer">
+                        <label className="flex items-center gap-2 cursor-pointer">
                           <input type="checkbox" checked={cloudConfig.autoSync} onChange={(e) => setCloudConfig({ ...cloudConfig, autoSync: e.target.checked })} className="rounded bg-slate-700 border-slate-600 text-emerald-500 focus:ring-emerald-500" />
                           <span className="text-slate-300">Auto-Sincronizar (cada 3s al detectar cambios)</span>
                         </label>
                       </div>
 
-<div className="mt-8 pt-8 border-t border-slate-700">
+                      <div className="mt-8 pt-8 border-t border-slate-700">
                         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                           <Sparkles className="text-purple-400" size={20} /> Gestión de Era
                         </h3>
@@ -6096,7 +6107,7 @@ if (s > 0 && p > 0) {
                         </div>
                       </div>
 
-<div className="mt-8 pt-8 border-t border-slate-700">
+                      <div className="mt-8 pt-8 border-t border-slate-700">
                         <h3 className="text-lg font-bold text-white mb-4">Zona de Peligro</h3>
                         <details className="group">
                           <summary className="text-[10px] cursor-pointer text-slate-500 hover:text-indigo-400 select-none">Opciones Avanzadas (URL & Key)</summary>
@@ -6108,7 +6119,7 @@ if (s > 0 && p > 0) {
                       </div>
                     </div>
 
-{/* LOCAL MEMORY SECTION (Moved from Sidebar V35) */}
+                    {/* LOCAL MEMORY SECTION (Moved from Sidebar V35) */}
                     <div className="border-t border-slate-800 pt-4">
                       <div className="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2"><Save size={12} /> Memoria Local & Respaldo</div>
                       <div className="grid grid-cols-2 gap-2">
@@ -6130,7 +6141,7 @@ if (s > 0 && p > 0) {
                       </div>
                     </div>
 
-</div>
+                  </div>
                 </div>
               </div>
             )
@@ -6184,7 +6195,7 @@ if (s > 0 && p > 0) {
             )
           }
 
-{/* IMPORT MODAL (V45) - Fixed Z-Index to be above Cloud Modal (z-200) -> Z-500 */}
+          {/* IMPORT MODAL (V45) - Fixed Z-Index to be above Cloud Modal (z-200) -> Z-500 */}
           {importModalOpen && pendingImportData && (
             <div className="fixed inset-0 bg-black/95 z-[500] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
               <div className="bg-slate-900 w-full max-w-lg rounded-xl border-2 border-emerald-500 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -6196,13 +6207,13 @@ if (s > 0 && p > 0) {
                   <button onClick={() => { setImportModalOpen(false); setPendingImportData(null); }}><X size={20} className="text-slate-500 hover:text-white" /></button>
                 </div>
 
-<div className="p-6">
+                <div className="p-6">
                   <div className="bg-blue-900/20 text-blue-300 p-3 rounded mb-4 text-xs border border-blue-500/30 flex items-start gap-2">
                     <AlertCircle size={14} className="mt-0.5 shrink-0" />
                     <span>Selecciona qué datos quieres restaurar. Los datos no seleccionados se mantendrán tal como están ahora en tu navegador.</span>
                   </div>
 
-<form onSubmit={(e) => {
+                  <form onSubmit={(e) => {
                     e.preventDefault();
                     const formData = new FormData(e.target);
                     confirmImport({
@@ -6213,7 +6224,7 @@ if (s > 0 && p > 0) {
                     });
                   }} className="space-y-3">
 
-<label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
                       <div className="flex items-center gap-3">
                         <input type="checkbox" name="includeBets" defaultChecked className="w-4 h-4 accent-emerald-500" />
                         <div>
@@ -6227,7 +6238,7 @@ if (s > 0 && p > 0) {
                       </div>
                     </label>
 
-<label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
                       <div className="flex items-center gap-3">
                         <input type="checkbox" name="includeChallenges" defaultChecked className="w-4 h-4 accent-emerald-500" />
                         <div>
@@ -6241,7 +6252,7 @@ if (s > 0 && p > 0) {
                       </div>
                     </label>
 
-<label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
                       <div className="flex items-center gap-3">
                         <input type="checkbox" name="includeTipsters" defaultChecked className="w-4 h-4 accent-emerald-500" />
                         <div>
@@ -6255,7 +6266,7 @@ if (s > 0 && p > 0) {
                       </div>
                     </label>
 
-<label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
                       <div className="flex items-center gap-3">
                         <input type="checkbox" name="includeConfig" defaultChecked className="w-4 h-4 accent-emerald-500" />
                         <div>
@@ -6269,7 +6280,7 @@ if (s > 0 && p > 0) {
                       </div>
                     </label>
 
-<div className="pt-4 flex gap-3">
+                    <div className="pt-4 flex gap-3">
                       <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold shadow-lg shadow-emerald-900/20 text-sm">
                         Confirmar Restauración
                       </button>
@@ -6283,7 +6294,7 @@ if (s > 0 && p > 0) {
             </div>
           )}
 
-</div>
+        </div>
       );
     }
 
