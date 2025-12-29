@@ -257,7 +257,7 @@
       'CheckCircle', 'XCircle', 'Clock', 'Activity', 'Target', 'Zap',
       'BarChart2', 'Menu', 'ChevronRight', 'AlertCircle', 'AlertTriangle', 'RefreshCw', 'Check', 'X', 'Calendar', 'Layers', 'Trophy', 'Flame',
       'Filter', 'Tag', 'Camera', 'Sparkles', 'Brain', 'Upload', 'Scan', 'TrendingDown', 'UserPlus', 'Edit', 'Calculator', 'LayoutDashboard', 'Copy',
-      'ChevronUp', 'ChevronDown', 'Cloud', 'UploadCloud', 'DownloadCloud', 'Settings', 'ArrowDown', 'ArrowUp', 'LayoutGrid', 'Repeat'
+      'ChevronUp', 'ChevronDown', 'Cloud', 'UploadCloud', 'DownloadCloud', 'Settings', 'ArrowDown', 'ArrowUp', 'LayoutGrid', 'Repeat', 'Globe'
     ];
 
     const Icons = IconList.reduce((acc, name) => {
@@ -270,7 +270,7 @@
       CheckCircle, XCircle, Clock, Activity, Target, Zap,
       BarChart2, Menu, ChevronRight, AlertCircle, AlertTriangle, RefreshCw, Check, X, Calendar, Layers, Trophy, Flame,
       Filter, Tag, Camera, Sparkles, Brain, Upload, Scan, TrendingDown, UserPlus, Edit, Calculator, LayoutDashboard, Copy,
-      ChevronUp, ChevronDown, Cloud, UploadCloud, DownloadCloud, Settings, ArrowDown, ArrowUp, LayoutGrid, Repeat
+      ChevronUp, ChevronDown, Cloud, UploadCloud, DownloadCloud, Settings, ArrowDown, ArrowUp, LayoutGrid, Repeat, Globe
     } = Icons;
     const {
       LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -2741,6 +2741,31 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             {/* 1. DASHBOARD */}
             {activeSection === 'dashboard' && (
               <div className="space-y-6 animate-fade-in">
+
+                {/* MOBILE ERA SELECTOR (V50) */}
+                {eraResetDate && (
+                  <div className="md:hidden bg-slate-900 rounded-lg p-1.5 border border-slate-700 flex justify-between gap-1 mb-2">
+                    <button
+                      onClick={() => setEraFilter('BEFORE')}
+                      className={`flex-1 py-2 text-xs font-bold rounded-md transition-all flex flex-col items-center justify-center gap-1 ${eraFilter === 'BEFORE' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      <History size={14} /> Before
+                    </button>
+                    <button
+                      onClick={() => setEraFilter('AFTER')}
+                      className={`flex-1 py-2 text-xs font-bold rounded-md transition-all flex flex-col items-center justify-center gap-1 ${eraFilter === 'AFTER' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      <Zap size={14} /> New Era
+                    </button>
+                    <button
+                      onClick={() => setEraFilter('ALL')}
+                      className={`flex-1 py-2 text-xs font-bold rounded-md transition-all flex flex-col items-center justify-center gap-1 ${eraFilter === 'ALL' ? 'bg-slate-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      <Globe size={14} /> All
+                    </button>
+                  </div>
+                )}
+
                 {/* TAG FILTER UI (V3 - Updated V33) */}
                 {userTags.length > 1 && (
                   <div className="flex justify-end mb-2">
@@ -6034,14 +6059,14 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           {/* CLOUD MODAL (V32) */}
           {
             showCloudModal && (
-              <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setShowCloudModal(false)}>
-                <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-indigo-500/50 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                  <div className="p-4 bg-indigo-950/30 border-b border-indigo-900/30 flex justify-between items-center">
+              <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md">
+                <div className="bg-slate-900 w-full max-w-lg rounded-xl border border-indigo-500/50 shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                  <div className="p-4 bg-indigo-950/30 border-b border-indigo-900/30 flex justify-between items-center shrink-0">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2"><Cloud className="text-indigo-400" /> Sincronización en la Nube</h3>
                     <button onClick={() => setShowCloudModal(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
                   </div>
 
-                  <div className="p-6 space-y-6">
+                  <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                     {/* STATUS INDICATOR */}
                     <div className={`p-3 rounded-lg border text-center font-bold ${cloudStatus === 'error' ? 'bg-red-900/20 border-red-500 text-red-500' :
                       cloudStatus === 'success' ? 'bg-emerald-900/20 border-emerald-500 text-emerald-500' :
