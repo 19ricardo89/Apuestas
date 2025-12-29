@@ -491,22 +491,29 @@
 
       const filterByEra = (items, dateField = 'date') => {
         if (!eraResetDate || eraFilter === 'ALL') return items;
-        // Strict timestamp comparison
         const splitTime = new Date(eraResetDate).getTime();
 
         return items.filter(item => {
-          // Robust date parsing
-          let d = item[dateField];
-          // Handle 'today', 'yesterday' if they exist? No, standard is ISO YYYY-MM-DD usually.
-          // Note: item.date is usually YYYY-MM-DD string. eraResetDate is ISO full.
-          // We need to be careful. If item.date is just '2024-01-01', it treats as midnight UTC usually.
-          // Let's treat item date as end of day? Or simple comparison?
-          // Simplest: Compare strings if ISO? No, compare times.
-          const itemTime = new Date(d).getTime();
+          let itemTime = 0;
+          // Prefer ID if it's a timestamp (Bet IDs from Date.now() > 2020)
+          if (item.id && typeof item.id === 'number' && item.id > 1600000000000) {
+            itemTime = item.id;
+          } else {
+            // Fallback to Date field (Legacy or Challenges with small IDs)
+            // Ensure we parse the date string correctly as UTC or Local consistent with ResetDate
+            // ResetDate is ISO. item.date is usually YYYY-MM-DD.
+            // new Date('2024-01-01') defaults to UTC midnight in some browsers or local in others.
+            // Safer: append time if missing? Or just compare.
+            itemTime = new Date(item[dateField]).getTime();
+          }
 
-          if (eraFilter === 'BEFORE') return itemTime < splitTime;
-          // AFTER includes the split moment and future
-          return itemTime >= splitTime;
+          if (eraFilter === 'BEFORE') {
+            // Strict inequality: Before the reset moment
+            return itemTime < splitTime;
+          } else {
+            // AFTER: Equal or greater than reset moment (New Era)
+            return itemTime >= splitTime;
+          }
         });
       };
 
