@@ -1258,7 +1258,45 @@ La página se recargará ahora.`;
 
         if (filterTag === 'ALL') return source;
         return source.filter(b => b.tags && b.tags.includes(filterTag));
-      }, [betsByEra, filterTag]); // Changed dependnecy from bets to betsByEra
+      }, [betsByEra, filterTag]);
+
+      // V51: CONSOLIDATED BETS (System Bet Grouping)
+      const consolidatedBets = useMemo(() => {
+        const processedGroups = new Set();
+        const result = [];
+        filteredBets.forEach(bet => {
+          if (bet.groupId) {
+            if (processedGroups.has(bet.groupId)) return;
+            processedGroups.add(bet.groupId);
+            // Agrupar apuestas del sistema
+            const groupMembers = filteredBets.filter(b => b.groupId === bet.groupId);
+            const mainBet = { ...bet }; // Usar la primera como base
+            // Recalcular totales
+            mainBet.stake = groupMembers.reduce((sum, b) => sum + Number(b.stake), 0);
+            mainBet.profit = groupMembers.reduce((sum, b) => sum + Number(b.profit), 0);
+            // Determinar estado global
+            const isPending = groupMembers.some(b => b.result === 'pending');
+            if (isPending) {
+              mainBet.result = 'pending';
+            } else {
+              // Si todo resuelto, calcular resultado neto
+              // Simplificación: Profit >= 0 es Win (o void si todo es void)
+              const allVoid = groupMembers.every(b => b.result === 'void');
+              if (allVoid) mainBet.result = 'void';
+              else mainBet.result = mainBet.profit >= 0 ? 'win' : 'loss';
+            }
+            // Recalcular cuota efectiva (Retorno Total / Stake Total)
+            const totalReturn = mainBet.stake + mainBet.profit;
+            mainBet.odds = mainBet.stake > 0 ? (totalReturn / mainBet.stake).toFixed(2) : 0;
+            // Ajustar descripción para indicar agrupación
+            mainBet.description = `[Sistema x${groupMembers.length}] ${bet.groupType || ''} - ${bet.description}`;
+            result.push(mainBet);
+          } else {
+            result.push(bet);
+          }
+        });
+        return result;
+      }, [filteredBets]);
 
       // --- STATS GLOBALES ---
       // (financialStats moved below to consolidate with deep analytics logic)
@@ -1266,7 +1304,7 @@ La página se recargará ahora.`;
       const strategyStats = useMemo(() => {
         const stats = {};
         tipsters.forEach(t => { stats[t.name] = { name: t.name, staked: 0, profit: 0, bets: 0, wins: 0, losses: 0, voids: 0, oddsSum: 0, validOddsCount: 0 }; });
-        filteredBets.forEach(b => {
+        consolidatedBets.forEach(b => {
           if (b.result !== 'pending') {
             if (!stats[b.tipster]) stats[b.tipster] = { name: b.tipster, staked: 0, profit: 0, bets: 0, wins: 0, losses: 0, voids: 0, oddsSum: 0, validOddsCount: 0 };
             if (b.result === 'win') stats[b.tipster].wins += 1;
@@ -1288,7 +1326,7 @@ La página se recargará ahora.`;
           avgOdds: s.validOddsCount > 0 ? (s.oddsSum / s.validOddsCount).toFixed(2) : '0.00',
           avgStake: s.bets > 0 ? (s.staked / s.bets).toFixed(2) : '0.00'
         })).sort((a, b) => b.profit - a.profit);
-      }, [filteredBets, tipsters]);
+      }, [consolidatedBets, tipsters]);
 
       const scoutStats = useMemo(() => {
         const stats = {};
@@ -1297,7 +1335,7 @@ La página se recargará ahora.`;
           const cleanName = t.name.split(' (')[0];
           stats[cleanName] = { name: cleanName, picks: 0, wins: 0, losses: 0, voids: 0, pending: 0, staked: 0 };
         });
-        filteredBets.forEach(bet => {
+        consolidatedBets.forEach(bet => {
           if (bet.tipster !== 'Mezcla-Tips' && bet.tipster !== 'Combis (Apuesta D)') {
             const cleanName = bet.tipster.split(' (')[0];
             if (stats[cleanName]) {
@@ -1352,7 +1390,7 @@ La página se recargará ahora.`;
           winRate: s.picks > 0 ? ((s.wins / s.picks) * 100).toFixed(1) : 0,
           avgStake: s.picks > 0 && s.staked > 0 ? (s.staked / s.picks).toFixed(2) : '0.00' // Only meaningful for Main Tips
         })).sort((a, b) => parseFloat(b.winRate) - parseFloat(a.winRate));
-      }, [filteredBets, tipsters]);
+      }, [consolidatedBets, tipsters]);
 
       // --- CUOTAS STATS ---
       const oddsStats = useMemo(() => {
@@ -1369,7 +1407,7 @@ La página se recargará ahora.`;
           }
         });
         return ranges.filter(r => r.bets > 0).map(r => ({ ...r, yield: r.staked > 0 ? ((r.profit / r.staked) * 100).toFixed(2) : 0 }));
-      }, [filteredBets]);
+      }, [consolidatedBets]);
 
       // --- DEEP ANALYTICS ENGINE (SIA-Pro) ---
 
@@ -1415,7 +1453,7 @@ La página se recargará ahora.`;
         const data = [];
 
         // Ordenar apuestas cronologicamente para simular la evolucion
-        const sorted = [...filteredBets].filter(b => b.result !== 'pending' && b.result !== 'void').sort((a, b) => a.id - b.id);
+        const sorted = [...consolidatedBets].filter(b => b.result !== 'pending' && b.result !== 'void').sort((a, b) => a.id - b.id);
 
         sorted.forEach(bet => {
           currentBank += bet.profit;
@@ -1428,12 +1466,12 @@ La página se recargará ahora.`;
           });
         });
         return data;
-      }, [filteredBets]);
+      }, [consolidatedBets]);
 
       // 2. Streaks (Rachas)
       const streakStats = useMemo(() => {
         let maxWin = 0, maxLoss = 0, current = 0;
-        const sorted = [...filteredBets].filter(b => b.result !== 'pending' && b.result !== 'void').sort((a, b) => a.id - b.id);
+        const sorted = [...consolidatedBets].filter(b => b.result !== 'pending' && b.result !== 'void').sort((a, b) => a.id - b.id);
 
         sorted.forEach(b => {
           if (b.result === 'win') {
@@ -1447,11 +1485,11 @@ La página se recargará ahora.`;
           }
         });
         return { maxWin, maxLoss, current: current > 0 ? `+${current}` : current };
-      }, [filteredBets]);
+      }, [consolidatedBets]);
 
       // 3. Sniper Chart (Scatter: Odds vs Profit)
       const sniperData = useMemo(() => {
-        return filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').map(b => ({
+        return consolidatedBets.filter(b => b.result !== 'pending' && b.result !== 'void').map(b => ({
           x: b.odds, // Eje X: Cuota
           y: b.profit, // Eje Y: Beneficio
           z: 1,
@@ -1459,18 +1497,18 @@ La página se recargará ahora.`;
           desc: b.description,
           result: b.result // Needed for coloring
         }));
-      }, [filteredBets]);
+      }, [consolidatedBets]);
 
       // --- STATS GLOBALES ---
       const financialStats = useMemo(() => {
-        const valid = filteredBets.filter(b => b.result !== 'void' && b.result !== 'pending');
+        const valid = consolidatedBets.filter(b => b.result !== 'void' && b.result !== 'pending');
         const staked = valid.reduce((acc, b) => acc + b.stake, 0);
         const profit = valid.reduce((acc, b) => acc + b.profit, 0);
         const yield_val = staked > 0 ? ((profit / staked) * 100).toFixed(2) : 0;
 
         // Gráfico acumulativo Ganancias
         let runningProfit = 0;
-        const chartData = [...filteredBets]
+        const chartData = [...consolidatedBets]
           .filter(b => b.result !== 'pending')
           .sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id)
           .map(b => {
@@ -1480,7 +1518,7 @@ La página se recargará ahora.`;
 
         // Gráfico acumulativo PÃ‰RDIDAS (Solo suma los rojos)
         let runningLoss = 0;
-        const lossChartData = [...filteredBets]
+        const lossChartData = [...consolidatedBets]
           .filter(b => b.result !== 'pending')
           .sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id)
           .map(b => {
@@ -1494,7 +1532,7 @@ La página se recargará ahora.`;
 
         // Gráfico Semanal (Weekly Evolution)
         const weeklyMap = {};
-        filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
+        consolidatedBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
           const d = new Date(b.date);
           const onejan = new Date(d.getFullYear(), 0, 1);
           const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7);
@@ -1515,7 +1553,7 @@ La página se recargará ahora.`;
 
         // Gráfico Mensual (New V38)
         const monthlyMap = {};
-        filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
+        consolidatedBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
           const key = b.date.slice(0, 7); // YYYY-MM
           if (!monthlyMap[key]) monthlyMap[key] = 0;
           monthlyMap[key] += b.profit;
@@ -1524,7 +1562,7 @@ La página se recargará ahora.`;
 
         // Tag Stats (New V38)
         const tagMap = {};
-        filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
+        consolidatedBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
           const tags = b.tags && b.tags.length > 0 ? b.tags : (b.tag && b.tag !== 'ALL' ? [b.tag] : []);
           tags.forEach(t => {
             if (t === 'ALL') return;
@@ -1538,7 +1576,7 @@ La página se recargará ahora.`;
         // Tipster Evolution (Multi-line)
         const tipsterDailyMap = {};
         const activeTipsters = new Set();
-        filteredBets
+        consolidatedBets
           .filter(b => b.result !== 'pending' && b.result !== 'void')
           .sort((a, b) => new Date(a.date) - new Date(b.date))
           .forEach(b => {
@@ -1571,7 +1609,7 @@ La página se recargará ahora.`;
           { label: '2.0 - 3.0', min: 2.0001, max: 3.0, wins: 0, total: 0 },
           { label: '3.0 +', min: 3.0001, max: 999, wins: 0, total: 0 },
         ];
-        filteredBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
+        consolidatedBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
           const o = parseFloat(b.odds);
           const bucket = oddsBuckets.find(buc => o >= buc.min && o <= buc.max);
           if (bucket) {
@@ -1590,7 +1628,7 @@ La página se recargará ahora.`;
         const maxProfit = chartData.length > 0 ? chartData.reduce((max, d) => (d.profit > max ? d.profit : max), -Infinity) : 0;
 
         return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters).filter(Boolean), oddsEfficiencyData, maxProfit };
-      }, [filteredBets]);
+      }, [consolidatedBets]);
 
       // Auto-select all active tipsters when financialStats updates (only if empty to respect user selection)
       // Moved here to avoid ReferenceError
@@ -4063,7 +4101,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 let wiInvested = 0;
                                 const targetName = selectedTipsterStats.name;
 
-                                filteredBets.forEach(b => {
+                                consolidatedBets.forEach(b => {
                                   // Robust Matching
                                   const isMatch = b.tipster === targetName || b.tipster.startsWith(targetName) || (b.subPicks && b.subPicks.some(s => s.tipster.startsWith(targetName)));
 
@@ -4104,7 +4142,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={(() => {
                               let running = 0;
-                              return filteredBets
+                              return consolidatedBets
                                 .filter(b => (b.tipster === selectedTipsterStats.name || b.tipster.startsWith(selectedTipsterStats.name)) && b.result !== 'pending' && b.result !== 'void')
                                 .sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id)
                                 .map(b => {
@@ -4188,7 +4226,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               { label: 'Lotería (5.0+)', min: 5.01, max: 999, bets: 0, profit: 0, staked: 0 },
                             ];
                             const targetName = selectedTipsterStats.name;
-                            filteredBets.forEach(b => {
+                            consolidatedBets.forEach(b => {
                               // Exact match or sub-pick match
                               const isMatch = b.tipster === targetName || (b.subPicks && b.subPicks.some(s => s.tipster === targetName));
                               if (isMatch && b.result !== 'pending' && b.result !== 'void') {
@@ -4235,11 +4273,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               }} />
                               <Scatter name="Bets" data={(() => {
                                 const targetName = selectedTipsterStats.name;
-                                return filteredBets
+                                return consolidatedBets
                                   .filter(b => (b.tipster === targetName || (b.subPicks && b.subPicks.some(s => s.tipster === targetName))) && b.result !== 'pending' && b.result !== 'void')
                                   .map(b => ({ x: b.odds, y: b.profit, result: b.result }));
                               })()} shape="circle">
-                                {filteredBets.filter(b => b.tipster === selectedTipsterStats.name).map((entry, index) => (
+                                {consolidatedBets.filter(b => b.tipster === selectedTipsterStats.name).map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={entry.result === 'win' ? '#10b981' : '#ef4444'} />
                                 ))}
                               </Scatter>
@@ -4256,7 +4294,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             const days = [];
                             const targetName = selectedTipsterStats.name;
                             const map = {};
-                            filteredBets.forEach(b => {
+                            consolidatedBets.forEach(b => {
                               if (b.tipster === targetName || (b.subPicks && b.subPicks.some(s => s.tipster === targetName))) {
                                 if (!map[b.date]) map[b.date] = 0;
                                 map[b.date] += b.profit;
@@ -4286,7 +4324,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         <LineChart data={(() => {
                           let running = 0;
                           const targetName = selectedTipsterStats.name;
-                          return filteredBets
+                          return consolidatedBets
                             .filter(b => (b.tipster === targetName || b.tipster.startsWith(targetName)) && b.result !== 'pending' && b.result !== 'void')
                             .sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id)
                             .map(b => {
@@ -4322,7 +4360,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             let wiInvested = 0;
                             const targetName = selectedTipsterStats.name;
 
-                            filteredBets.forEach(b => {
+                            consolidatedBets.forEach(b => {
                               // Robust Matching
                               const isMatch = b.tipster === targetName || b.tipster.startsWith(targetName) || (b.subPicks && b.subPicks.some(s => s.tipster.startsWith(targetName)));
 
