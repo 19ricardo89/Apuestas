@@ -566,7 +566,8 @@
                     {Object.values(THEMES).map(t => (
                       <button key={t.id} onClick={() => setData({ ...data, theme: t.id })} className={`p-3 rounded-xl border flex flex-col gap-2 transition-all relative overflow-hidden ${data.theme === t.id ? 'border-2 border-emerald-500 shadow-xl scale-[1.02]' : 'border-slate-800 bg-slate-950 hover:bg-slate-900'}`}>
                         <div className="flex justify-between items-center z-10">
-                          <span className="font-bold text-sm" style={{ color: data.theme === t.id ? '#10b981' : t.colors.text }}>{t.name}</span>
+                          {/* Font Preview Applied Here (V62) */}
+                          <span className="font-bold text-lg" style={{ color: data.theme === t.id ? '#10b981' : t.colors.text, fontFamily: t.font }}>{t.name}</span>
                           {data.theme === t.id && <CheckCircle size={16} className="text-emerald-500" />}
                         </div>
                         <div className="h-10 w-full rounded flex overflow-hidden z-10 border border-white/10">
@@ -575,6 +576,7 @@
                           <div className="flex-1" style={{ background: t.colors.accent }}></div>
                         </div>
                         <div className="text-[10px] opacity-70" style={{ color: t.colors.text }}>{t.vibe}</div>
+                        <div className="text-[10px] opacity-50 mt-1" style={{ fontFamily: t.font }}>Abc 123</div>
                       </button>
                     ))}
                   </div>
@@ -631,34 +633,37 @@
 
       // --- THEME APPLICATOR ---
       useEffect(() => {
-        const themeId = currentUser?.theme || 'original';
-        const theme = THEMES[themeId] || THEMES.original;
-        const root = document.documentElement;
+        try {
+          const themeId = currentUser?.theme || 'original';
+          const theme = THEMES[themeId] || THEMES.original;
+          const root = document.documentElement;
 
-        // Apply CSS Variables
-        Object.entries(theme.cssVars).forEach(([key, val]) => root.style.setProperty(key, val));
-
-        // Font Injection (Lazy)
-        if (theme.font && !document.getElementById(`font-${themeId}`)) {
-          const link = document.createElement('link');
-          link.id = `font-${themeId}`;
-          link.rel = 'stylesheet';
-          // Map simplified font names to Google Fonts URLs (Approximate)
-          const fontMap = {
-            'ITC Benguiat': 'https://fonts.googleapis.com/css2?family=Benguiat+ITC:wght@400;700&display=swap', // Custom font, might need different handling or fallback
-            'Great Vibes': 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap',
-            'Impact': 'https://fonts.googleapis.com/css2?family=Bangers&display=swap', // Using Bangers for Comic look
-            'Coming Soon': 'https://fonts.googleapis.com/css2?family=Coming+Soon&display=swap'
-          };
-          // Note: ITC Benguiat is not on Google Fonts. Using Serif fallback or nearest match if available.
-          // For now, let's assume system fonts or imported elsewhere, or just set the family.
-          // Actually, for "Stranger" let's use a Google Font that looks similar e.g. 'Creepster' or just serif.
-          if (fontMap[theme.font.split(',')[0].trim()]) {
-            link.href = fontMap[theme.font.split(',')[0].trim()];
-            document.head.appendChild(link);
+          // Apply CSS Variables
+          if (theme.cssVars) {
+            Object.entries(theme.cssVars).forEach(([key, val]) => root.style.setProperty(key, val));
           }
+
+          // Font Injection (Lazy)
+          if (theme.font && !document.getElementById(`font-${themeId}`)) {
+            const link = document.createElement('link');
+            link.id = `font-${themeId}`;
+            link.rel = 'stylesheet';
+            const fontMap = {
+              'ITC Benguiat': 'https://fonts.googleapis.com/css2?family=Benguiat+ITC:wght@400;700&display=swap',
+              'Great Vibes': 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap',
+              'Impact': 'https://fonts.googleapis.com/css2?family=Bangers&display=swap',
+              'Coming Soon': 'https://fonts.googleapis.com/css2?family=Coming+Soon&display=swap'
+            };
+            const fontName = theme.font ? theme.font.split(',')[0].trim() : '';
+            if (fontMap[fontName]) {
+              link.href = fontMap[fontName];
+              document.head.appendChild(link);
+            }
+          }
+          if (theme.font) document.body.style.fontFamily = theme.font;
+        } catch (err) {
+          console.warn("Theme application failed:", err);
         }
-        document.body.style.fontFamily = theme.font;
       }, [currentUser]);
 
       // --- DATA RELOAD ON USER CHANGE (V60) ---
