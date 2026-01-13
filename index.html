@@ -503,6 +503,12 @@
                       ))}
                     </div>
                   </div>
+                  {/* PASSWORD FIELD (V61) */}
+                  <div>
+                    <label className="block text-xs uppercase font-bold text-slate-500 mb-2">Contraseña (Opcional)</label>
+                    <input type="password" value={data.password || ''} onChange={e => setData({ ...data, password: e.target.value })} className="w-full bg-slate-950 border-2 border-slate-800 focus:border-emerald-500 rounded-lg p-3 text-white text-lg font-bold outline-none" placeholder="Vacío = Sin contraseña" />
+                    <p className="text-[10px] text-slate-500 mt-1">Protege tu cuenta de otros usuarios en este dispositivo.</p>
+                  </div>
                 </div>
               )}
 
@@ -1184,7 +1190,8 @@ La página se recargará ahora.`;
             username: currentUser.name,
             avatar_url: currentUser.avatar,
             theme: currentUser.theme,
-            era_reset_date: eraResetDate // V50: Sync Era
+            era_reset_date: eraResetDate, // V50: Sync Era
+            password: currentUser.password // V61: Sync Password
           });
 
           const betsPayload = bets.map(b => ({ ...b, user_id: currentUser.id }));
@@ -3185,7 +3192,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
       // --- AUTH & ONBOARDING HANDLER (V60) ---
       const handleNewUser = (data) => {
         const newId = Date.now();
-        const newUser = { id: newId, name: data.name, avatar: data.avatar, theme: data.theme };
+        const newUser = {
+          id: newId,
+          name: data.name,
+          avatar: data.avatar,
+          theme: data.theme,
+          password: data.password // Save Password
+        };
 
         // 1. Initialize DB for New User
         if (data.source === 'new') {
@@ -3220,13 +3233,19 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         // 2. Set Active
         const updatedUsers = [...users, newUser];
         setUsers(updatedUsers);
-        // setUsers runs async, so we trigger persist manually or rely on effect? 
-        // Effect `useEffect(() => localStorage..., [users])` handles it.
         setCurrentUser(newUser);
         setIsNewUser(false);
       };
 
-      if (!currentUser) return <AuthScreen users={users} onLogin={setCurrentUser} onNewUser={() => setIsNewUser(true)} />;
+      const handleLogin = (user) => {
+        if (user.password) {
+          const pwd = prompt(`🔒 Hola ${user.name}, introduce tu contraseña:`);
+          if (pwd !== user.password) return alert("❌ Contraseña incorrecta");
+        }
+        setCurrentUser(user);
+      };
+
+      if (!currentUser) return <AuthScreen users={users} onLogin={handleLogin} onNewUser={() => setIsNewUser(true)} />;
       if (isNewUser) return <OnboardingWizard onFinish={handleNewUser} onCancel={() => setIsNewUser(false)} />;
 
       const handleThemeCycle = () => {
