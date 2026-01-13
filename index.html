@@ -3245,8 +3245,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         setCurrentUser(user);
       };
 
-      if (!currentUser) return <AuthScreen users={users} onLogin={handleLogin} onNewUser={() => setIsNewUser(true)} />;
       if (isNewUser) return <OnboardingWizard onFinish={handleNewUser} onCancel={() => setIsNewUser(false)} />;
+      if (!currentUser) return <AuthScreen users={users} onLogin={handleLogin} onNewUser={() => setIsNewUser(true)} />;
 
       const handleThemeCycle = () => {
         if (!currentUser) return;
