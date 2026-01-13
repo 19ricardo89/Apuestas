@@ -2086,6 +2086,47 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           if (editingBet.tag) setFormTag(editingBet.tag);
           if (editingBet.tags) setUserTags(prev => [...new Set([...prev, ...editingBet.tags])]);
 
+          // --- IA SPECIAL LOGIC: RESTORE FORM ---
+          if (editingBet.groupType === 'Sistema Marcador Exacto' && editingBet.children && editingBet.children.length === 4) {
+            console.log("Restoring IA Bet System:", editingBet);
+            try {
+              // Parse Description logic: "Roma 1-0 + Lazio 2-0"
+              // Child 0: M1 S1 + M2 S1
+              // Child 1: M1 S1 + M2 S2
+              // Child 2: M1 S2 + M2 S1
+              // Child 3: M1 S2 + M2 S2
+
+              // Helper to extract team and score from "TeamName Score" (e.g. "Roma 1-0")
+              const parsePart = (str) => {
+                const lastSpace = str.lastIndexOf(' ');
+                return { name: str.substring(0, lastSpace), score: str.substring(lastSpace + 1) };
+              };
+
+              // We can just take Child 0 and Child 3 to get all 4 components (S1/S1 and S2/S2)
+              const c0 = editingBet.children[0]; // M1 S1 + M2 S1
+              const c3 = editingBet.children[3]; // M1 S2 + M2 S2
+
+              // We need the individual odds. They are in c0.betLines[0].odds, etc.
+              const m1s1_line = c0.betLines[0];
+              const m2s1_line = c0.betLines[1];
+              const m1s2_line = c3.betLines[0];
+              const m2s2_line = c3.betLines[1];
+
+              const m1s1 = parsePart(m1s1_line.description);
+              const m2s1 = parsePart(m2s1_line.description);
+              const m1s2 = parsePart(m1s2_line.description);
+              const m2s2 = parsePart(m2s2_line.description);
+
+              setIaBetData({
+                m1: { name: m1s1.name, s1: { score: m1s1.score, odds: m1s1_line.odds }, s2: { score: m1s2.score, odds: m1s2_line.odds } },
+                m2: { name: m2s1.name, s1: { score: m2s1.score, odds: m2s1_line.odds }, s2: { score: m2s2.score, odds: m2s2_line.odds } }
+              });
+              setFormTipster('IA'); // Force form switch
+            } catch (err) {
+              console.error("Error restoring IA form:", err);
+            }
+          }
+
           // 2. Handle System / Group Bets
           if (editingBet.isGroup || (editingBet.children && editingBet.children.length > 0)) {
             console.log("Editing System Bet:", editingBet);
@@ -2189,6 +2230,37 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         // FIX: Ensure we check for children if isGroup is passed
         if (bet.isGroup || (bet.groupId && bet.isSystemBet) || (bet.children && bet.children.length > 0)) {
           console.log("Detected System/Group Bet:", bet);
+
+          // --- IA SPECIAL LOGIC: RESTORE FORM FOR REPEAT ---
+          if ((bet.groupType === 'Sistema Marcador Exacto' || bet.tipster === 'IA') && bet.children && bet.children.length === 4) {
+            try {
+              const parsePart = (str) => {
+                const lastSpace = str.lastIndexOf(' ');
+                return { name: str.substring(0, lastSpace), score: str.substring(lastSpace + 1) };
+              };
+
+              const c0 = bet.children[0];
+              const c3 = bet.children[3];
+              const m1s1_line = c0.betLines[0];
+              const m2s1_line = c0.betLines[1];
+              const m1s2_line = c3.betLines[0];
+              const m2s2_line = c3.betLines[1];
+
+              const m1s1 = parsePart(m1s1_line.description);
+              const m2s1 = parsePart(m2s1_line.description);
+              const m1s2 = parsePart(m1s2_line.description);
+              const m2s2 = parsePart(m2s2_line.description);
+
+              setIaBetData({
+                m1: { name: m1s1.name, s1: { score: m1s1.score, odds: m1s1_line.odds }, s2: { score: m1s2.score, odds: m1s2_line.odds } },
+                m2: { name: m2s1.name, s1: { score: m2s1.score, odds: m2s1_line.odds }, s2: { score: m2s2.score, odds: m2s2_line.odds } }
+              });
+              setFormTipster('IA'); // Force form switch
+            } catch (err) {
+              console.error("Error restoring IA form (Repeat):", err);
+            }
+          }
+
           // Logic for System Bets
           let linesToRestore = [];
           let sysStake = 0;
@@ -2384,7 +2456,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               stake: stakePerBet,
               odds: parseFloat(combinedOdds),
               description: c.desc,
-              groupTitle: `${m1.name} vs ${m2.name} (CS System)`,
+              groupTitle: `${m1.name} // ${m2.name} (CS System)`,
               tag: finalTag || 'SISTEMA IA',
               tags: tagsArray.length > 0 ? tagsArray : ['SISTEMA IA'],
               result: 'pending',
@@ -5776,9 +5848,62 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               </div>
                             </div>
                           </div>
+
+                          {/* IA TAG SELECTION */}
+                          <div>
+                            <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Etiqueta (Opcional)</label>
+                            <div className="relative group">
+                              <input
+                                list="tags-list-ia"
+                                type="text"
+                                value={formTag}
+                                onChange={e => setFormTag(e.target.value.toUpperCase())}
+                                placeholder="SISTEMA IA"
+                                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm focus:border-indigo-500 uppercase font-bold"
+                                onFocus={e => e.target.select()}
+                              />
+                              <datalist id="tags-list-ia">
+                                {userTags.filter(t => t !== 'ALL').map(tag => <option key={tag} value={tag} />)}
+                              </datalist>
+                              <div className="absolute top-0 right-0 h-full flex items-center pr-3 pointer-events-none text-slate-600"><Tag size={14} /></div>
+                            </div>
+                          </div>
+
+                          {/* IA PROFIT PREVIEW */}
+                          <div className="bg-slate-950/50 p-2 rounded border border-slate-700/50">
+                            <details className="group">
+                              <summary className="flex justify-between items-center cursor-pointer text-xs font-bold text-indigo-400 hover:text-indigo-300">
+                                <span>Ver Ganancias Potenciales (x4)</span>
+                                <ChevronDown size={14} className="group-open:rotate-180 transition-transform" />
+                              </summary>
+                              <div className="mt-2 space-y-1 max-h-[150px] overflow-y-auto custom-scrollbar">
+                                {(() => {
+                                  const stP = parseFloat(formStake) || 0;
+                                  const { m1, m2 } = iaBetData;
+                                  const combosPreview = [
+                                    { lines: [m1.s1, m2.s1], desc: 'S1+S1' },
+                                    { lines: [m1.s1, m2.s2], desc: 'S1+S2' },
+                                    { lines: [m1.s2, m2.s1], desc: 'S2+S1' },
+                                    { lines: [m1.s2, m2.s2], desc: 'S2+S2' }
+                                  ];
+                                  return combosPreview.map((c, i) => {
+                                    const o1 = parseFloat(c.lines[0].odds) || 1;
+                                    const o2 = parseFloat(c.lines[1].odds) || 1;
+                                    const combined = (o1 * o2).toFixed(2);
+                                    const prof = ((stP * combined) - stP).toFixed(2);
+                                    return (
+                                      <div key={i} className="flex justify-between text-[10px] text-slate-400 p-1 hover:bg-slate-800 rounded">
+                                        <span>{c.desc} (@{combined})</span>
+                                        <span className="font-mono text-emerald-400">+{prof}€</span>
+                                      </div>
+                                    )
+                                  });
+                                })()}
+                              </div>
+                            </details>
+                          </div>
                         </div>
                       ) : (
-                        /* STANDARD FORM BLOCKS - WRAPPED IN FRAGMENT TO HIDE WHEN IA IS SELECTED */
                         <>
 
                           {/* 2. DESCRIPTION & TAGS */}
@@ -6090,8 +6215,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       </button>
                     </form>
                   </div>
-                </div>
-              </div>
+                </div >
+              </div >
             )
           }
 
@@ -6397,105 +6522,107 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           }
 
           {/* IMPORT MODAL (V45) - Fixed Z-Index to be above Cloud Modal (z-200) -> Z-500 */}
-          {importModalOpen && pendingImportData && (
-            <div className="fixed inset-0 bg-black/95 z-[500] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
-              <div className="bg-slate-900 w-full max-w-lg rounded-xl border-2 border-emerald-500 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-white uppercase text-sm flex items-center gap-2"><DownloadCloud size={16} className="text-indigo-400" /> Restauración Selectiva</h3>
-                    <div className="text-[10px] text-slate-500">Backup del: {new Date(pendingImportData.timestamp || Date.now()).toLocaleString()}</div>
-                  </div>
-                  <button onClick={() => { setImportModalOpen(false); setPendingImportData(null); }}><X size={20} className="text-slate-500 hover:text-white" /></button>
-                </div>
-
-                <div className="p-6">
-                  <div className="bg-blue-900/20 text-blue-300 p-3 rounded mb-4 text-xs border border-blue-500/30 flex items-start gap-2">
-                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                    <span>Selecciona qué datos quieres restaurar. Los datos no seleccionados se mantendrán tal como están ahora en tu navegador.</span>
-                  </div>
-
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.target);
-                    confirmImport({
-                      includeBets: formData.get('includeBets') === 'on',
-                      includeChallenges: formData.get('includeChallenges') === 'on',
-                      includeTipsters: formData.get('includeTipsters') === 'on',
-                      includeConfig: formData.get('includeConfig') === 'on'
-                    });
-                  }} className="space-y-3">
-
-                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
-                      <div className="flex items-center gap-3">
-                        <input type="checkbox" name="includeBets" defaultChecked className="w-4 h-4 accent-emerald-500" />
-                        <div>
-                          <div className="font-bold text-white text-sm">Apuestas (Portfolio)</div>
-                          <div className="text-[10px] text-slate-500">Historial principal y estadísticas</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-bold text-indigo-400">{pendingImportData.bets?.length || 0}</span>
-                        <span className="text-[10px] text-slate-600 block">vs {bets.length} actuales</span>
-                      </div>
-                    </label>
-
-                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
-                      <div className="flex items-center gap-3">
-                        <input type="checkbox" name="includeChallenges" defaultChecked className="w-4 h-4 accent-emerald-500" />
-                        <div>
-                          <div className="font-bold text-white text-sm">Retos y Objetivos</div>
-                          <div className="text-[10px] text-slate-500">Todos los retos y sus pasos</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-bold text-indigo-400">{pendingImportData.challenges?.length || 0}</span>
-                        <span className="text-[10px] text-slate-600 block">vs {challenges.length} actuales</span>
-                      </div>
-                    </label>
-
-                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
-                      <div className="flex items-center gap-3">
-                        <input type="checkbox" name="includeTipsters" defaultChecked className="w-4 h-4 accent-emerald-500" />
-                        <div>
-                          <div className="font-bold text-white text-sm">Lista de Tipsters</div>
-                          <div className="text-[10px] text-slate-500">Configuración de Tipsters y Stakes</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-bold text-indigo-400">{pendingImportData.tipsters?.length || 0}</span>
-                        <span className="text-[10px] text-slate-600 block">vs {tipsters.length} actuales</span>
-                      </div>
-                    </label>
-
-                    <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
-                      <div className="flex items-center gap-3">
-                        <input type="checkbox" name="includeConfig" defaultChecked className="w-4 h-4 accent-emerald-500" />
-                        <div>
-                          <div className="font-bold text-white text-sm">Configuración y Bank</div>
-                          <div className="text-[10px] text-slate-500">Etiquetas personalizadas y Transacciones Bank</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-bold text-indigo-400">Info</span>
-                        <span className="text-[10px] text-slate-600 block">Global</span>
-                      </div>
-                    </label>
-
-                    <div className="pt-4 flex gap-3">
-                      <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold shadow-lg shadow-emerald-900/20 text-sm">
-                        Confirmar Restauración
-                      </button>
-                      <button type="button" onClick={() => { setImportModalOpen(false); setPendingImportData(null); }} className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-sm">
-                        Cancelar
-                      </button>
+          {
+            importModalOpen && pendingImportData && (
+              <div className="fixed inset-0 bg-black/95 z-[500] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md">
+                <div className="bg-slate-900 w-full max-w-lg rounded-xl border-2 border-emerald-500 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                  <div className="p-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
+                    <div>
+                      <h3 className="font-bold text-white uppercase text-sm flex items-center gap-2"><DownloadCloud size={16} className="text-indigo-400" /> Restauración Selectiva</h3>
+                      <div className="text-[10px] text-slate-500">Backup del: {new Date(pendingImportData.timestamp || Date.now()).toLocaleString()}</div>
                     </div>
-                  </form>
+                    <button onClick={() => { setImportModalOpen(false); setPendingImportData(null); }}><X size={20} className="text-slate-500 hover:text-white" /></button>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="bg-blue-900/20 text-blue-300 p-3 rounded mb-4 text-xs border border-blue-500/30 flex items-start gap-2">
+                      <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                      <span>Selecciona qué datos quieres restaurar. Los datos no seleccionados se mantendrán tal como están ahora en tu navegador.</span>
+                    </div>
+
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.target);
+                      confirmImport({
+                        includeBets: formData.get('includeBets') === 'on',
+                        includeChallenges: formData.get('includeChallenges') === 'on',
+                        includeTipsters: formData.get('includeTipsters') === 'on',
+                        includeConfig: formData.get('includeConfig') === 'on'
+                      });
+                    }} className="space-y-3">
+
+                      <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <input type="checkbox" name="includeBets" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                          <div>
+                            <div className="font-bold text-white text-sm">Apuestas (Portfolio)</div>
+                            <div className="text-[10px] text-slate-500">Historial principal y estadísticas</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-indigo-400">{pendingImportData.bets?.length || 0}</span>
+                          <span className="text-[10px] text-slate-600 block">vs {bets.length} actuales</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <input type="checkbox" name="includeChallenges" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                          <div>
+                            <div className="font-bold text-white text-sm">Retos y Objetivos</div>
+                            <div className="text-[10px] text-slate-500">Todos los retos y sus pasos</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-indigo-400">{pendingImportData.challenges?.length || 0}</span>
+                          <span className="text-[10px] text-slate-600 block">vs {challenges.length} actuales</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <input type="checkbox" name="includeTipsters" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                          <div>
+                            <div className="font-bold text-white text-sm">Lista de Tipsters</div>
+                            <div className="text-[10px] text-slate-500">Configuración de Tipsters y Stakes</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-indigo-400">{pendingImportData.tipsters?.length || 0}</span>
+                          <span className="text-[10px] text-slate-600 block">vs {tipsters.length} actuales</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center justify-between p-3 bg-slate-950 rounded border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <input type="checkbox" name="includeConfig" defaultChecked className="w-4 h-4 accent-emerald-500" />
+                          <div>
+                            <div className="font-bold text-white text-sm">Configuración y Bank</div>
+                            <div className="text-[10px] text-slate-500">Etiquetas personalizadas y Transacciones Bank</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-indigo-400">Info</span>
+                          <span className="text-[10px] text-slate-600 block">Global</span>
+                        </div>
+                      </label>
+
+                      <div className="pt-4 flex gap-3">
+                        <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold shadow-lg shadow-emerald-900/20 text-sm">
+                          Confirmar Restauración
+                        </button>
+                        <button type="button" onClick={() => { setImportModalOpen(false); setPendingImportData(null); }} className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-sm">
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
-        </div>
+        </div >
       );
     }
 
