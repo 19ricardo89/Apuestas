@@ -5859,7 +5859,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         </div>
                         <div>
                           <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">
-                            {formTipster === 'IA' ? 'Stake POR APUESTA (€)' : 'Stake Total (€)'}
+                            {formTipster === 'IA' && iaBetData.mode === 'SYSTEM' ? 'Stake POR APUESTA (€)' : 'Stake Total (€)'}
                           </label>
                           <input type="number" step="0.01" value={formStake} onChange={e => {
                             const newStake = e.target.value;
@@ -5871,7 +5871,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               setManualProfit(((s * o) - s).toFixed(2));
                             }
                           }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white font-mono text-lg focus:border-emerald-500" />
-                          {formTipster === 'IA' ? (
+                          {formTipster === 'IA' && iaBetData.mode === 'SYSTEM' ? (
                             <div className="text-[10px] text-emerald-500 mt-1 font-mono">
                               Total Inversión: {(() => {
                                 const config = iaBetData.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' };
@@ -5894,7 +5894,26 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       </div>
 
                       {/* --- IA SPECIAL FORM --- */}
-                      {formTipster === 'IA' ? (
+                      {formTipster === 'IA' && (
+                        <div className="mb-4 flex p-1 bg-slate-900 rounded-lg border border-slate-700">
+                          <button
+                            type="button"
+                            onClick={() => setIaBetData({ ...iaBetData, mode: 'SYSTEM' })}
+                            className={`flex-1 py-1.5 text-xs font-bold rounded flex items-center justify-center gap-2 transition-colors ${iaBetData.mode === 'SYSTEM' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                          >
+                            <LayoutGrid size={14} /> SISTEMA (Matrices)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIaBetData({ ...iaBetData, mode: 'NORMAL' })}
+                            className={`flex-1 py-1.5 text-xs font-bold rounded flex items-center justify-center gap-2 transition-colors ${iaBetData.mode === 'NORMAL' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                          >
+                            <Edit size={14} /> APUESTA NORMAL
+                          </button>
+                        </div>
+                      )}
+
+                      {formTipster === 'IA' && iaBetData.mode === 'SYSTEM' ? (
                         <div className="bg-slate-800/40 p-4 rounded-xl border border-indigo-500/30 space-y-4 animate-fade-in">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="p-1 bg-indigo-500 rounded text-white"><LayoutGrid size={16} /></div>
