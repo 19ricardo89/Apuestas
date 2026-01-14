@@ -634,7 +634,8 @@
         m1: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
         m2: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
         m3: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
-        config: { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' }
+        config: { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' },
+        mode: 'SYSTEM' // 'SYSTEM' (Matrices) or 'NORMAL' (Standard Bet)
       });
 
       // ESTADO FORMULARIO APUESTA RETO (V14: Tipster Support)
@@ -2404,7 +2405,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         let finalTag = formTag === 'ALL' ? '' : formTag;
 
         // --- IA SPECIAL LOGIC START (Sistema Marcador Exacto) ---
-        if (formTipster === 'IA') {
+        // Only trigger special logic if we are in SYSTEM mode
+        if (formTipster === 'IA' && iaBetData.mode === 'SYSTEM') {
           const { m1, m2, m3 } = iaBetData;
           const config = iaBetData.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' };
           // 1. Validation
