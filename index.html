@@ -633,7 +633,8 @@
       const [iaBetData, setIaBetData] = useState({
         m1: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
         m2: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
-        m3: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } }
+        m3: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
+        config: { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' }
       });
 
       // ESTADO FORMULARIO APUESTA RETO (V14: Tipster Support)
@@ -2404,60 +2405,120 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
         // --- IA SPECIAL LOGIC START (Sistema Marcador Exacto) ---
         if (formTipster === 'IA') {
-          const { m1, m2 } = iaBetData;
+          const { m1, m2, m3, config } = iaBetData;
           // 1. Validation
           if (!m1.name || !m2.name) { alert("¡Introduce los nombres de los equipos (Partido 1 y 2)!"); return; }
+          // Check M1 & M2 (Mandatory)
           if (!m1.s1.score || !m1.s1.odds || !m1.s2.score || !m1.s2.odds) { alert(`Faltan datos de marcadores para ${m1.name}`); return; }
           if (!m2.s1.score || !m2.s1.odds || !m2.s2.score || !m2.s2.odds) { alert(`Faltan datos de marcadores para ${m2.name}`); return; }
 
-          const stakePerBet = parseFloat(formStake);
-          if (!stakePerBet || stakePerBet <= 0) { alert("Introduce un Stake por apuesta válido"); return; }
+          // Check M3 (Optional? If entered, treat as 3-match system)
+          const hasM3 = m3 && m3.name && m3.s1.score && m3.s1.odds && m3.s2.score && m3.s2.odds;
 
-          // 2. Generate 4 Combos
-          const combos = [
-            {
-              desc: `${m1.name} ${m1.s1.score} + ${m2.name} ${m2.s1.score}`,
-              lines: [
-                { description: `${m1.name} ${m1.s1.score}`, odds: m1.s1.odds, result: 'pending', tipster: 'IA' },
-                { description: `${m2.name} ${m2.s1.score}`, odds: m2.s1.odds, result: 'pending', tipster: 'IA' }
-              ]
-            },
-            {
-              desc: `${m1.name} ${m1.s1.score} + ${m2.name} ${m2.s2.score}`,
-              lines: [
-                { description: `${m1.name} ${m1.s1.score}`, odds: m1.s1.odds, result: 'pending', tipster: 'IA' },
-                { description: `${m2.name} ${m2.s2.score}`, odds: m2.s2.odds, result: 'pending', tipster: 'IA' }
-              ]
-            },
-            {
-              desc: `${m1.name} ${m1.s2.score} + ${m2.name} ${m2.s1.score}`,
-              lines: [
-                { description: `${m1.name} ${m1.s2.score}`, odds: m1.s2.odds, result: 'pending', tipster: 'IA' },
-                { description: `${m2.name} ${m2.s1.score}`, odds: m2.s1.odds, result: 'pending', tipster: 'IA' }
-              ]
-            },
-            {
-              desc: `${m1.name} ${m1.s2.score} + ${m2.name} ${m2.s2.score}`,
-              lines: [
-                { description: `${m1.name} ${m1.s2.score}`, odds: m1.s2.odds, result: 'pending', tipster: 'IA' },
-                { description: `${m2.name} ${m2.s2.score}`, odds: m2.s2.odds, result: 'pending', tipster: 'IA' }
-              ]
+          // Config Validation
+          if (hasM3) {
+            if (!config.includeTriples && !config.includeDoubles) { alert("Selecciona al menos una estrategia (Triples o Dobles)"); return; }
+            if (config.includeTriples && (!config.stakeTriples || parseFloat(config.stakeTriples) <= 0)) { alert("Introduce Stake válido para Triples"); return; }
+            if (config.includeDoubles && (!config.stakeDoubles || parseFloat(config.stakeDoubles) <= 0)) { alert("Introduce Stake válido para Dobles"); return; }
+          } else {
+            // Fallback 2 Match Mode (Legacy Stake Input reused or config doublestake?)
+            // We'll use Doubles Stake from Config for consistency if entered, generic formStake otherwise?
+            // Actually, keep simplicity: If 2 matches, use Doubles Stake or default generic stake?
+            // Let's use config.stakeDoubles if set, else formStake.
+            // But UI hides Generic Stake for IA... So we rely on config.stakeDoubles.
+            if (!config.stakeDoubles || parseFloat(config.stakeDoubles) <= 0) {
+              // If user didn't see the new inputs (because M3 empty), maybe fallback?
+              // But our UI shows the new inputs always? No, let's ensure UI is consistent.
+              // For now, require Double Stake.
+              alert("Introduce Stake para Dobles (Estrategia de Combinación)"); return;
             }
-          ];
+          }
 
+          let betsToGenerate = [];
           const groupId = `IA-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
           const dateStr = formDate ? formDate : new Date().toISOString().split('T')[0];
 
-          const newBets = combos.map((c, idx) => {
+          if (hasM3) {
+            // --- 3 MATCH SYSTEM ---
+            const opts1 = [m1.s1, m1.s2];
+            const opts2 = [m2.s1, m2.s2];
+            const opts3 = [m3.s1, m3.s2];
+
+            // 1. TRIPLES (8 Combinations)
+            if (config.includeTriples) {
+              const stake = parseFloat(config.stakeTriples);
+              opts1.forEach((o1, i1) => {
+                opts2.forEach((o2, i2) => {
+                  opts3.forEach((o3, i3) => {
+                    betsToGenerate.push({
+                      desc: `[TRIPLE] ${m1.name}(${i1 + 1}) + ${m2.name}(${i2 + 1}) + ${m3.name}(${i3 + 1})`,
+                      lines: [
+                        { description: `${m1.name} ${o1.score}`, odds: o1.odds, result: 'pending', tipster: 'IA' },
+                        { description: `${m2.name} ${o2.score}`, odds: o2.odds, result: 'pending', tipster: 'IA' },
+                        { description: `${m3.name} ${o3.score}`, odds: o3.odds, result: 'pending', tipster: 'IA' }
+                      ],
+                      stake: stake,
+                      type: 'TRIPLE'
+                    });
+                  });
+                });
+              });
+            }
+
+            // 2. DOUBLES (12 Combinations)
+            if (config.includeDoubles) {
+              const stake = parseFloat(config.stakeDoubles);
+              // M1+M2
+              opts1.forEach((o1, i1) => {
+                opts2.forEach((o2, i2) => {
+                  betsToGenerate.push({ desc: `[DOBLE] ${m1.name}(${i1 + 1}) + ${m2.name}(${i2 + 1})`, lines: [{ description: `${m1.name} ${o1.score}`, odds: o1.odds, tipster: 'IA', result: 'pending' }, { description: `${m2.name} ${o2.score}`, odds: o2.odds, tipster: 'IA', result: 'pending' }], stake: stake, type: 'DOBLE' });
+                })
+              });
+              // M1+M3
+              opts1.forEach((o1, i1) => {
+                opts3.forEach((o3, i3) => {
+                  betsToGenerate.push({ desc: `[DOBLE] ${m1.name}(${i1 + 1}) + ${m3.name}(${i3 + 1})`, lines: [{ description: `${m1.name} ${o1.score}`, odds: o1.odds, tipster: 'IA', result: 'pending' }, { description: `${m3.name} ${o3.score}`, odds: o3.odds, tipster: 'IA', result: 'pending' }], stake: stake, type: 'DOBLE' });
+                })
+              });
+              // M2+M3
+              opts2.forEach((o2, i2) => {
+                opts3.forEach((o3, i3) => {
+                  betsToGenerate.push({ desc: `[DOBLE] ${m2.name}(${i2 + 1}) + ${m3.name}(${i3 + 1})`, lines: [{ description: `${m2.name} ${o2.score}`, odds: o2.odds, tipster: 'IA', result: 'pending' }, { description: `${m3.name} ${o3.score}`, odds: o3.odds, tipster: 'IA', result: 'pending' }], stake: stake, type: 'DOBLE' });
+                })
+              });
+            }
+
+          } else {
+            // --- 2 MATCH FALLBACK (4 Doubles) ---
+            const stake = parseFloat(config.stakeDoubles) || parseFloat(formStake); // Fallback to formStake if config empty (legacy safety)
+            const opts1 = [m1.s1, m1.s2];
+            const opts2 = [m2.s1, m2.s2];
+
+            opts1.forEach((o1, i1) => {
+              opts2.forEach((o2, i2) => {
+                betsToGenerate.push({
+                  desc: `${m1.name} ${o1.score} + ${m2.name} ${o2.score}`,
+                  lines: [
+                    { description: `${m1.name} ${o1.score}`, odds: o1.odds, result: 'pending', tipster: 'IA' },
+                    { description: `${m2.name} ${o2.score}`, odds: o2.odds, result: 'pending', tipster: 'IA' }
+                  ],
+                  stake: stake,
+                  type: 'DOBLE'
+                });
+              });
+            });
+          }
+
+          const newBets = betsToGenerate.map((c, idx) => {
             const combinedOdds = c.lines.reduce((acc, l) => acc * parseFloat(l.odds), 1).toFixed(2);
             return {
               id: Date.now() + idx,
               date: dateStr,
               tipster: 'IA',
-              stake: stakePerBet,
+              stake: c.stake,
               odds: parseFloat(combinedOdds),
               description: c.desc,
-              groupTitle: `${m1.name} // ${m2.name} (CS System)`,
+              groupTitle: hasM3 ? `Sistema IA (3 Partidos)` : `${m1.name} // ${m2.name} (CS System)`,
               tag: finalTag || 'SISTEMA IA',
               tags: tagsArray.length > 0 ? tagsArray : ['SISTEMA IA'],
               result: 'pending',
@@ -2465,19 +2526,32 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               betLines: c.lines,
               isSystemBet: true,
               groupId: groupId,
-              groupType: 'Sistema Marcador Exacto',
-              systemTotalBets: 4,
+              groupType: hasM3 ? 'Sistema Marcador Exacto (3P)' : 'Sistema Marcador Exacto',
+              systemTotalBets: betsToGenerate.length,
               profit: 0
             };
           });
 
           setBets(prev => [...prev, ...newBets]);
-          alert(`✅ Sistema IA Registrado Correctamente\n\n4 Combinadas generadas.\nStake Total: ${(stakePerBet * 4).toFixed(2)}€`);
 
-          // Clear IA Form
+          let summaryMsg = `✅ Sistema IA Registrado Correctamente\n\n${newBets.length} Apuestas generadas.`;
+          if (hasM3) {
+            const triplesCount = newBets.filter(b => b.description.includes('TRIPLE')).length;
+            const doublesCount = newBets.filter(b => b.description.includes('DOBLE')).length;
+            const totalInv = newBets.reduce((acc, b) => acc + b.stake, 0);
+            summaryMsg += `\nTriples: ${triplesCount}\nDobles: ${doublesCount}\nInversión Total: ${totalInv.toFixed(2)}€`;
+          } else {
+            summaryMsg += `\nInversión Total: ${(newBets.reduce((acc, b) => acc + b.stake, 0)).toFixed(2)}€`;
+          }
+
+          alert(summaryMsg);
+
+          // Clear IA Form (Reset config too? Maybe keep stakes for convenience? Let's reset for safety)
           setIaBetData({
             m1: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
-            m2: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } }
+            m2: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
+            m3: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
+            config: { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' }
           });
           setShowAddBetModal(false);
           return;
@@ -5794,9 +5868,23 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               setManualProfit(((s * o) - s).toFixed(2));
                             }
                           }} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white font-mono text-lg focus:border-emerald-500" />
-                          {formTipster === 'IA' && (
-                            <div className="text-right text-[10px] text-emerald-500 mt-1 font-mono">
-                              Total Inversión: {((parseFloat(formStake) || 0) * 4).toFixed(2)}€
+                          {formTipster === 'IA' ? (
+                            <div className="text-[10px] text-emerald-500 mt-1 font-mono">
+                              Total Inversión: {(() => {
+                                const { config } = iaBetData;
+                                let total = 0;
+                                // Calc Triples (8 combos)
+                                if (config.includeTriples && config.stakeTriples) total += (parseFloat(config.stakeTriples) * 8);
+                                // Calc Doubles (12 combos)
+                                if (config.includeDoubles && config.stakeDoubles) total += (parseFloat(config.stakeDoubles) * 12);
+                                // Fallback 2 matches (4 doubles)
+                                // We need to handle this display dynamically in the form below, but for global total here:
+                                return total.toFixed(2);
+                              })()}€
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-slate-500 mt-1 italic">
+                              * Si es combinada, Stake Total. Si no, Stake por apuesta.
                             </div>
                           )}
                         </div>
@@ -5852,6 +5940,53 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                           {/* MATCH 3 (NEW) */}
                           <div className="bg-slate-900 border border-slate-700 p-2 rounded">
+
+                            {/* NEW: SELECTIVE SYSTEM BETTING UI */}
+                            <div className="mb-2 p-2 bg-slate-950/50 rounded border border-indigo-900/30">
+                              <label className="text-xs font-bold text-indigo-400 uppercase mb-2 block flex items-center gap-1">
+                                <SlidersHorizontal size={12} /> Estrategia de Combinación
+                              </label>
+                              <div className="space-y-2">
+                                {/* TRIPLES CONTROL */}
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={iaBetData.config.includeTriples}
+                                    onChange={e => setIaBetData({ ...iaBetData, config: { ...iaBetData.config, includeTriples: e.target.checked } })}
+                                    className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500"
+                                  />
+                                  <span className="text-xs text-slate-300 font-bold w-16">TRIPLES</span>
+                                  <input
+                                    type="number"
+                                    placeholder="Stake"
+                                    value={iaBetData.config.stakeTriples}
+                                    onChange={e => setIaBetData({ ...iaBetData, config: { ...iaBetData.config, stakeTriples: e.target.value } })}
+                                    className={`w-20 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white ${!iaBetData.config.includeTriples ? 'opacity-50 pointer-events-none' : ''}`}
+                                  />
+                                  <span className="text-[10px] text-slate-500">x8 Comb.</span>
+                                </div>
+
+                                {/* DOUBLES CONTROL */}
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={iaBetData.config.includeDoubles}
+                                    onChange={e => setIaBetData({ ...iaBetData, config: { ...iaBetData.config, includeDoubles: e.target.checked } })}
+                                    className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500"
+                                  />
+                                  <span className="text-xs text-slate-300 font-bold w-16">DOBLES</span>
+                                  <input
+                                    type="number"
+                                    placeholder="Stake"
+                                    value={iaBetData.config.stakeDoubles}
+                                    onChange={e => setIaBetData({ ...iaBetData, config: { ...iaBetData.config, stakeDoubles: e.target.value } })}
+                                    className={`w-20 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white ${!iaBetData.config.includeDoubles ? 'opacity-50 pointer-events-none' : ''}`}
+                                  />
+                                  <span className="text-[10px] text-slate-500">x12 Comb.</span>
+                                </div>
+                              </div>
+                            </div>
+
                             <input
                               type="text"
                               placeholder="Partido 3 (Ej: Nadal vs Djokovic)"
@@ -5900,72 +6035,93 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               </summary>
                               <div className="mt-2 space-y-1 max-h-[250px] overflow-y-auto custom-scrollbar">
                                 {(() => {
-                                  const stP = parseFloat(formStake) || 0;
-                                  const { m1, m2, m3 } = iaBetData;
+                                  const { m1, m2, m3, config } = iaBetData;
 
                                   // Helper to check if a match is valid (has odds)
                                   const isValid = (m) => m && (parseFloat(m.s1.odds) > 1 || parseFloat(m.s2.odds) > 1);
 
                                   let combosPreview = [];
 
+                                  // 3 MATCH LOGIC
                                   if (isValid(m1) && isValid(m2) && isValid(m3)) {
-                                    // 3 MATCHES -> Generate Triples (2x2x2 = 8) & Doubles (4+4+4 = 12)
 
                                     // TRIPLES (3 Matches)
-                                    const triples = [];
-                                    const opts1 = [m1.s1, m1.s2];
-                                    const opts2 = [m2.s1, m2.s2];
-                                    const opts3 = [m3.s1, m3.s2];
+                                    if (config.includeTriples) {
+                                      const stake = parseFloat(config.stakeTriples) || 0;
+                                      const opts1 = [m1.s1, m1.s2];
+                                      const opts2 = [m2.s1, m2.s2];
+                                      const opts3 = [m3.s1, m3.s2];
 
-                                    opts1.forEach((o1, i1) => {
-                                      opts2.forEach((o2, i2) => {
-                                        opts3.forEach((o3, i3) => {
-                                          triples.push({
-                                            lines: [o1, o2, o3],
-                                            type: 'TRIPLE',
-                                            desc: `M1(${i1 + 1}) + M2(${i2 + 1}) + M3(${i3 + 1})`
+                                      opts1.forEach((o1, i1) => {
+                                        opts2.forEach((o2, i2) => {
+                                          opts3.forEach((o3, i3) => {
+                                            combosPreview.push({
+                                              lines: [o1, o2, o3],
+                                              type: 'TRIPLE',
+                                              desc: `M1(${i1 + 1}) + M2(${i2 + 1}) + M3(${i3 + 1})`,
+                                              stake: stake
+                                            });
                                           });
                                         });
                                       });
-                                    });
+                                    }
 
                                     // DOUBLES (Pairs)
-                                    const doubles = [];
-                                    // M1+M2
-                                    opts1.forEach((o1, i1) => {
-                                      opts2.forEach((o2, i2) => {
-                                        doubles.push({ lines: [o1, o2], type: 'DOBLE', desc: `M1(${i1 + 1}) + M2(${i2 + 1})` });
-                                      });
-                                    });
-                                    // M1+M3
-                                    opts1.forEach((o1, i1) => {
-                                      opts3.forEach((o3, i3) => {
-                                        doubles.push({ lines: [o1, o3], type: 'DOBLE', desc: `M1(${i1 + 1}) + M3(${i3 + 1})` });
-                                      });
-                                    });
-                                    // M2+M3
-                                    opts2.forEach((o2, i2) => {
-                                      opts3.forEach((o3, i3) => {
-                                        doubles.push({ lines: [o2, o3], type: 'DOBLE', desc: `M2(${i2 + 1}) + M3(${i3 + 1})` });
-                                      });
-                                    });
+                                    if (config.includeDoubles) {
+                                      const stake = parseFloat(config.stakeDoubles) || 0;
+                                      const opts1 = [m1.s1, m1.s2];
+                                      const opts2 = [m2.s1, m2.s2];
+                                      const opts3 = [m3.s1, m3.s2];
 
-                                    combosPreview = [...triples, ...doubles];
+                                      // M1+M2
+                                      opts1.forEach((o1, i1) => {
+                                        opts2.forEach((o2, i2) => {
+                                          combosPreview.push({ lines: [o1, o2], type: 'DOBLE', desc: `M1(${i1 + 1}) + M2(${i2 + 1})`, stake: stake });
+                                        });
+                                      });
+                                      // M1+M3
+                                      opts1.forEach((o1, i1) => {
+                                        opts3.forEach((o3, i3) => {
+                                          combosPreview.push({ lines: [o1, o3], type: 'DOBLE', desc: `M1(${i1 + 1}) + M3(${i3 + 1})`, stake: stake });
+                                        });
+                                      });
+                                      // M2+M3
+                                      opts2.forEach((o2, i2) => {
+                                        opts3.forEach((o3, i3) => {
+                                          combosPreview.push({ lines: [o2, o3], type: 'DOBLE', desc: `M2(${i2 + 1}) + M3(${i3 + 1})`, stake: stake });
+                                        });
+                                      });
+                                    }
 
                                   } else if (isValid(m1) && isValid(m2)) {
-                                    // 2 MATCHES (Legacy behavior)
+                                    // 2 MATCHES (Legacy behavior) - force use of Double Stake if set, otherwise 0?
+                                    // Fallback to formStake concept if Doubles Stake not set?
+                                    // UI encourages "config.stakeDoubles" now.
+                                    const stake = parseFloat(config.stakeDoubles) || parseFloat(formStake) || 0;
+
+                                    const opts1 = [m1.s1, m1.s2];
+                                    const opts2 = [m2.s1, m2.s2];
+
+                                    // Force simplified display without "DOBLE" prefix if just 2 matches? Keeping consistent.
+                                    opts1.forEach((o1, i1) => {
+                                      opts2.forEach((o2, i2) => {
+                                        combosPreview.push({ lines: [o1, o2], type: 'DOBLE', desc: 'S1+S2', stake: stake });
+                                      });
+                                    });
+
+                                    // Update desc manually for legacy clarity?
                                     combosPreview = [
-                                      { lines: [m1.s1, m2.s1], type: 'DOBLE', desc: 'S1+S1' },
-                                      { lines: [m1.s1, m2.s2], type: 'DOBLE', desc: 'S1+S2' },
-                                      { lines: [m1.s2, m2.s1], type: 'DOBLE', desc: 'S2+S1' },
-                                      { lines: [m1.s2, m2.s2], type: 'DOBLE', desc: 'S2+S2' }
+                                      { lines: [m1.s1, m2.s1], type: 'DOBLE', desc: 'S1+S1', stake: stake },
+                                      { lines: [m1.s1, m2.s2], type: 'DOBLE', desc: 'S1+S2', stake: stake },
+                                      { lines: [m1.s2, m2.s1], type: 'DOBLE', desc: 'S2+S1', stake: stake },
+                                      { lines: [m1.s2, m2.s2], type: 'DOBLE', desc: 'S2+S2', stake: stake }
                                     ];
                                   }
 
                                   return combosPreview.map((c, i) => {
                                     const oddsProduct = c.lines.reduce((acc, l) => acc * (parseFloat(l.odds) || 1), 1);
                                     const combined = oddsProduct.toFixed(2);
-                                    const prof = ((stP * oddsProduct) - stP).toFixed(2);
+                                    const prof = ((c.stake * oddsProduct) - c.stake).toFixed(2);
 
                                     return (
                                       <div key={i} className="flex justify-between text-[10px] text-slate-400 p-1 hover:bg-slate-800 rounded border-b border-slate-800/50 last:border-0">
