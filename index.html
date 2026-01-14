@@ -2405,7 +2405,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
         // --- IA SPECIAL LOGIC START (Sistema Marcador Exacto) ---
         if (formTipster === 'IA') {
-          const { m1, m2, m3, config } = iaBetData;
+          const { m1, m2, m3 } = iaBetData;
+          const config = iaBetData.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' };
           // 1. Validation
           if (!m1.name || !m2.name) { alert("¡Introduce los nombres de los equipos (Partido 1 y 2)!"); return; }
           // Check M1 & M2 (Mandatory)
@@ -5871,7 +5872,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           {formTipster === 'IA' ? (
                             <div className="text-[10px] text-emerald-500 mt-1 font-mono">
                               Total Inversión: {(() => {
-                                const { config } = iaBetData;
+                                const config = iaBetData.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' };
                                 let total = 0;
                                 // Calc Triples (8 combos)
                                 if (config.includeTriples && config.stakeTriples) total += (parseFloat(config.stakeTriples) * 8);
@@ -5951,17 +5952,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="checkbox"
-                                    checked={iaBetData.config.includeTriples}
-                                    onChange={e => setIaBetData({ ...iaBetData, config: { ...iaBetData.config, includeTriples: e.target.checked } })}
+                                    checked={iaBetData.config?.includeTriples ?? true}
+                                    onChange={e => setIaBetData(prev => ({ ...prev, config: { ...(prev.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' }), includeTriples: e.target.checked } }))}
                                     className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500"
                                   />
                                   <span className="text-xs text-slate-300 font-bold w-16">TRIPLES</span>
                                   <input
                                     type="number"
                                     placeholder="Stake"
-                                    value={iaBetData.config.stakeTriples}
-                                    onChange={e => setIaBetData({ ...iaBetData, config: { ...iaBetData.config, stakeTriples: e.target.value } })}
-                                    className={`w-20 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white ${!iaBetData.config.includeTriples ? 'opacity-50 pointer-events-none' : ''}`}
+                                    value={iaBetData.config?.stakeTriples || ''}
+                                    onChange={e => setIaBetData(prev => ({ ...prev, config: { ...(prev.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' }), stakeTriples: e.target.value } }))}
+                                    className={`w-20 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white ${!(iaBetData.config?.includeTriples ?? true) ? 'opacity-50 pointer-events-none' : ''}`}
                                   />
                                   <span className="text-[10px] text-slate-500">x8 Comb.</span>
                                 </div>
@@ -5970,17 +5971,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="checkbox"
-                                    checked={iaBetData.config.includeDoubles}
-                                    onChange={e => setIaBetData({ ...iaBetData, config: { ...iaBetData.config, includeDoubles: e.target.checked } })}
+                                    checked={iaBetData.config?.includeDoubles ?? true}
+                                    onChange={e => setIaBetData(prev => ({ ...prev, config: { ...(prev.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' }), includeDoubles: e.target.checked } }))}
                                     className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500"
                                   />
                                   <span className="text-xs text-slate-300 font-bold w-16">DOBLES</span>
                                   <input
                                     type="number"
                                     placeholder="Stake"
-                                    value={iaBetData.config.stakeDoubles}
-                                    onChange={e => setIaBetData({ ...iaBetData, config: { ...iaBetData.config, stakeDoubles: e.target.value } })}
-                                    className={`w-20 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white ${!iaBetData.config.includeDoubles ? 'opacity-50 pointer-events-none' : ''}`}
+                                    value={iaBetData.config?.stakeDoubles || ''}
+                                    onChange={e => setIaBetData(prev => ({ ...prev, config: { ...(prev.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' }), stakeDoubles: e.target.value } }))}
+                                    className={`w-20 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white ${!(iaBetData.config?.includeDoubles ?? true) ? 'opacity-50 pointer-events-none' : ''}`}
                                   />
                                   <span className="text-[10px] text-slate-500">x12 Comb.</span>
                                 </div>
@@ -6035,7 +6036,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               </summary>
                               <div className="mt-2 space-y-1 max-h-[250px] overflow-y-auto custom-scrollbar">
                                 {(() => {
-                                  const { m1, m2, m3, config } = iaBetData;
+                                  const { m1, m2, m3 } = iaBetData;
+                                  const config = iaBetData.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' };
 
                                   // Helper to check if a match is valid (has odds)
                                   const isValid = (m) => m && (parseFloat(m.s1.odds) > 1 || parseFloat(m.s2.odds) > 1);
