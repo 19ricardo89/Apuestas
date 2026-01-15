@@ -631,9 +631,9 @@
 
       // ESTADO IA SYSTEM (V_IA)
       const [iaBetData, setIaBetData] = useState({
-        m1: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
-        m2: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
-        m3: { name: '', s1: { score: '', odds: '' }, s2: { score: '', odds: '' } },
+        m1: { name: '', scores: [{ score: '', odds: '' }, { score: '', odds: '' }] },
+        m2: { name: '', scores: [{ score: '', odds: '' }, { score: '', odds: '' }] },
+        m3: { name: '', scores: [{ score: '', odds: '' }, { score: '', odds: '' }] },
         config: { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' },
         mode: 'SYSTEM' // 'SYSTEM' (Matrices) or 'NORMAL' (Standard Bet)
       });
@@ -5876,12 +5876,25 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               Total Inversión: {(() => {
                                 const config = iaBetData.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' };
                                 let total = 0;
-                                // Calc Triples (8 combos)
-                                if (config.includeTriples && config.stakeTriples) total += (parseFloat(config.stakeTriples) * 8);
-                                // Calc Doubles (12 combos)
-                                if (config.includeDoubles && config.stakeDoubles) total += (parseFloat(config.stakeDoubles) * 12);
-                                // Fallback 2 matches (4 doubles)
-                                // We need to handle this display dynamically in the form below, but for global total here:
+
+                                const v1 = iaBetData.m1.scores.filter(s => s.score).length || 0;
+                                const v2 = iaBetData.m2.scores.filter(s => s.score).length || 0;
+                                const v3 = iaBetData.m3.scores.filter(s => s.score).length || 0;
+
+                                // Calc Triples (v1 * v2 * v3)
+                                if (config.includeTriples && config.stakeTriples) {
+                                  total += (parseFloat(config.stakeTriples) * (v1 * v2 * v3));
+                                }
+
+                                // Calc Doubles (Pairs)
+                                if (config.includeDoubles && config.stakeDoubles) {
+                                  let doublesCount = 0;
+                                  if (v1 > 0 && v2 > 0) doublesCount += (v1 * v2);
+                                  if (v1 > 0 && v3 > 0) doublesCount += (v1 * v3);
+                                  if (v2 > 0 && v3 > 0) doublesCount += (v2 * v3);
+                                  total += (parseFloat(config.stakeDoubles) * doublesCount);
+                                }
+
                                 return total.toFixed(2);
                               })()}€
                             </div>
@@ -5922,49 +5935,92 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                           {/* MATCH 1 */}
                           <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase block">Partido 1</label>
+                            <div className="flex justify-between">
+                              <label className="text-xs font-bold text-slate-400 uppercase block">Partido 1</label>
+                              <button type="button" onClick={() => {
+                                // Add Score
+                                const newScores = [...iaBetData.m1.scores, { score: '', odds: '' }];
+                                setIaBetData({ ...iaBetData, m1: { ...iaBetData.m1, scores: newScores } });
+                              }} className="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 rounded text-emerald-400 flex items-center gap-1"><Plus size={10} /> Añadir Marcador</button>
+                            </div>
                             <input type="text" placeholder="Ej: Roma vs Lazio"
                               value={iaBetData.m1.name}
                               onChange={e => setIaBetData({ ...iaBetData, m1: { ...iaBetData.m1, name: e.target.value } })}
                               className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm focus:border-indigo-500"
                             />
                             <div className="grid grid-cols-2 gap-2">
-                              <div className="flex gap-1">
-                                <input type="text" placeholder="Score 1 (1-0)" value={iaBetData.m1.s1.score} onChange={e => setIaBetData({ ...iaBetData, m1: { ...iaBetData.m1, s1: { ...iaBetData.m1.s1, score: e.target.value } } })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" />
-                                <input type="number" placeholder="@" value={iaBetData.m1.s1.odds} onChange={e => setIaBetData({ ...iaBetData, m1: { ...iaBetData.m1, s1: { ...iaBetData.m1.s1, odds: e.target.value } } })} className="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono text-center" />
-                              </div>
-                              <div className="flex gap-1">
-                                <input type="text" placeholder="Score 2 (2-0)" value={iaBetData.m1.s2.score} onChange={e => setIaBetData({ ...iaBetData, m1: { ...iaBetData.m1, s2: { ...iaBetData.m1.s2, score: e.target.value } } })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" />
-                                <input type="number" placeholder="@" value={iaBetData.m1.s2.odds} onChange={e => setIaBetData({ ...iaBetData, m1: { ...iaBetData.m1, s2: { ...iaBetData.m1.s2, odds: e.target.value } } })} className="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono text-center" />
-                              </div>
+                              {iaBetData.m1.scores.map((s, idx) => (
+                                <div key={idx} className="flex gap-1 group relative">
+                                  <input type="text" placeholder={`Score ${idx + 1}`} value={s.score} onChange={e => {
+                                    const newScores = [...iaBetData.m1.scores];
+                                    newScores[idx].score = e.target.value;
+                                    setIaBetData({ ...iaBetData, m1: { ...iaBetData.m1, scores: newScores } });
+                                  }} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" />
+                                  <input type="number" placeholder="@" value={s.odds} onChange={e => {
+                                    const newScores = [...iaBetData.m1.scores];
+                                    newScores[idx].odds = e.target.value;
+                                    setIaBetData({ ...iaBetData, m1: { ...iaBetData.m1, scores: newScores } });
+                                  }} className="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono text-center" />
+                                  {iaBetData.m1.scores.length > 1 && (
+                                    <button type="button" onClick={() => {
+                                      const newScores = iaBetData.m1.scores.filter((_, i) => i !== idx);
+                                      setIaBetData({ ...iaBetData, m1: { ...iaBetData.m1, scores: newScores } });
+                                    }} className="absolute -top-1 -right-1 bg-red-900 text-red-400 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><X size={10} /></button>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           </div>
 
                           {/* MATCH 2 */}
                           <div className="space-y-2 pt-2 border-t border-slate-700/50">
-                            <label className="text-xs font-bold text-slate-400 uppercase block">Partido 2</label>
+                            <div className="flex justify-between">
+                              <label className="text-xs font-bold text-slate-400 uppercase block">Partido 2</label>
+                              <button type="button" onClick={() => {
+                                const newScores = [...iaBetData.m2.scores, { score: '', odds: '' }];
+                                setIaBetData({ ...iaBetData, m2: { ...iaBetData.m2, scores: newScores } });
+                              }} className="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 rounded text-emerald-400 flex items-center gap-1"><Plus size={10} /> Añadir Marcador</button>
+                            </div>
                             <input type="text" placeholder="Ej: Dortmund vs Bayern"
                               value={iaBetData.m2.name}
                               onChange={e => setIaBetData({ ...iaBetData, m2: { ...iaBetData.m2, name: e.target.value } })}
                               className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-sm focus:border-indigo-500"
                             />
                             <div className="grid grid-cols-2 gap-2">
-                              <div className="flex gap-1">
-                                <input type="text" placeholder="Score 1 (2-1)" value={iaBetData.m2.s1.score} onChange={e => setIaBetData({ ...iaBetData, m2: { ...iaBetData.m2, s1: { ...iaBetData.m2.s1, score: e.target.value } } })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" />
-                                <input type="number" placeholder="@" value={iaBetData.m2.s1.odds} onChange={e => setIaBetData({ ...iaBetData, m2: { ...iaBetData.m2, s1: { ...iaBetData.m2.s1, odds: e.target.value } } })} className="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono text-center" />
-                              </div>
-                              <div className="flex gap-1">
-                                <input type="text" placeholder="Score 2 (3-1)" value={iaBetData.m2.s2.score} onChange={e => setIaBetData({ ...iaBetData, m2: { ...iaBetData.m2, s2: { ...iaBetData.m2.s2, score: e.target.value } } })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" />
-                                <input type="number" placeholder="@" value={iaBetData.m2.s2.odds} onChange={e => setIaBetData({ ...iaBetData, m2: { ...iaBetData.m2, s2: { ...iaBetData.m2.s2, odds: e.target.value } } })} className="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono text-center" />
-                              </div>
+                              {iaBetData.m2.scores.map((s, idx) => (
+                                <div key={idx} className="flex gap-1 group relative">
+                                  <input type="text" placeholder={`Score ${idx + 1}`} value={s.score} onChange={e => {
+                                    const newScores = [...iaBetData.m2.scores];
+                                    newScores[idx].score = e.target.value;
+                                    setIaBetData({ ...iaBetData, m2: { ...iaBetData.m2, scores: newScores } });
+                                  }} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" />
+                                  <input type="number" placeholder="@" value={s.odds} onChange={e => {
+                                    const newScores = [...iaBetData.m2.scores];
+                                    newScores[idx].odds = e.target.value;
+                                    setIaBetData({ ...iaBetData, m2: { ...iaBetData.m2, scores: newScores } });
+                                  }} className="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono text-center" />
+                                  {iaBetData.m2.scores.length > 1 && (
+                                    <button type="button" onClick={() => {
+                                      const newScores = iaBetData.m2.scores.filter((_, i) => i !== idx);
+                                      setIaBetData({ ...iaBetData, m2: { ...iaBetData.m2, scores: newScores } });
+                                    }} className="absolute -top-1 -right-1 bg-red-900 text-red-400 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><X size={10} /></button>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           </div>
 
                           {/* MATCH 3 (NEW) */}
                           <div className="bg-slate-900 border border-slate-700 p-2 rounded">
-                            <label className="text-xs font-bold text-slate-400 uppercase block mb-2">Partido 3 (Opcional)</label>
+                            <div className="flex justify-between mb-2">
+                              <label className="text-xs font-bold text-slate-400 uppercase block">Partido 3 (Opcional)</label>
+                              <button type="button" onClick={() => {
+                                const newScores = [...iaBetData.m3.scores, { score: '', odds: '' }];
+                                setIaBetData({ ...iaBetData, m3: { ...iaBetData.m3, scores: newScores } });
+                              }} className="text-[10px] bg-slate-700 hover:bg-slate-600 px-2 rounded text-emerald-400 flex items-center gap-1"><Plus size={10} /> Añadir Marcador</button>
+                            </div>
 
-                            {/* NEW: SELECTIVE SYSTEM BETTING UI */}
+                            {/* NEW: SELECTIVE SYSTEM BETTING UI (Dynamic Counts Preview) */}
                             <div className="mb-2 p-2 bg-slate-950/50 rounded border border-indigo-900/30">
                               <label className="text-xs font-bold text-indigo-400 uppercase mb-2 block flex items-center gap-1">
                                 <SlidersHorizontal size={12} /> Estrategia de Combinación
@@ -5986,7 +6042,20 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                     onChange={e => setIaBetData(prev => ({ ...prev, config: { ...(prev.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' }), stakeTriples: e.target.value } }))}
                                     className={`w-20 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white ${!(iaBetData.config?.includeTriples ?? true) ? 'opacity-50 pointer-events-none' : ''}`}
                                   />
-                                  <span className="text-[10px] text-slate-500">x8 Comb.</span>
+                                  <span className="text-[10px] text-slate-500">
+                                    x{(() => {
+                                      // Calc Dynamic Combinations: S1 x S2 x S3
+                                      const s1 = iaBetData.m1.scores.length;
+                                      const s2 = iaBetData.m2.scores.length;
+                                      const s3 = iaBetData.m3.scores.filter(s => s.score || s.odds).length || 0; // Check real usage? Or just length if valid?
+                                      // For preview, let's use actual length but assume user fills them? Or filter empty?
+                                      // Let's filter empties for a "live" count
+                                      const v1 = iaBetData.m1.scores.filter(s => s.score).length || 0;
+                                      const v2 = iaBetData.m2.scores.filter(s => s.score).length || 0;
+                                      const v3 = iaBetData.m3.scores.filter(s => s.score).length || 0;
+                                      return v1 * v2 * v3;
+                                    })()} Comb.
+                                  </span>
                                 </div>
 
                                 {/* DOUBLES CONTROL */}
@@ -6005,7 +6074,18 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                     onChange={e => setIaBetData(prev => ({ ...prev, config: { ...(prev.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' }), stakeDoubles: e.target.value } }))}
                                     className={`w-20 bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white ${!(iaBetData.config?.includeDoubles ?? true) ? 'opacity-50 pointer-events-none' : ''}`}
                                   />
-                                  <span className="text-[10px] text-slate-500">x12 Comb.</span>
+                                  <span className="text-[10px] text-slate-500">
+                                    x{(() => {
+                                      const v1 = iaBetData.m1.scores.filter(s => s.score).length || 0;
+                                      const v2 = iaBetData.m2.scores.filter(s => s.score).length || 0;
+                                      const v3 = iaBetData.m3.scores.filter(s => s.score).length || 0;
+                                      let total = 0;
+                                      if (v1 > 0 && v2 > 0) total += (v1 * v2);
+                                      if (v1 > 0 && v3 > 0) total += (v1 * v3);
+                                      if (v2 > 0 && v3 > 0) total += (v2 * v3);
+                                      return total;
+                                    })()} Comb.
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -6018,14 +6098,26 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white mb-2"
                             />
                             <div className="grid grid-cols-2 gap-2">
-                              <div className="flex gap-1">
-                                <input type="text" placeholder="Score 1" value={iaBetData.m3.s1.score} onChange={e => setIaBetData({ ...iaBetData, m3: { ...iaBetData.m3, s1: { ...iaBetData.m3.s1, score: e.target.value } } })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" />
-                                <input type="number" placeholder="@" value={iaBetData.m3.s1.odds} onChange={e => setIaBetData({ ...iaBetData, m3: { ...iaBetData.m3, s1: { ...iaBetData.m3.s1, odds: e.target.value } } })} className="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono text-center" />
-                              </div>
-                              <div className="flex gap-1">
-                                <input type="text" placeholder="Score 2" value={iaBetData.m3.s2.score} onChange={e => setIaBetData({ ...iaBetData, m3: { ...iaBetData.m3, s2: { ...iaBetData.m3.s2, score: e.target.value } } })} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" />
-                                <input type="number" placeholder="@" value={iaBetData.m3.s2.odds} onChange={e => setIaBetData({ ...iaBetData, m3: { ...iaBetData.m3, s2: { ...iaBetData.m3.s2, odds: e.target.value } } })} className="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono text-center" />
-                              </div>
+                              {iaBetData.m3.scores.map((s, idx) => (
+                                <div key={idx} className="flex gap-1 group relative">
+                                  <input type="text" placeholder={`Score ${idx + 1}`} value={s.score} onChange={e => {
+                                    const newScores = [...iaBetData.m3.scores];
+                                    newScores[idx].score = e.target.value;
+                                    setIaBetData({ ...iaBetData, m3: { ...iaBetData.m3, scores: newScores } });
+                                  }} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" />
+                                  <input type="number" placeholder="@" value={s.odds} onChange={e => {
+                                    const newScores = [...iaBetData.m3.scores];
+                                    newScores[idx].odds = e.target.value;
+                                    setIaBetData({ ...iaBetData, m3: { ...iaBetData.m3, scores: newScores } });
+                                  }} className="w-20 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white font-mono text-center" />
+                                  {iaBetData.m3.scores.length > 1 && (
+                                    <button type="button" onClick={() => {
+                                      const newScores = iaBetData.m3.scores.filter((_, i) => i !== idx);
+                                      setIaBetData({ ...iaBetData, m3: { ...iaBetData.m3, scores: newScores } });
+                                    }} className="absolute -top-1 -right-1 bg-red-900 text-red-400 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><X size={10} /></button>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           </div>
 
@@ -6049,7 +6141,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             </div>
                           </div>
 
-                          {/* IA PROFIT PREVIEW (UPDATED FOR 3 MATCHES) */}
+                          {/* IA PROFIT PREVIEW (DYNAMIC) */}
                           <div className="bg-slate-950/50 p-2 rounded border border-slate-700/50">
                             <details className="group">
                               <summary className="flex justify-between items-center cursor-pointer text-xs font-bold text-indigo-400 hover:text-indigo-300">
@@ -6061,85 +6153,57 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   const { m1, m2, m3 } = iaBetData;
                                   const config = iaBetData.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' };
 
-                                  // Helper to check if a match is valid (has odds)
-                                  const isValid = (m) => m && (parseFloat(m.s1.odds) > 1 || parseFloat(m.s2.odds) > 1);
+                                  // Helper to check valid lines in dynamic array
+                                  const valid1 = m1.scores.filter(s => s.score && parseFloat(s.odds) > 1);
+                                  const valid2 = m2.scores.filter(s => s.score && parseFloat(s.odds) > 1);
+                                  const valid3 = m3.scores.filter(s => s.score && parseFloat(s.odds) > 1);
 
                                   let combosPreview = [];
 
-                                  // 3 MATCH LOGIC
-                                  if (isValid(m1) && isValid(m2) && isValid(m3)) {
-
-                                    // TRIPLES (3 Matches)
-                                    if (config.includeTriples) {
-                                      const stake = parseFloat(config.stakeTriples) || 0;
-                                      const opts1 = [m1.s1, m1.s2];
-                                      const opts2 = [m2.s1, m2.s2];
-                                      const opts3 = [m3.s1, m3.s2];
-
-                                      opts1.forEach((o1, i1) => {
-                                        opts2.forEach((o2, i2) => {
-                                          opts3.forEach((o3, i3) => {
-                                            combosPreview.push({
-                                              lines: [o1, o2, o3],
-                                              type: 'TRIPLE',
-                                              desc: `M1(${i1 + 1}) + M2(${i2 + 1}) + M3(${i3 + 1})`,
-                                              stake: stake
-                                            });
+                                  // TRIPLES
+                                  if (config.includeTriples && valid1.length > 0 && valid2.length > 0 && valid3.length > 0) {
+                                    const stake = parseFloat(config.stakeTriples) || 0;
+                                    valid1.forEach(s1 => {
+                                      valid2.forEach(s2 => {
+                                        valid3.forEach(s3 => {
+                                          combosPreview.push({
+                                            lines: [s1, s2, s3],
+                                            type: 'TRIPLE',
+                                            desc: `M1(${s1.score}) + M2(${s2.score}) + M3(${s3.score})`,
+                                            stake: stake
                                           });
                                         });
                                       });
-                                    }
-
-                                    // DOUBLES (Pairs)
-                                    if (config.includeDoubles) {
-                                      const stake = parseFloat(config.stakeDoubles) || 0;
-                                      const opts1 = [m1.s1, m1.s2];
-                                      const opts2 = [m2.s1, m2.s2];
-                                      const opts3 = [m3.s1, m3.s2];
-
-                                      // M1+M2
-                                      opts1.forEach((o1, i1) => {
-                                        opts2.forEach((o2, i2) => {
-                                          combosPreview.push({ lines: [o1, o2], type: 'DOBLE', desc: `M1(${i1 + 1}) + M2(${i2 + 1})`, stake: stake });
-                                        });
-                                      });
-                                      // M1+M3
-                                      opts1.forEach((o1, i1) => {
-                                        opts3.forEach((o3, i3) => {
-                                          combosPreview.push({ lines: [o1, o3], type: 'DOBLE', desc: `M1(${i1 + 1}) + M3(${i3 + 1})`, stake: stake });
-                                        });
-                                      });
-                                      // M2+M3
-                                      opts2.forEach((o2, i2) => {
-                                        opts3.forEach((o3, i3) => {
-                                          combosPreview.push({ lines: [o2, o3], type: 'DOBLE', desc: `M2(${i2 + 1}) + M3(${i3 + 1})`, stake: stake });
-                                        });
-                                      });
-                                    }
-
-                                  } else if (isValid(m1) && isValid(m2)) {
-                                    // 2 MATCHES (Legacy behavior) - force use of Double Stake if set, otherwise 0?
-                                    // Fallback to formStake concept if Doubles Stake not set?
-                                    // UI encourages "config.stakeDoubles" now.
-                                    const stake = parseFloat(config.stakeDoubles) || parseFloat(formStake) || 0;
-
-                                    const opts1 = [m1.s1, m1.s2];
-                                    const opts2 = [m2.s1, m2.s2];
-
-                                    // Force simplified display without "DOBLE" prefix if just 2 matches? Keeping consistent.
-                                    opts1.forEach((o1, i1) => {
-                                      opts2.forEach((o2, i2) => {
-                                        combosPreview.push({ lines: [o1, o2], type: 'DOBLE', desc: 'S1+S2', stake: stake });
-                                      });
                                     });
+                                  }
 
-                                    // Update desc manually for legacy clarity?
-                                    combosPreview = [
-                                      { lines: [m1.s1, m2.s1], type: 'DOBLE', desc: 'S1+S1', stake: stake },
-                                      { lines: [m1.s1, m2.s2], type: 'DOBLE', desc: 'S1+S2', stake: stake },
-                                      { lines: [m1.s2, m2.s1], type: 'DOBLE', desc: 'S2+S1', stake: stake },
-                                      { lines: [m1.s2, m2.s2], type: 'DOBLE', desc: 'S2+S2', stake: stake }
-                                    ];
+                                  // DOUBLES
+                                  if (config.includeDoubles) {
+                                    const stake = parseFloat(config.stakeDoubles) || 0;
+                                    // M1 x M2
+                                    if (valid1.length > 0 && valid2.length > 0) {
+                                      valid1.forEach(s1 => {
+                                        valid2.forEach(s2 => {
+                                          combosPreview.push({ lines: [s1, s2], type: 'DOBLE', desc: `M1(${s1.score}) + M2(${s2.score})`, stake: stake });
+                                        });
+                                      });
+                                    }
+                                    // M1 x M3
+                                    if (valid1.length > 0 && valid3.length > 0) {
+                                      valid1.forEach(s1 => {
+                                        valid3.forEach(s3 => {
+                                          combosPreview.push({ lines: [s1, s3], type: 'DOBLE', desc: `M1(${s1.score}) + M3(${s3.score})`, stake: stake });
+                                        });
+                                      });
+                                    }
+                                    // M2 x M3
+                                    if (valid2.length > 0 && valid3.length > 0) {
+                                      valid2.forEach(s2 => {
+                                        valid3.forEach(s3 => {
+                                          combosPreview.push({ lines: [s2, s3], type: 'DOBLE', desc: `M2(${s2.score}) + M3(${s3.score})`, stake: stake });
+                                        });
+                                      });
+                                    }
                                   }
 
                                   return combosPreview.map((c, i) => {
@@ -6161,6 +6225,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               </div>
                             </details>
                           </div>
+
                         </div>
                       ) : (
                         <>
