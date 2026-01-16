@@ -5236,187 +5236,203 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           if (filtered.length === 0) return <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No hay registros con estos filtros</td></tr>;
 
                           return (() => {
-                            // GROUPING LOGIC (V42)
-                            const sorted = filtered.sort((a, b) => b.id - a.id);
-                            const groupedList = [];
-                            const processedIds = new Set();
+                            try {
+                              // GROUPING LOGIC (V42) - Wrapped in Try-Catch for Safety
+                              const sorted = filtered.sort((a, b) => b.id - a.id);
+                              const groupedList = [];
+                              const processedIds = new Set();
 
-                            sorted.forEach(bet => {
-                              if (processedIds.has(bet.id)) return;
+                              sorted.forEach(bet => {
+                                if (processedIds.has(bet.id)) return;
 
-                              if (bet.groupId) {
-                                const groupMembers = sorted.filter(b => b.groupId === bet.groupId);
-                                groupMembers.forEach(m => processedIds.add(m.id));
+                                if (bet.groupId) {
+                                  const groupMembers = sorted.filter(b => b.groupId === bet.groupId);
+                                  groupMembers.forEach(m => processedIds.add(m.id));
 
-                                // Calculate Group Stats
-                                const totalStake = groupMembers.reduce((sum, b) => sum + (parseFloat(b.stake) || 0), 0);
-                                const totalProfit = groupMembers.reduce((sum, b) => sum + (parseFloat(b.profit) || 0), 0);
-                                // Determine Status: 'pending' if any pending, else 'win'/'loss' based on net profit? 
-                                // Or just show profit.
-                                const isPending = groupMembers.some(b => b.result === 'pending');
+                                  // Calculate Group Stats
+                                  const totalStake = groupMembers.reduce((sum, b) => sum + (parseFloat(b.stake) || 0), 0);
+                                  const totalProfit = groupMembers.reduce((sum, b) => sum + (parseFloat(b.profit) || 0), 0);
+                                  // Determine Status: 'pending' if any pending, else 'win'/'loss' based on net profit? 
+                                  // Or just show profit.
+                                  const isPending = groupMembers.some(b => b.result === 'pending');
 
-                                // Odds range?
-                                const oddsList = groupMembers.map(b => parseFloat(b.odds)).sort((a, b) => a - b);
-                                const oddsDisplay = oddsList.length > 1 ? `${oddsList[0].toFixed(2)} - ${oddsList[oddsList.length - 1].toFixed(2)}` : (oddsList[0] ? oddsList[0].toFixed(2) : '0.00');
+                                  // Odds range?
+                                  const oddsList = groupMembers.map(b => parseFloat(b.odds)).sort((a, b) => a - b);
+                                  const oddsDisplay = oddsList.length > 1 ? `${oddsList[0].toFixed(2)} - ${oddsList[oddsList.length - 1].toFixed(2)}` : (oddsList[0] ? oddsList[0].toFixed(2) : '0.00');
 
-                                groupedList.push({
-                                  type: 'group',
-                                  id: bet.groupId,
-                                  date: bet.date,
-                                  tipster: bet.tipster,
-                                  description: `${bet.groupType || 'Sistema'} (${groupMembers.length} apuestas)`,
-                                  stake: totalStake,
-                                  odds: oddsDisplay,
-                                  profit: totalProfit,
-                                  result: isPending ? 'pending' : (totalProfit >= 0 ? 'win' : 'loss'),
-                                  children: groupMembers
-                                });
-                              } else {
-                                groupedList.push({ type: 'single', ...bet });
-                              }
-                            });
+                                  groupedList.push({
+                                    type: 'group',
+                                    id: bet.groupId,
+                                    date: bet.date,
+                                    tipster: bet.tipster,
+                                    description: `${bet.groupType || 'Sistema'} (${groupMembers.length} apuestas)`,
+                                    stake: totalStake,
+                                    odds: oddsDisplay,
+                                    profit: totalProfit,
+                                    result: isPending ? 'pending' : (totalProfit >= 0 ? 'win' : 'loss'),
+                                    children: groupMembers
+                                  });
+                                } else {
+                                  groupedList.push({ type: 'single', ...bet });
+                                }
+                              });
 
-                            return groupedList.map(item => {
-                              if (item.type === 'group') {
-                                const isExpanded = expandedBets.includes(item.id);
-                                const profitColor = item.result === 'pending' ? 'text-slate-500' : (item.profit >= 0 ? 'text-emerald-400' : 'text-red-400');
+                              return groupedList.map(item => {
+                                if (item.type === 'group') {
+                                  const isExpanded = expandedBets.includes(item.id);
+                                  const profitColor = item.result === 'pending' ? 'text-slate-500' : (item.profit >= 0 ? 'text-emerald-400' : 'text-red-400');
 
-                                return (
-                                  <React.Fragment key={item.id}>
-                                    <tr className={`hover:bg-slate-800/50 transition-colors border-l-4 border-l-cyan-500/50 bg-cyan-900/10 cursor-pointer`} onClick={() => toggleHistoryExpansion(item.id)}>
-                                      <td className="p-4 text-slate-400 text-xs whitespace-nowrap">{item.date}</td>
-                                      <td className="p-4">
-                                        <div className="flex items-center gap-3">
-                                          <div className="p-2 rounded-lg bg-cyan-900/20 text-cyan-400"><LayoutGrid size={18} /></div>
-                                          <div>
-                                            <div className="font-bold text-white flex items-center gap-2">
-                                              {item.tipster} <span className="text-[10px] bg-cyan-900 text-cyan-200 px-1.5 rounded">{item.description}</span>
+                                  return (
+                                    <React.Fragment key={item.id}>
+                                      <tr className={`hover:bg-slate-800/50 transition-colors border-l-4 border-l-cyan-500/50 bg-cyan-900/10 cursor-pointer`} onClick={() => toggleHistoryExpansion(item.id)}>
+                                        <td className="p-4 text-slate-400 text-xs whitespace-nowrap">{item.date}</td>
+                                        <td className="p-4">
+                                          <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-cyan-900/20 text-cyan-400"><LayoutGrid size={18} /></div>
+                                            <div>
+                                              <div className="font-bold text-white flex items-center gap-2">
+                                                {item.tipster} <span className="text-[10px] bg-cyan-900 text-cyan-200 px-1.5 rounded">{item.description}</span>
+                                              </div>
+                                              <div className="text-xs text-slate-500">{isExpanded ? 'Ocultar desglose' : 'Ver desglose detallado'}</div>
                                             </div>
-                                            <div className="text-xs text-slate-500">{isExpanded ? 'Ocultar desglose' : 'Ver desglose detallado'}</div>
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); setEditingBet({ id: item.id, isGroup: true, children: item.children, description: item.description, groupType: item.children?.[0]?.groupType || 'Sistema', stake: item.stake, date: item.date, tipster: item.tipster }); setActiveSection('dashboard'); }}
+                                              className="bg-blue-900/40 hover:bg-blue-600 text-blue-400 hover:text-white p-2 rounded-lg transition-all"
+                                              title="Editar Sistema"
+                                            >
+                                              <Edit size={16} />
+                                            </button>
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); handleRepeatBet({ ...item, isGroup: true }); }}
+                                              className="bg-indigo-900/40 hover:bg-indigo-600 text-indigo-400 hover:text-white p-2 rounded-lg transition-all"
+                                              title="Repetir Sistema"
+                                            >
+                                              <Repeat size={16} />
+                                            </button>
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); deleteGroup(item); }}
+                                              className="bg-red-900/40 hover:bg-red-600 text-red-400 hover:text-white p-2 rounded-lg transition-all"
+                                              title="Borrar Grupo"
+                                            >
+                                              <Trash2 size={16} />
+                                            </button>
                                           </div>
-                                          <button
-                                            onClick={(e) => { e.stopPropagation(); setEditingBet({ id: item.id, isGroup: true, children: item.children, description: item.description, groupType: item.children?.[0]?.groupType || 'Sistema', stake: item.stake, date: item.date, tipster: item.tipster }); setActiveSection('dashboard'); }}
-                                            className="bg-blue-900/40 hover:bg-blue-600 text-blue-400 hover:text-white p-2 rounded-lg transition-all"
-                                            title="Editar Sistema"
-                                          >
-                                            <Edit size={16} />
-                                          </button>
-                                          <button
-                                            onClick={(e) => { e.stopPropagation(); handleRepeatBet({ ...item, isGroup: true }); }}
-                                            className="bg-indigo-900/40 hover:bg-indigo-600 text-indigo-400 hover:text-white p-2 rounded-lg transition-all"
-                                            title="Repetir Sistema"
-                                          >
-                                            <Repeat size={16} />
-                                          </button>
-                                          <button
-                                            onClick={(e) => { e.stopPropagation(); deleteGroup(item); }}
-                                            className="bg-red-900/40 hover:bg-red-600 text-red-400 hover:text-white p-2 rounded-lg transition-all"
-                                            title="Borrar Grupo"
-                                          >
-                                            <Trash2 size={16} />
-                                          </button>
-                                        </div>
-                                      </td>
-                                      <td className="p-4 text-center text-slate-300 font-bold">{item.stake.toFixed(2)}€</td>
-                                      <td className="p-4 text-center font-mono text-slate-400 text-xs">
-                                        {(() => {
-                                          const ods = item.children.map(c => c.odds || 0);
-                                          const min = Math.min(...ods);
-                                          const max = Math.max(...ods);
-                                          return min === max ? `@${min.toFixed(2)}` : `@${min.toFixed(2)} - ${max.toFixed(2)}`;
-                                        })()}
-                                      </td>
-                                      <td className={`p-4 text-right font-bold font-mono ${profitColor}`}>
-                                        {item.result === 'pending' ? 'PEND' : (item.profit > 0 ? '+' : '') + item.profit.toFixed(2) + '€'}
-                                      </td>
-                                      <td className="p-4 text-center">
-                                        <ChevronDown size={16} className={`text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                      </td>
-                                    </tr>
-                                    {isExpanded && item.children.map(child => (
-                                      <tr key={child.id} className="bg-slate-950/30 border-b border-slate-800/50">
-                                        <td className="p-4 pl-8 text-slate-600 text-[10px]">{child.id}</td>
-                                        <td className="p-4 pl-12 text-xs text-slate-400 flex items-center gap-2">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
-                                          {child.description}
                                         </td>
-                                        <td className="p-4 text-center text-slate-500 text-xs">{child.stake.toFixed(2)}€</td>
-                                        <td className="p-4 text-center text-emerald-600 font-mono text-xs">@{child.odds.toFixed(2)}</td>
-                                        <td className={`p-4 text-right text-xs font-mono font-bold ${child.result === 'pending' ? 'text-slate-600' : (child.profit >= 0 ? 'text-emerald-500' : 'text-red-500')}`}>
-                                          {child.result === 'pending' ? '---' : (child.profit.toFixed(2) + '€')}
+                                        <td className="p-4 text-center text-slate-300 font-bold">{item.stake.toFixed(2)}€</td>
+                                        <td className="p-4 text-center font-mono text-slate-400 text-xs">
+                                          {(() => {
+                                            const ods = item.children.map(c => c.odds || 0);
+                                            const min = Math.min(...ods);
+                                            const max = Math.max(...ods);
+                                            return min === max ? `@${min.toFixed(2)}` : `@${min.toFixed(2)} - ${max.toFixed(2)}`;
+                                          })()}
+                                        </td>
+                                        <td className={`p-4 text-right font-bold font-mono ${profitColor}`}>
+                                          {item.result === 'pending' ? 'PEND' : (item.profit > 0 ? '+' : '') + item.profit.toFixed(2) + '€'}
                                         </td>
                                         <td className="p-4 text-center">
-                                          {/* Actions for child? Maybe delete single line? Complex. Keep simple for now. */}
+                                          <ChevronDown size={16} className={`text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                         </td>
                                       </tr>
-                                    ))}
-                                  </React.Fragment>
-                                );
-                              } else {
-                                // SINGLE BET RENDER (Existing Logic)
-                                const bet = item;
-                                const isMulti = (bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0);
-                                const isExpanded = expandedBets.includes(bet.id);
+                                      {isExpanded && item.children.map(child => (
+                                        <tr key={child.id} className="bg-slate-950/30 border-b border-slate-800/50">
+                                          <td className="p-4 pl-8 text-slate-600 text-[10px]">{child.id}</td>
+                                          <td className="p-4 pl-12 text-xs text-slate-400 flex items-center gap-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                                            {child.description}
+                                          </td>
+                                          <td className="p-4 text-center text-slate-500 text-xs">{child.stake.toFixed(2)}€</td>
+                                          <td className="p-4 text-center text-emerald-600 font-mono text-xs">@{child.odds.toFixed(2)}</td>
+                                          <td className={`p-4 text-right text-xs font-mono font-bold ${child.result === 'pending' ? 'text-slate-600' : (child.profit >= 0 ? 'text-emerald-500' : 'text-red-500')}`}>
+                                            {child.result === 'pending' ? '---' : (child.profit.toFixed(2) + '€')}
+                                          </td>
+                                          <td className="p-4 text-center">
+                                            {/* Actions for child? Maybe delete single line? Complex. Keep simple for now. */}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </React.Fragment>
+                                  );
+                                } else {
+                                  // SINGLE BET RENDER (Existing Logic)
+                                  const bet = item;
+                                  const isMulti = (bet.betLines && bet.betLines.length > 0) || (bet.subPicks && bet.subPicks.length > 0);
+                                  const isExpanded = expandedBets.includes(bet.id);
 
-                                return (
-                                  <React.Fragment key={bet.id}>
-                                    <tr className={`hover:bg-slate-800/50 transition-colors ${isExpanded ? 'bg-slate-800/30' : ''}`}>
-                                      <td className="p-4 text-slate-400 text-xs whitespace-nowrap">{bet.date}</td>
-                                      <td className="p-4" onClick={() => isMulti && toggleHistoryExpansion(bet.id)}>
-                                        <div className={`flex items-start gap-3 ${isMulti ? 'cursor-pointer group' : ''}`}>
-                                          <div className={`p-2 rounded-lg ${isMulti ? 'bg-indigo-900/20 text-indigo-400 group-hover:bg-indigo-900/40' : 'bg-slate-800 text-slate-400'}`}>
-                                            {isMulti ? <Layers size={18} /> : (bet.stake > 50 ? <Flame size={18} className="text-orange-500" /> : <Tag size={18} />)}
-                                          </div>
-                                          <div>
-                                            <div className="font-bold text-white flex items-center gap-2">
-                                              {bet.tipster}
-                                              {isMulti && <span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 font-normal border border-slate-700">{isExpanded ? 'Ocultar' : 'Ver Líneas'}</span>}
+                                  return (
+                                    <React.Fragment key={bet.id}>
+                                      <tr className={`hover:bg-slate-800/50 transition-colors ${isExpanded ? 'bg-slate-800/30' : ''}`}>
+                                        <td className="p-4 text-slate-400 text-xs whitespace-nowrap">{bet.date}</td>
+                                        <td className="p-4" onClick={() => isMulti && toggleHistoryExpansion(bet.id)}>
+                                          <div className={`flex items-start gap-3 ${isMulti ? 'cursor-pointer group' : ''}`}>
+                                            <div className={`p-2 rounded-lg ${isMulti ? 'bg-indigo-900/20 text-indigo-400 group-hover:bg-indigo-900/40' : 'bg-slate-800 text-slate-400'}`}>
+                                              {isMulti ? <Layers size={18} /> : (bet.stake > 50 ? <Flame size={18} className="text-orange-500" /> : <Tag size={18} />)}
                                             </div>
-                                            <div className="text-xs text-slate-500 truncate max-w-[250px]">{bet.description}</div>
-                                          </div>
-                                        </div>
-                                      </td>
-                                      <td className="p-4 text-center text-slate-300">{bet.stake.toFixed(2)}€</td>
-                                      <td className="p-4 text-center font-mono text-emerald-400 font-bold">@{bet.odds.toFixed(2)}</td>
-                                      <td className={`p-4 text-right font-bold font-mono ${bet.result === 'pending' ? 'text-slate-500' : (bet.profit >= 0 ? 'text-emerald-400' : 'text-red-400')}`}>
-                                        {bet.result === 'pending' ? 'PEND' : (bet.profit >= 0 ? '+' : '') + bet.profit.toFixed(2) + '€'}
-                                      </td>
-                                      <td className="p-4 text-center flex items-center justify-center gap-2">
-                                        <button onClick={() => setEditingBet(bet)} className="text-blue-400 hover:text-white p-1.5 rounded bg-blue-900/20 hover:bg-blue-600 transition-colors" title="Editar"><Edit size={14} /></button>
-                                        <button onClick={() => handleRepeatBet(bet)} className="text-indigo-400 hover:text-white p-1.5 rounded bg-indigo-900/20 hover:bg-indigo-600 transition-colors" title="Repetir Apuesta"><Repeat size={14} /></button>
-                                        <button onClick={() => deleteBet(bet.id)} className="text-slate-600 hover:text-red-400 p-1.5 transition-colors"><Trash2 size={16} /></button>
-                                      </td>
-                                    </tr>
-                                    {isMulti && isExpanded && (
-                                      <tr className="bg-slate-950/50 animate-fade-in border-b border-slate-800">
-                                        <td colSpan="6" className="p-0">
-                                          <div className="p-4 pl-16 grid grid-cols-1 gap-2 bg-gradient-to-b from-indigo-900/10 to-transparent">
-                                            <div className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2 mb-1"><Layers size={10} /> Desglose de Combinada</div>
-                                            {(bet.betLines || bet.subPicks).map((line, i) => {
-                                              const s = line.result || line.status || 'pending';
-                                              let colorClass = 'text-slate-500';
-                                              if (s === 'win') colorClass = 'text-emerald-400';
-                                              if (s === 'loss') colorClass = 'text-red-400';
-                                              if (s === 'void') colorClass = 'text-slate-400 line-through';
-                                              return (
-                                                <div key={i} className="flex items-center justify-between bg-slate-900 border border-slate-800 p-2 rounded text-xs hover:border-slate-700 transition-colors">
-                                                  <div className="flex items-center gap-3">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${s === 'win' ? 'bg-emerald-500' : (s === 'loss' ? 'bg-red-500' : 'bg-slate-600')}`}></div>
-                                                    {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && <span className="font-bold text-slate-300">{line.tipster || bet.tipster}</span>}
-                                                    <span className={`${colorClass} truncate max-w-[200px]`}>{line.description}</span>
-                                                  </div>
-                                                  <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
-                                                </div>
-                                              )
-                                            })}
+                                            <div>
+                                              <div className="font-bold text-white flex items-center gap-2">
+                                                {bet.tipster}
+                                                {isMulti && <span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 font-normal border border-slate-700">{isExpanded ? 'Ocultar' : 'Ver Líneas'}</span>}
+                                              </div>
+                                              <div className="text-xs text-slate-500 truncate max-w-[250px]">{bet.description}</div>
+                                            </div>
                                           </div>
                                         </td>
+                                        <td className="p-4 text-center text-slate-300">{bet.stake.toFixed(2)}€</td>
+                                        <td className="p-4 text-center font-mono text-emerald-400 font-bold">@{bet.odds.toFixed(2)}</td>
+                                        <td className={`p-4 text-right font-bold font-mono ${bet.result === 'pending' ? 'text-slate-500' : (bet.profit >= 0 ? 'text-emerald-400' : 'text-red-400')}`}>
+                                          {bet.result === 'pending' ? 'PEND' : (bet.profit >= 0 ? '+' : '') + bet.profit.toFixed(2) + '€'}
+                                        </td>
+                                        <td className="p-4 text-center flex items-center justify-center gap-2">
+                                          <button onClick={() => setEditingBet(bet)} className="text-blue-400 hover:text-white p-1.5 rounded bg-blue-900/20 hover:bg-blue-600 transition-colors" title="Editar"><Edit size={14} /></button>
+                                          <button onClick={() => handleRepeatBet(bet)} className="text-indigo-400 hover:text-white p-1.5 rounded bg-indigo-900/20 hover:bg-indigo-600 transition-colors" title="Repetir Apuesta"><Repeat size={14} /></button>
+                                          <button onClick={() => deleteBet(bet.id)} className="text-slate-600 hover:text-red-400 p-1.5 transition-colors"><Trash2 size={16} /></button>
+                                        </td>
                                       </tr>
-                                    )}
-                                  </React.Fragment>
-                                );
-                              }
-                            });
+                                      {isMulti && isExpanded && (
+                                        <tr className="bg-slate-950/50 animate-fade-in border-b border-slate-800">
+                                          <td colSpan="6" className="p-0">
+                                            <div className="p-4 pl-16 grid grid-cols-1 gap-2 bg-gradient-to-b from-indigo-900/10 to-transparent">
+                                              <div className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2 mb-1"><Layers size={10} /> Desglose de Combinada</div>
+                                              {(bet.betLines || bet.subPicks).map((line, i) => {
+                                                const s = line.result || line.status || 'pending';
+                                                let colorClass = 'text-slate-500';
+                                                if (s === 'win') colorClass = 'text-emerald-400';
+                                                if (s === 'loss') colorClass = 'text-red-400';
+                                                if (s === 'void') colorClass = 'text-slate-400 line-through';
+                                                return (
+                                                  <div key={i} className="flex items-center justify-between bg-slate-900 border border-slate-800 p-2 rounded text-xs hover:border-slate-700 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                      <div className={`w-1.5 h-1.5 rounded-full ${s === 'win' ? 'bg-emerald-500' : (s === 'loss' ? 'bg-red-500' : 'bg-slate-600')}`}></div>
+                                                      {(bet.tipster === 'Mezcla-Tips' || bet.tipster === 'Combis (Apuesta D)') && <span className="font-bold text-slate-300">{line.tipster || bet.tipster}</span>}
+                                                      <span className={`${colorClass} truncate max-w-[200px]`}>{line.description}</span>
+                                                    </div>
+                                                    <span className="font-mono text-slate-500">@{line.odds || '-'}</span>
+                                                  </div>
+                                                )
+                                              })}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                }
+                              });
+
+                            } catch (error) {
+                              console.error("HISTORY CRITICAL RENDER ERROR:", error);
+                              return (
+                                <tr>
+                                  <td colSpan="6" className="p-8 text-center text-red-500 bg-red-900/10 border border-red-500/20 rounded">
+                                    <div className="font-bold">Error Crítico al cargar el historial</div>
+                                    <div className="text-xs opacity-75">{error.message}</div>
+                                    <button onClick={() => { localStorage.removeItem('betPortfolioV29_bets'); window.location.reload(); }} className="mt-2 bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition-colors">
+                                      RESET DE EMERGENCIA (Borrar Apuestas)
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            }
                           })()
                         })()}
                       </tbody>
