@@ -351,6 +351,12 @@
       useEffect(() => { localStorage.setItem('betPortfolioV33_tags', JSON.stringify(userTags)); }, [userTags]);
       const [showTipsterManager, setShowTipsterManager] = useState(false);
 
+      // --- CASH OUT MODAL STATE (V51) ---
+      const [showCashOutModal, setShowCashOutModal] = useState(false);
+      const [cashOutBet, setCashOutBet] = useState(null);
+      const [cashOutValue, setCashOutValue] = useState('');
+      const [cashOutRealResult, setCashOutRealResult] = useState('loss');
+
       // PERSISTENCIA TIPSTERS
       useEffect(() => {
         localStorage.setItem('betPortfolioV29_tipsters', JSON.stringify(tipsters));
@@ -928,6 +934,37 @@ La página se recargará ahora.`;
         if (!editingBet) return;
         setBets(bets.map(b => b.id === editingBet.id ? editingBet : b));
         setEditingBet(null);
+      };
+
+      // --- CASH OUT HANDLERS (V51) ---
+      const handleOpenCashOut = (bet) => {
+        setCashOutBet(bet);
+        setCashOutValue(''); // User enters the returned amount
+        setCashOutRealResult('loss'); // Default assumption: we cash out because we fear a loss
+        setShowCashOutModal(true);
+      };
+
+      const handleConfirmCashOut = () => {
+        if (!cashOutBet) return;
+        const amount = parseFloat(cashOutValue);
+        if (isNaN(amount)) { alert("Introduce una cantidad válida"); return; }
+
+        const stake = parseFloat(cashOutBet.stake);
+        const profit = amount - stake;
+
+        const updatedBet = {
+          ...cashOutBet,
+          result: 'cashout',
+          profit: parseFloat(profit.toFixed(2)),
+          realResult: cashOutRealResult // Save for analytics (Money Saved vs Lost)
+        };
+
+        // Update in state
+        setBets(prevBets => prevBets.map(b => b.id === cashOutBet.id ? updatedBet : b));
+
+        setShowCashOutModal(false);
+        setCashOutBet(null);
+        // alert(`Cash Out Confirmado: ${profit >= 0 ? '+' : ''}${profit.toFixed(2)}€`);
       };
 
       const toggleLineVoid = (lineIndex) => {
