@@ -1505,8 +1505,8 @@ La página se recargará ahora.`;
           if (bet.tipster !== 'Mezcla-Tips' && bet.tipster !== 'Combis (Apuesta D)') {
             const cleanName = bet.tipster.split(' (')[0];
             if (stats[cleanName]) {
-              if (bet.result === 'win') { stats[cleanName].wins++; stats[cleanName].picks++; }
-              if (bet.result === 'loss') { stats[cleanName].losses++; stats[cleanName].picks++; }
+              if (bet.result === 'win' || (bet.result === 'cashout' && bet.profit >= 0)) { stats[cleanName].wins++; stats[cleanName].picks++; }
+              if (bet.result === 'loss' || (bet.result === 'cashout' && bet.profit < 0)) { stats[cleanName].losses++; stats[cleanName].picks++; }
               if (bet.result === 'void') { stats[cleanName].voids++; }
               if (bet.result === 'pending') { stats[cleanName].pending++; }
               if (bet.result !== 'void' && bet.result !== 'pending') stats[cleanName].staked += bet.stake;
@@ -1765,6 +1765,27 @@ La página se recargará ahora.`;
                 totalMoneyLostOnTable += (potentialReturn - cashOutAmount);
               }
             }
+          }
+
+          // RECURSIVE CHECK FOR CHILDREN (Granular System Cash Out)
+          if (b.children && b.children.length > 0) {
+            b.children.forEach(child => {
+              if (child.result === 'cashout') {
+                totalRealizedProfit += (parseFloat(child.profit) || 0);
+                if (child.realResult) {
+                  cashOutCount++;
+                  const cashOutAmount = (parseFloat(child.profit) || 0) + (parseFloat(child.stake) || 0);
+                  if (child.realResult === 'loss') {
+                    totalMoneySaved += cashOutAmount;
+                    goodCashOuts++;
+                  } else if (child.realResult === 'win') {
+                    // Correct calculation for lost potential
+                    const potentialReturn = (parseFloat(child.stake) * parseFloat(child.odds));
+                    totalMoneyLostOnTable += (potentialReturn - cashOutAmount);
+                  }
+                }
+              }
+            });
           }
         });
 
