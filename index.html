@@ -1625,6 +1625,34 @@ La página se recargará ahora.`;
             tipsterDailyMap[d][tName] += b.profit;
           });
 
+        const tipsterEvolutionData = Object.values(tipsterDailyMap).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
+
+        // ODDS EFFICIENCY (V40 Agent Choice)
+        const oddsBuckets = { '1.0-1.5': { w: 0, l: 0 }, '1.5-2.0': { w: 0, l: 0 }, '2.0-3.0': { w: 0, l: 0 }, '3.0+': { w: 0, l: 0 } };
+        consolidatedBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
+          const o = parseFloat(b.odds);
+          let k = '3.0+';
+          if (o < 1.5) k = '1.0-1.5';
+          else if (o < 2.0) k = '1.5-2.0';
+          else if (o < 3.0) k = '2.0-3.0';
+
+          if (b.result === 'win') oddsBuckets[k].w++;
+          else if (b.result === 'loss') oddsBuckets[k].l++;
+        });
+        const oddsEfficiencyData = Object.keys(oddsBuckets).map(k => ({
+          name: k,
+          winRate: (oddsBuckets[k].w + oddsBuckets[k].l) > 0 ? Math.round((oddsBuckets[k].w / (oddsBuckets[k].w + oddsBuckets[k].l)) * 100) : 0
+        }));
+
+        // MAX PROFIT (For Drawdown)
+        let maxProfit = 0;
+        let currentRun = 0;
+        const sortedForDd = [...consolidatedBets].filter(b => b.result !== 'pending' && b.result !== 'void').sort((a, b) => new Date(a.date) - new Date(b.date));
+        sortedForDd.forEach(b => {
+          currentRun += b.profit;
+          if (currentRun > maxProfit) maxProfit = currentRun;
+        });
+
         return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters).filter(Boolean), oddsEfficiencyData, maxProfit, cashOutStats: { saved: totalMoneySaved, lost: totalMoneyLostOnTable, count: cashOutCount, good: goodCashOuts } };
       }, [consolidatedBets]);
 
