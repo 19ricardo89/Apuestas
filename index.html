@@ -5216,8 +5216,8 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                             // Tipster Filter (Improved: checks lines too)
                             if (historyFilters.tipster !== 'ALL') {
-                              const matchMain = b.tipster === historyFilters.tipster;
-                              const matchLine = b.betLines?.some(l => l.tipster?.includes(historyFilters.tipster)) || b.subPicks?.some(s => s.tipster === historyFilters.tipster);
+                              const matchMain = (b.tipster || '').toUpperCase() === historyFilters.tipster.toUpperCase();
+                              const matchLine = b.betLines?.some(l => (l.tipster || '').toUpperCase().includes(historyFilters.tipster.toUpperCase())) || b.subPicks?.some(s => (s.tipster || '').toUpperCase().includes(historyFilters.tipster.toUpperCase()));
                               if (!matchMain && !matchLine) return false;
                             }
 
@@ -5295,7 +5295,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                             <div className="text-xs text-slate-500">{isExpanded ? 'Ocultar desglose' : 'Ver desglose detallado'}</div>
                                           </div>
                                           <button
-                                            onClick={(e) => { e.stopPropagation(); setEditingBet({ id: item.id, isGroup: true, children: item.children, description: item.description, groupType: item.children[0].groupType, stake: item.stake, date: item.date, tipster: item.tipster }); setActiveSection('dashboard'); }}
+                                            onClick={(e) => { e.stopPropagation(); setEditingBet({ id: item.id, isGroup: true, children: item.children, description: item.description, groupType: item.children?.[0]?.groupType || 'Sistema', stake: item.stake, date: item.date, tipster: item.tipster }); setActiveSection('dashboard'); }}
                                             className="bg-blue-900/40 hover:bg-blue-600 text-blue-400 hover:text-white p-2 rounded-lg transition-all"
                                             title="Editar Sistema"
                                           >
