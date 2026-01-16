@@ -5628,9 +5628,15 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                         });
 
                         if (anyPending) {
-                          status = 'PENDING';
+                          status = 'PENDING (Parcial)';
                           statusColor = 'text-yellow-400';
-                          effOdds = 0; // Not relevant
+                          // LIVE CALCULATION: Show profit from WON lines even if pending exist
+                          if (estProfit > 0) {
+                            status = `GANANDO (+${estProfit.toFixed(2)}€)`;
+                            statusColor = 'text-emerald-400';
+                          }
+                          // effOdds is tricky, let's show Projected Odds based on WINs
+                          if (totalStake > 0) effOdds = (estProfit + totalStake) / totalStake;
                         } else {
                           // All resolved
                           status = estProfit >= 0 ? 'WIN' : 'PARTIAL'; // Or just WIN/LOSS logic based on total
@@ -5682,70 +5688,100 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                     {/* GROUPED VIEW (Match Centric) */}
                     {resolutionBet.tempLines && resolutionBet.tempLines.length > 0 && (() => {
-                      // 1. Group by Match Name
+                      // 1. Group by Match Name & Deduplicate
                       const groups = {};
                       resolutionBet.tempLines.forEach((line, originalIdx) => {
                         let desc = line.description;
 
-                        // STRATEGY: Isolate Score first (usually at the end: "1-2", "2-1")
-                        // Look for the LAST occurrence of digit-dash-digit
-                        const scoreMatch = desc.match(/(\d+-\d+)\s*$/);
+                        // STRATEGY: Find Score (d-d) anywhere in the string
+                        const scoreMatch = desc.match(/\b(\d+-\d+)\b/);
                         const score = scoreMatch ? scoreMatch[1] : 'General';
 
-                        // Extract Name part (everything before the score)
-                        let rawName = scoreMatch ? desc.substring(0, scoreMatch.index) : desc;
+                        // Extract Name part: Remove the score from the description
+                        let rawName = desc.replace(score, '');
 
                         // AGGRESSIVE CLEANING
-                        // 1. Remove ANY content inside parentheses (...)
-                        rawName = rawName.replace(/\(.*?\)/g, '');
+                        // 1. Remove ANY content inside parentheses (...) OR brackets [...]
+                        rawName = rawName.replace(/[\[\(].*?[\]\)]/g, '');
 
-                        // 2. Remove specific system keywords even if not in parens (case insensitive)
+                        // 2. Remove specific keywords
                         rawName = rawName.replace(/\b(doble|triple|cuadruple|quintuple|sextuple|septuple|octuple|simple|system|apuesta|partido|pick)\b/gi, '');
 
-                        // 3. Remove leading/trailing non-word chars (dashes, spaces)
-                        rawName = rawName.replace(/^[\s-]+|[\s-]+$/g, '');
-
-                        // 4. Collapse multiple spaces
+                        // 3. Cleanup spaces/dashes
+                        rawName = rawName.replace(/^[\s-:|]+|[\s-:|]+$/g, '');
                         const matchName = rawName.replace(/\s+/g, ' ').trim();
 
-                        if (!groups[matchName]) groups[matchName] = [];
-                        groups[matchName].push({ ...line, originalIdx, score });
+                        if (!groups[matchName]) groups[matchName] = new Map(); // Use Map to deduplicate by Score
+
+                        // Only add if not already present for this score (Deduplication)
+                        if (!groups[matchName].has(score)) {
+                          groups[matchName].set(score, { ...line, originalIdx, score });
+                        }
                       });
 
-                      return Object.entries(groups).map(([matchName, lines]) => (
-                        <div key={matchName} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-3">
-                          <div className="flex justify-between items-center border-b border-slate-800/50 pb-2">
-                            <span className="font-bold text-white text-sm uppercase tracking-wide">{matchName || 'Evento Desconocido'}</span>
-                            <span className="text-[10px] text-slate-500 font-mono">({lines.length} resultados)</span>
-                          </div>
+                      return Object.entries(groups).map(([matchName, scoresMap]) => {
+                        const lines = Array.from(scoresMap.values());
+                        return (
+                          <div key={matchName} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-3">
+                            <div className="flex justify-between items-center border-b border-slate-800/50 pb-2">
+                              <span className="font-bold text-white text-sm uppercase tracking-wide">{matchName || 'Evento Desconocido'}</span>
+                              <span className="text-[10px] text-slate-500 font-mono">({lines.length} resultados)</span>
+                            </div>
 
-                          <div className="grid grid-cols-2 gap-4"> {/* Forced 2 cols for left/right feel */}
-                            {lines.map((line) => (
-                              <div key={line.originalIdx} className="bg-slate-900/50 p-3 rounded border border-slate-800 flex flex-col items-center gap-2 shadow-sm">
-                                <div className="text-xs font-bold text-slate-300">{line.score}</div>
-                                <div className="text-[10px] text-slate-500 font-mono">@{line.odds}</div>
+                            <div className="grid grid-cols-2 gap-4">
+                              {lines.map((line) => {
+                                // Identify if this specific line matches others in the original list (to update all duplicates)
+                                // We use the 'score' as the key. When user clicks, we find ALL lines in tempLines 
+                                // that belong to this match and have this score.
+                                return (
+                                  <div key={line.originalIdx} className="bg-slate-900/50 p-3 rounded border border-slate-800 flex flex-col items-center gap-2 shadow-sm">
+                                    <div className="text-xs font-bold text-slate-300">{line.score}</div>
+                                    <div className="text-[10px] text-slate-500 font-mono">@{line.odds}</div>
 
-                                <div className="flex w-full gap-1">
-                                  <button onClick={() => {
-                                    const newLines = [...resolutionBet.tempLines];
-                                    newLines[line.originalIdx].result = newLines[line.originalIdx].result === 'win' ? 'pending' : 'win';
-                                    setResolutionBet({ ...resolutionBet, tempLines: newLines });
-                                  }} className={`flex-1 py-1 rounded text-[10px] font-bold border transition-colors ${line.result === 'win' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-white'}`}>
-                                    WIN
-                                  </button>
-                                  <button onClick={() => {
-                                    const newLines = [...resolutionBet.tempLines];
-                                    newLines[line.originalIdx].result = newLines[line.originalIdx].result === 'loss' ? 'pending' : 'loss';
-                                    setResolutionBet({ ...resolutionBet, tempLines: newLines });
-                                  }} className={`flex-1 py-1 rounded text-[10px] font-bold border transition-colors ${line.result === 'loss' ? 'bg-red-600 text-white border-red-500' : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-white'}`}>
-                                    LOSS
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                                    <div className="flex w-full gap-1">
+                                      <button onClick={() => {
+                                        const newLines = [...resolutionBet.tempLines];
+                                        // Update THIS line and ANY duplicates (others with same MatchName + Score)
+                                        // Note: We need to re-run the matching logic to find peers, or just iterate all
+                                        newLines.forEach((nl, idx) => {
+                                          // Normalize NL name
+                                          let nlDesc = nl.description;
+                                          const nlScoreMatch = nlDesc.match(/\b(\d+-\d+)\b/);
+                                          const nlScore = nlScoreMatch ? nlScoreMatch[1] : 'General';
+                                          let nlName = nlDesc.replace(nlScore, '').replace(/[\[\(].*?[\]\)]/g, '').replace(/\b(doble|triple|cuadruple|quintuple|sextuple|septuple|octuple|simple|system|apuesta|partido|pick)\b/gi, '').replace(/^[\s-:|]+|[\s-:|]+$/g, '').replace(/\s+/g, ' ').trim();
+
+                                          if (nlName === matchName && nlScore === line.score) {
+                                            newLines[idx].result = newLines[idx].result === 'win' ? 'pending' : 'win';
+                                          }
+                                        });
+                                        setResolutionBet({ ...resolutionBet, tempLines: newLines });
+                                      }} className={`flex-1 py-1 rounded text-[10px] font-bold border transition-colors ${line.result === 'win' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-white'}`}>
+                                        WIN
+                                      </button>
+                                      <button onClick={() => {
+                                        const newLines = [...resolutionBet.tempLines];
+                                        newLines.forEach((nl, idx) => {
+                                          let nlDesc = nl.description;
+                                          const nlScoreMatch = nlDesc.match(/\b(\d+-\d+)\b/);
+                                          const nlScore = nlScoreMatch ? nlScoreMatch[1] : 'General';
+                                          let nlName = nlDesc.replace(nlScore, '').replace(/[\[\(].*?[\]\)]/g, '').replace(/\b(doble|triple|cuadruple|quintuple|sextuple|septuple|octuple|simple|system|apuesta|partido|pick)\b/gi, '').replace(/^[\s-:|]+|[\s-:|]+$/g, '').replace(/\s+/g, ' ').trim();
+
+                                          if (nlName === matchName && nlScore === line.score) {
+                                            newLines[idx].result = newLines[idx].result === 'loss' ? 'pending' : 'loss';
+                                          }
+                                        });
+                                        setResolutionBet({ ...resolutionBet, tempLines: newLines });
+                                      }} className={`flex-1 py-1 rounded text-[10px] font-bold border transition-colors ${line.result === 'loss' ? 'bg-red-600 text-white border-red-500' : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-white'}`}>
+                                        LOSS
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      ));
+                        );
+                      });
                     })()}
 
                     {/* Support V3 SubPicks (Legacy) */}
