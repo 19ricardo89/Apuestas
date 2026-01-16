@@ -3147,7 +3147,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   <StatCard title="Beneficio Neto" value={`${financialStats.profit >= 0 ? '+' : ''}${financialStats.profit.toFixed(2)}€`} icon={PieChart} colorClass="text-emerald-500" />
                   <StatCard title="Yield / ROI" value={`${financialStats.yield_val}%`} icon={TrendingUp} colorClass="text-blue-500" />
                   <StatCard title="Win Rate Scout" value={`${scoutStats.length > 0 ? (scoutStats.reduce((acc, s) => acc + parseFloat(s.winRate), 0) / scoutStats.length).toFixed(1) : 0}%`} subtext="Efectividad Media" icon={Target} colorClass="text-purple-500" />
-                  <StatCard title="Riesgo Activo" value={`${pendingBetsList.reduce((a, b) => a + b.stake, 0).toFixed(2)}€`} subtext="En juego" icon={Clock} colorClass="text-yellow-500" />
+                  <StatCard title="Riesgo Activo" value={`${pendingBetsList.reduce((a, b) => a + (parseFloat(b.stake) || 0), 0).toFixed(2)}€`} subtext="En juego" icon={Clock} colorClass="text-yellow-500" />
                 </div>
 
                 {pendingBetsList.length > 0 && (
@@ -5249,15 +5249,15 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 groupMembers.forEach(m => processedIds.add(m.id));
 
                                 // Calculate Group Stats
-                                const totalStake = groupMembers.reduce((sum, b) => sum + parseFloat(b.stake), 0);
-                                const totalProfit = groupMembers.reduce((sum, b) => sum + (b.profit || 0), 0);
+                                const totalStake = groupMembers.reduce((sum, b) => sum + (parseFloat(b.stake) || 0), 0);
+                                const totalProfit = groupMembers.reduce((sum, b) => sum + (parseFloat(b.profit) || 0), 0);
                                 // Determine Status: 'pending' if any pending, else 'win'/'loss' based on net profit? 
                                 // Or just show profit.
                                 const isPending = groupMembers.some(b => b.result === 'pending');
 
                                 // Odds range?
-                                const oddsList = groupMembers.map(b => b.odds).sort((a, b) => a - b);
-                                const oddsDisplay = oddsList.length > 1 ? `${oddsList[0].toFixed(2)} - ${oddsList[oddsList.length - 1].toFixed(2)}` : oddsList[0].toFixed(2);
+                                const oddsList = groupMembers.map(b => parseFloat(b.odds)).sort((a, b) => a - b);
+                                const oddsDisplay = oddsList.length > 1 ? `${oddsList[0].toFixed(2)} - ${oddsList[oddsList.length - 1].toFixed(2)}` : (oddsList[0] ? oddsList[0].toFixed(2) : '0.00');
 
                                 groupedList.push({
                                   type: 'group',
