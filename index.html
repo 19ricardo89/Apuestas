@@ -1501,15 +1501,38 @@ La página se recargará ahora.`;
           const cleanName = t.name.split(' (')[0];
           stats[cleanName] = { name: cleanName, picks: 0, wins: 0, losses: 0, voids: 0, pending: 0, staked: 0 };
         });
+        // Init Manual Cash Out Strategy
+        stats['CASH OUT'] = { name: 'CASH OUT', picks: 0, wins: 0, losses: 0, voids: 0, pending: 0, staked: 0 };
         consolidatedBets.forEach(bet => {
+          // GRANULAR CASH OUT INTERCEPTION
+          if (bet.children && bet.children.length > 0) {
+            bet.children.forEach(child => {
+              if (child.result === 'cashout') {
+                // Attribute to CASH OUT Strategy
+                const coStats = stats['CASH OUT'];
+                if (child.profit >= 0) { coStats.wins++; coStats.picks++; }
+                else { coStats.losses++; coStats.picks++; }
+                coStats.staked += parseFloat(child.stake);
+              }
+            });
+          }
+
           if (bet.tipster !== 'Mezcla-Tips' && bet.tipster !== 'Combis (Apuesta D)') {
             const cleanName = bet.tipster.split(' (')[0];
             if (stats[cleanName]) {
-              if (bet.result === 'win' || (bet.result === 'cashout' && bet.profit >= 0)) { stats[cleanName].wins++; stats[cleanName].picks++; }
-              if (bet.result === 'loss' || (bet.result === 'cashout' && bet.profit < 0)) { stats[cleanName].losses++; stats[cleanName].picks++; }
-              if (bet.result === 'void') { stats[cleanName].voids++; }
-              if (bet.result === 'pending') { stats[cleanName].pending++; }
-              if (bet.result !== 'void' && bet.result !== 'pending') stats[cleanName].staked += bet.stake;
+              // If strict outcome is cashout (single bet), hijack it
+              if (bet.result === 'cashout' && (!bet.children || bet.children.length === 0)) {
+                const coStats = stats['CASH OUT'];
+                if (bet.profit >= 0) { coStats.wins++; coStats.picks++; }
+                else { coStats.losses++; coStats.picks++; }
+                coStats.staked += parseFloat(bet.stake);
+              }
+              else if (bet.result === 'win') { stats[cleanName].wins++; stats[cleanName].picks++; }
+              else if (bet.result === 'loss') { stats[cleanName].losses++; stats[cleanName].picks++; }
+              else if (bet.result === 'void') { stats[cleanName].voids++; }
+              else if (bet.result === 'pending') { stats[cleanName].pending++; }
+
+              if (bet.result !== 'void' && bet.result !== 'pending' && bet.result !== 'cashout') stats[cleanName].staked += bet.stake;
             }
           }
           if (bet.subPicks && bet.subPicks.length > 0) {
