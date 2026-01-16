@@ -257,7 +257,7 @@
       'CheckCircle', 'XCircle', 'Clock', 'Activity', 'Target', 'Zap',
       'BarChart2', 'Menu', 'ChevronRight', 'AlertCircle', 'AlertTriangle', 'RefreshCw', 'Check', 'X', 'Calendar', 'Layers', 'Trophy', 'Flame',
       'Filter', 'Tag', 'Camera', 'Sparkles', 'Brain', 'Upload', 'Scan', 'TrendingDown', 'UserPlus', 'Edit', 'Calculator', 'LayoutDashboard', 'Copy',
-      'ChevronUp', 'ChevronDown', 'Cloud', 'UploadCloud', 'DownloadCloud', 'Settings', 'ArrowDown', 'ArrowUp', 'LayoutGrid', 'Repeat', 'Globe', 'SlidersHorizontal'
+      'ChevronUp', 'ChevronDown', 'Cloud', 'UploadCloud', 'DownloadCloud', 'Settings', 'ArrowDown', 'ArrowUp', 'LayoutGrid', 'Repeat', 'Globe', 'SlidersHorizontal', 'DollarSign'
     ];
 
     const Icons = IconList.reduce((acc, name) => {
@@ -270,7 +270,7 @@
       CheckCircle, XCircle, Clock, Activity, Target, Zap,
       BarChart2, Menu, ChevronRight, AlertCircle, AlertTriangle, RefreshCw, Check, X, Calendar, Layers, Trophy, Flame,
       Filter, Tag, Camera, Sparkles, Brain, Upload, Scan, TrendingDown, UserPlus, Edit, Calculator, LayoutDashboard, Copy,
-      ChevronUp, ChevronDown, Cloud, UploadCloud, DownloadCloud, Settings, ArrowDown, ArrowUp, LayoutGrid, Repeat, Globe, SlidersHorizontal
+      ChevronUp, ChevronDown, Cloud, UploadCloud, DownloadCloud, Settings, ArrowDown, ArrowUp, LayoutGrid, Repeat, Globe, SlidersHorizontal, DollarSign
     } = Icons;
     const {
       LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -677,6 +677,7 @@
       const [isCashOut, setIsCashOut] = useState(false);
       const [cashOutAmount, setCashOutAmount] = useState('');
       const [betLines, setBetLines] = useState([]);
+      const [realResult, setRealResult] = useState(null); // V47: Detailed Cash Out Result (Win/Loss/Void)
 
       // Legacy State (Moved from line ~1087 to prevent ReferenceErrors)
       const [formDesc, setFormDesc] = useState('');
@@ -1584,7 +1585,30 @@ La página se recargará ahora.`;
         });
         const tagStats = Object.values(tagMap).sort((a, b) => b.profit - a.profit);
 
-        // Tipster Evolution (Multi-line)
+        // CASHOUT STATS (V47) - Money Saved vs Left on Table
+        let totalMoneySaved = 0;
+        let totalMoneyLostOnTable = 0;
+        let cashOutCount = 0;
+        let goodCashOuts = 0; // Where Real Result was LOSS (Saved money)
+
+        consolidatedBets.forEach(b => {
+          if (b.result === 'cashout' && b.realResult) {
+            cashOutCount++;
+            const cashOutAmount = (parseFloat(b.profit) || 0) + (parseFloat(b.stake) || 0);
+
+            if (b.realResult === 'loss') {
+              // Money Saved = The amount we got back (CashOutAmount) instead of 0
+              totalMoneySaved += cashOutAmount;
+              goodCashOuts++;
+            } else if (b.realResult === 'win') {
+              // Money Left on Table = Potential Return - Actual Return
+              const potentialReturn = (parseFloat(b.stake) * parseFloat(b.odds));
+              totalMoneyLostOnTable += (potentialReturn - cashOutAmount);
+            }
+          }
+        });
+
+        // TIPSTER EVOLUTION (Inclusive of Real Results) - V47
         const tipsterDailyMap = {};
         const activeTipsters = new Set();
         consolidatedBets
@@ -1601,44 +1625,7 @@ La página se recargará ahora.`;
             tipsterDailyMap[d][tName] += b.profit;
           });
 
-        const sortedDays = Object.values(tipsterDailyMap).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
-        const tipsterRunning = {};
-        const tipsterEvolutionData = sortedDays.map(dayObj => {
-          const newPoint = { ...dayObj };
-          activeTipsters.forEach(t => {
-            if (tipsterRunning[t] === undefined) tipsterRunning[t] = 0;
-            if (dayObj[t] !== undefined) tipsterRunning[t] += dayObj[t];
-            newPoint[t] = parseFloat(tipsterRunning[t].toFixed(2));
-          });
-          return newPoint;
-        });
-
-        // Odds Efficiency (Agent Choice)
-        const oddsBuckets = [
-          { label: '1.0 - 1.5', min: 1.0, max: 1.5, wins: 0, total: 0 },
-          { label: '1.5 - 2.0', min: 1.5001, max: 2.0, wins: 0, total: 0 },
-          { label: '2.0 - 3.0', min: 2.0001, max: 3.0, wins: 0, total: 0 },
-          { label: '3.0 +', min: 3.0001, max: 999, wins: 0, total: 0 },
-        ];
-        consolidatedBets.filter(b => b.result !== 'pending' && b.result !== 'void').forEach(b => {
-          const o = parseFloat(b.odds);
-          const bucket = oddsBuckets.find(buc => o >= buc.min && o <= buc.max);
-          if (bucket) {
-            bucket.total++;
-            if (b.result === 'win') bucket.wins++;
-          }
-        });
-
-        const oddsEfficiencyData = oddsBuckets.map(b => ({
-          name: b.label,
-          winRate: b.total > 0 ? parseFloat(((b.wins / b.total) * 100).toFixed(1)) : 0,
-          count: b.total
-        }));
-
-        // MAX PROFIT (ATH) Logic - SAFE (Reduce instead of Spread)
-        const maxProfit = chartData.length > 0 ? chartData.reduce((max, d) => (d.profit > max ? d.profit : max), -Infinity) : 0;
-
-        return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters).filter(Boolean), oddsEfficiencyData, maxProfit };
+        return { staked, profit, yield_val, chartData, weeklyChartData, monthlyChartData, tagStats, tipsterEvolutionData, activeTipsters: Array.from(activeTipsters).filter(Boolean), oddsEfficiencyData, maxProfit, cashOutStats: { saved: totalMoneySaved, lost: totalMoneyLostOnTable, count: cashOutCount, good: goodCashOuts } };
       }, [consolidatedBets]);
 
       // Auto-select all active tipsters when financialStats updates (only if empty to respect user selection)
@@ -2087,6 +2074,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           setFormDesc(editingBet.description); // Sync legacy
           setFormDate(editingBet.date);
           setFormResult(editingBet.result || 'pending');
+          setRealResult(editingBet.realResult || null); // V47: Restore Real Result
 
           if (editingBet.tag) setFormTag(editingBet.tag);
           if (editingBet.tags) setUserTags(prev => [...new Set([...prev, ...editingBet.tags])]);
@@ -2577,6 +2565,11 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             mode: 'SYSTEM'
           });
 
+          // FIX: Close Modal and Reset Form properly
+          setFormTag('');
+          setShowAddBetModal(false);
+          setActiveSection('dashboard');
+
           return; // STOP HERE, DO NOT PROCEED TO STANDARD BET LOGIC
         }
 
@@ -2746,6 +2739,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 tag: finalTag,
                 tags: tagsArray,
                 result: formResult, // V20: Allow setting result directly
+                realResult: formResult === 'cashout' ? realResult : null, // V47: Save Real Result only on Cash Out
                 bookie: 'Bet365', // Placeholder
                 betLines: isMulti ? betLines.map(l => ({ ...l, tipster: (formTipster !== 'Mezcla-Tips' && formTipster) ? formTipster : l.tipster })) : [],
                 // Legacy support
@@ -2809,6 +2803,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
         };
         setManualProfit('');
         setFormResult('pending'); // Reset result
+        setRealResult(null); // Reset Real Result
         setShowAddBetModal(false);
         if (!editingBet) setActiveSection('dashboard');
       };
@@ -3256,7 +3251,12 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 )}
                               </div>
                               <div className="flex gap-2 w-full mt-3">
-                                <button onClick={() => handleOracle(bet.description, bet.odds)} className="w-10 py-2 bg-purple-600/20 text-purple-400 border border-purple-600/50 rounded hover:bg-purple-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Analizar con IA"><Sparkles size={16} /></button>
+                                <button onClick={() => {
+                                  setEditingBet(bet);
+                                  setFormResult('cashout');
+                                  setActiveSection('dashboard');
+                                  // Scroll to form if needed?
+                                }} className="w-10 py-2 bg-amber-600/20 text-amber-400 border border-amber-600/50 rounded hover:bg-amber-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Cash Out"><DollarSign size={16} /></button>
                                 <button onClick={() => setEditingBet(bet)} className="w-10 py-2 bg-blue-600/20 text-blue-400 border border-blue-600/50 rounded hover:bg-blue-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Editar Apuesta"><Edit size={16} /></button>
                                 <button onClick={() => handleRepeatBet(bet)} className="w-10 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-600/50 rounded hover:bg-indigo-600 hover:text-white font-bold text-sm flex justify-center items-center" title="Repetir Apuesta"><Repeat size={16} /></button>
                                 <button onClick={() => updateSimpleStatus(bet.id, 'win')} className="flex-1 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 rounded hover:bg-emerald-600 hover:text-white font-bold text-sm">Ganada</button>
@@ -3883,6 +3883,35 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} /><XAxis dataKey="label" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} interval={0} /><YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} /><Bar dataKey="profit" radius={[4, 4, 0, 0]}>{oddsStats.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? '#8b5cf6' : '#ef4444'} />)}</Bar>
                         </BarChart>
                       </ResponsiveContainer>
+                    </div>
+                  </div>
+                </section>
+                <section>
+                  <header className="mb-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2"><DollarSign className="text-emerald-500" /> Inteligencia de Cash Out (Beta)</h2>
+                  </header>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
+                      <div className="text-xs text-slate-500 uppercase font-bold mb-1">Dinero Ahorrado</div>
+                      <div className="text-2xl font-bold text-emerald-400">+{financialStats.cashOutStats.saved.toFixed(2)}€</div>
+                      <div className="text-[10px] text-slate-500 mt-1">Evitado en apuestas perdidas</div>
+                    </div>
+                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
+                      <div className="text-xs text-slate-500 uppercase font-bold mb-1">Coste de Oportunidad</div>
+                      <div className="text-2xl font-bold text-orange-400">-{financialStats.cashOutStats.lost.toFixed(2)}€</div>
+                      <div className="text-[10px] text-slate-500 mt-1">Dejado en mesa (Wins)</div>
+                    </div>
+                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
+                      <div className="text-xs text-slate-500 uppercase font-bold mb-1">Uso de Cash Out</div>
+                      <div className="text-2xl font-bold text-white">{financialStats.cashOutStats.count} <span className="text-sm font-normal text-slate-500">Veces</span></div>
+                      <div className="text-[10px] text-slate-500 mt-1">Total operaciones cerradas</div>
+                    </div>
+                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
+                      <div className="text-xs text-slate-500 uppercase font-bold mb-1">Efectividad Real</div>
+                      <div className="text-2xl font-bold text-blue-400">
+                        {financialStats.cashOutStats.count > 0 ? ((financialStats.cashOutStats.good / financialStats.cashOutStats.count) * 100).toFixed(0) : 0}%
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-1">% Decisiones Correctas (Loss)</div>
                     </div>
                   </div>
                 </section>
@@ -6556,6 +6585,23 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                     <div className="relative w-full">
                                       <input type="number" step="0.01" value={cashOutAmount} onChange={e => setCashOutAmount(e.target.value)} className="w-full bg-slate-900 border border-amber-500/50 rounded p-1.5 pl-4 text-xs text-white font-bold focus:border-amber-500 outline-none" placeholder="0.00" />
                                       <span className="absolute left-1.5 top-1.5 text-slate-500 text-xs">€</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 animate-fade-in pl-2">
+                                    <span className="text-amber-400 text-xs font-bold text-nowrap">Retorno Total (Cashout):</span>
+                                    <div className="relative w-full">
+                                      <input type="number" step="0.01" value={cashOutAmount} onChange={e => setCashOutAmount(e.target.value)} className="w-full bg-slate-900 border border-amber-500/50 rounded p-1.5 pl-4 text-xs text-white font-bold focus:border-amber-500 outline-none" placeholder="0.00" />
+                                      <span className="absolute left-1.5 top-1.5 text-slate-500 text-xs">€</span>
+                                    </div>
+                                  </div>
+
+                                  {/* REAL RESULT TRACKING */}
+                                  <div className="flex items-center gap-2 animate-fade-in pl-2 mt-1 pt-1 border-t border-amber-500/20">
+                                    <span className="text-slate-400 text-[10px] font-bold uppercase text-nowrap">¿Qué pasó en realidad?</span>
+                                    <div className="flex gap-1 flex-1">
+                                      <button type="button" onClick={() => setRealResult('win')} className={`flex-1 py-1 rounded text-[10px] font-bold border ${realResult === 'win' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-900 text-slate-500 border-slate-700'}`}>GANÓ</button>
+                                      <button type="button" onClick={() => setRealResult('loss')} className={`flex-1 py-1 rounded text-[10px] font-bold border ${realResult === 'loss' ? 'bg-red-500 text-white border-red-500' : 'bg-slate-900 text-slate-500 border-slate-700'}`}>PERDIÓ</button>
+                                      <button type="button" onClick={() => setRealResult('void')} className={`flex-1 py-1 rounded text-[10px] font-bold border ${realResult === 'void' ? 'bg-slate-500 text-white border-slate-500' : 'bg-slate-900 text-slate-500 border-slate-700'}`}>ANULÓ</button>
                                     </div>
                                   </div>
                                 </div>
