@@ -5685,17 +5685,28 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       // 1. Group by Match Name
                       const groups = {};
                       resolutionBet.tempLines.forEach((line, originalIdx) => {
-                        // Extract "Match Name" by removing the score (e.g. "Roma 2-1" -> Match: "Roma")
-                        // Regex: Look for digits-digits at the end
-                        // IMPROVED V2: Clean up prefixes like "(triple)", "(doble)" to ensure grouping
-                        let cleanDesc = line.description.replace(/\((?:doble|triple|cuadruple|quintuple|sextuple|septuple|octuple|simple|system|apuesta|partido|pick).*?\)/gi, '').trim();
+                        let desc = line.description;
 
-                        // Also remove leading " - " if any
-                        cleanDesc = cleanDesc.replace(/^[\s-]+|[\s-]+$/g, '');
+                        // STRATEGY: Isolate Score first (usually at the end: "1-2", "2-1")
+                        // Look for the LAST occurrence of digit-dash-digit
+                        const scoreMatch = desc.match(/(\d+-\d+)\s*$/);
+                        const score = scoreMatch ? scoreMatch[1] : 'General';
 
-                        const match = cleanDesc.match(/^(.*)\s+(\d+-\d+)$/);
-                        const matchName = match ? match[1].trim() : cleanDesc;
-                        const score = match ? match[2] : 'General'; // Fallback if no score pattern found
+                        // Extract Name part (everything before the score)
+                        let rawName = scoreMatch ? desc.substring(0, scoreMatch.index) : desc;
+
+                        // AGGRESSIVE CLEANING
+                        // 1. Remove ANY content inside parentheses (...)
+                        rawName = rawName.replace(/\(.*?\)/g, '');
+
+                        // 2. Remove specific system keywords even if not in parens (case insensitive)
+                        rawName = rawName.replace(/\b(doble|triple|cuadruple|quintuple|sextuple|septuple|octuple|simple|system|apuesta|partido|pick)\b/gi, '');
+
+                        // 3. Remove leading/trailing non-word chars (dashes, spaces)
+                        rawName = rawName.replace(/^[\s-]+|[\s-]+$/g, '');
+
+                        // 4. Collapse multiple spaces
+                        const matchName = rawName.replace(/\s+/g, ' ').trim();
 
                         if (!groups[matchName]) groups[matchName] = [];
                         groups[matchName].push({ ...line, originalIdx, score });
@@ -5704,13 +5715,13 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                       return Object.entries(groups).map(([matchName, lines]) => (
                         <div key={matchName} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col gap-3">
                           <div className="flex justify-between items-center border-b border-slate-800/50 pb-2">
-                            <span className="font-bold text-white text-sm uppercase tracking-wide">{matchName}</span>
+                            <span className="font-bold text-white text-sm uppercase tracking-wide">{matchName || 'Evento Desconocido'}</span>
                             <span className="text-[10px] text-slate-500 font-mono">({lines.length} resultados)</span>
                           </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-2 gap-4"> {/* Forced 2 cols for left/right feel */}
                             {lines.map((line) => (
-                              <div key={line.originalIdx} className="bg-slate-900/50 p-2 rounded border border-slate-800 flex flex-col items-center gap-2">
+                              <div key={line.originalIdx} className="bg-slate-900/50 p-3 rounded border border-slate-800 flex flex-col items-center gap-2 shadow-sm">
                                 <div className="text-xs font-bold text-slate-300">{line.score}</div>
                                 <div className="text-[10px] text-slate-500 font-mono">@{line.odds}</div>
 
