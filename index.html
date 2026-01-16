@@ -1513,8 +1513,8 @@ La página se recargará ahora.`;
       // --- STATS GLOBALES ---
       const financialStats = useMemo(() => {
         const valid = consolidatedBets.filter(b => b.result !== 'void' && b.result !== 'pending');
-        const staked = valid.reduce((acc, b) => acc + b.stake, 0);
-        const profit = valid.reduce((acc, b) => acc + b.profit, 0);
+        const staked = valid.reduce((acc, b) => acc + (parseFloat(b.stake) || 0), 0);
+        const profit = valid.reduce((acc, b) => acc + (parseFloat(b.profit) || 0), 0);
         const yield_val = staked > 0 ? ((profit / staked) * 100).toFixed(2) : 0;
 
         // Gráfico acumulativo Ganancias
@@ -2416,7 +2416,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
           if (!m1.name || !m2.name) { alert("¡Introduce los nombres de los equipos (Partido 1 y 2)!"); return; }
 
           // Helper to get valid non-empty scores
-          const getValidScores = (m) => m ? m.scores.filter(s => s.score && parseFloat(s.odds) > 1) : [];
+          const getValidScores = (m) => m ? m.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1) : [];
 
           const validS1 = getValidScores(m1);
           const validS2 = getValidScores(m2);
@@ -2437,6 +2437,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             if (!config.stakeDoubles || parseFloat(config.stakeDoubles) <= 0) {
               alert("Introduce Stake para Dobles (Estrategia de Combinación)"); return;
             }
+          }
+
+          // TAGS LOGIC FOR IA (Copied from Standard Logic)
+          // Ensure tagsArray is populated based on formTag and formDescription (if needed, but IA description is auto-generated)
+          // IA uses its own description style. But we can respect `formTag`.
+          // If the user entered a specific tag in the IA form (which uses formTag state), we use it.
+          if (formTag && formTag !== 'ALL') {
+            if (!tagsArray.includes(formTag)) tagsArray.push(formTag);
+            if (!finalTag) finalTag = formTag;
+            // Also ensure it is in userTags for future use
+            if (!userTags.includes(formTag)) setUserTags(prev => [...prev, formTag]);
           }
 
           let newBets = [];
@@ -2462,7 +2473,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     bookie: 'Bet365', // Default
                     groupTitle: 'IA System - Triples',
                     groupId: groupId,
-                    groupType: 'system_triple'
+                    groupType: 'system_triple',
+                    tag: finalTag,
+                    tags: [...tagsArray]
                   });
                 });
               });
@@ -2489,7 +2502,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   bookie: 'Bet365',
                   groupTitle: 'IA System - Dobles',
                   groupId: groupId,
-                  groupType: 'system_double'
+                  groupType: 'system_double',
+                  tag: finalTag,
+                  tags: [...tagsArray]
                 });
               });
             });
@@ -2510,7 +2525,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     bookie: 'Bet365',
                     groupTitle: 'IA System - Dobles',
                     groupId: groupId,
-                    groupType: 'system_double'
+                    groupType: 'system_double',
+                    tag: finalTag,
+                    tags: [...tagsArray]
                   });
                 });
               });
@@ -2529,7 +2546,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                     bookie: 'Bet365',
                     groupTitle: 'IA System - Dobles',
                     groupId: groupId,
-                    groupType: 'system_double'
+                    groupType: 'system_double',
+                    tag: finalTag,
+                    tags: [...tagsArray]
                   });
                 });
               });
@@ -5882,9 +5901,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                 const config = iaBetData.config || { includeTriples: true, includeDoubles: true, stakeTriples: '', stakeDoubles: '' };
                                 let total = 0;
 
-                                const v1 = iaBetData.m1.scores.filter(s => s.score).length || 0;
-                                const v2 = iaBetData.m2.scores.filter(s => s.score).length || 0;
-                                const v3 = iaBetData.m3.scores.filter(s => s.score).length || 0;
+                                const v1 = iaBetData.m1.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1).length || 0;
+                                const v2 = iaBetData.m2.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1).length || 0;
+                                const v3 = iaBetData.m3.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1).length || 0;
 
                                 // Calc Triples (v1 * v2 * v3)
                                 if (config.includeTriples && config.stakeTriples) {
@@ -6055,9 +6074,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                       const s3 = iaBetData.m3.scores.filter(s => s.score || s.odds).length || 0; // Check real usage? Or just length if valid?
                                       // For preview, let's use actual length but assume user fills them? Or filter empty?
                                       // Let's filter empties for a "live" count
-                                      const v1 = iaBetData.m1.scores.filter(s => s.score).length || 0;
-                                      const v2 = iaBetData.m2.scores.filter(s => s.score).length || 0;
-                                      const v3 = iaBetData.m3.scores.filter(s => s.score).length || 0;
+                                      const v1 = iaBetData.m1.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1).length || 0;
+                                      const v2 = iaBetData.m2.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1).length || 0;
+                                      const v3 = iaBetData.m3.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1).length || 0;
                                       return v1 * v2 * v3;
                                     })()} Comb.
                                   </span>
@@ -6081,9 +6100,9 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   />
                                   <span className="text-[10px] text-slate-500">
                                     x{(() => {
-                                      const v1 = iaBetData.m1.scores.filter(s => s.score).length || 0;
-                                      const v2 = iaBetData.m2.scores.filter(s => s.score).length || 0;
-                                      const v3 = iaBetData.m3.scores.filter(s => s.score).length || 0;
+                                      const v1 = iaBetData.m1.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1).length || 0;
+                                      const v2 = iaBetData.m2.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1).length || 0;
+                                      const v3 = iaBetData.m3.scores.filter(s => s.score && (parseFloat(s.odds) || 0) >= 1).length || 0;
                                       let total = 0;
                                       if (v1 > 0 && v2 > 0) total += (v1 * v2);
                                       if (v1 > 0 && v3 > 0) total += (v1 * v3);
