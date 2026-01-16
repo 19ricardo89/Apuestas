@@ -3315,6 +3315,15 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                       <CheckCircle size={12} /> {(item.description === 'system_triple' || item.description === 'system_double' || (item.children?.[0]?.groupType && item.children[0].groupType.includes('system'))) ? 'RESOLVER SISTEMA' : 'RESOLVER'}
                                     </button>
                                     <div className="flex gap-1 items-end">
+                                      {/* Cash Out Button for Systems */}
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleOpenCashOut(item); }}
+                                        className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1 shadow-lg shadow-amber-900/20 z-10 relative whitespace-nowrap transition-all active:scale-95 flex-1 md:flex-none justify-center"
+                                        title="Cash Out"
+                                      >
+                                        <DollarSign size={12} />
+                                      </button>
+
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
@@ -5589,23 +5598,36 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
 
                         resolutionBet.children.forEach(child => {
                           totalStake += parseFloat(child.stake);
-                          const childLines = child.betLines || [];
+                          // FIXED: Handle IA Systems without betLines metadata
+                          let childLines = child.betLines || [];
+                          if (childLines.length === 0 && child.description.includes(' + ')) {
+                            childLines = child.description.split(' + ').map(desc => ({ description: desc.trim(), odds: 0 }));
+                          } else if (childLines.length === 0) {
+                            childLines = [{ description: child.description, odds: 0 }];
+                          }
 
                           // Simulate matching
                           const resolvedChildLines = childLines.map(cl => {
-                            const clOdds = parseFloat(String(cl.odds).replace(',', '.'));
+                            const clOdds = parseFloat(String(cl.odds || 0).replace(',', '.'));
+
+                            // Robust Match: Try exact, then Normalized
                             const match = lines.find(rl => {
-                              const rlOdds = parseFloat(String(rl.odds).replace(',', '.'));
-                              return rl.description === cl.description &&
-                                rl.tipster === cl.tipster &&
-                                Math.abs(rlOdds - clOdds) < 0.01;
+                              // Exact Description Match
+                              if (rl.description === cl.description) return true;
+
+                              // Normalized Match (e.g. "Girona 2-1" vs "Girona - 2-1")
+                              const cleanRl = rl.description.replace(/\s+/g, '').toLowerCase();
+                              const cleanCl = cl.description.replace(/\s+/g, '').toLowerCase();
+                              return cleanRl.includes(cleanCl) || cleanCl.includes(cleanRl);
                             });
-                            return match ? { ...cl, result: match.result } : cl;
+
+                            return match ? { ...cl, result: match.result || 'pending', odds: (match.odds && parseFloat(match.odds) > 0) ? match.odds : cl.odds } : { ...cl, result: 'pending' };
                           });
 
                           const isPending = resolvedChildLines.some(l => !l.result || l.result === 'pending');
                           if (isPending) {
                             anyPending = true;
+                            // Do not return; continue to next child, but this specific child contributes 0 to Realized Profit
                             return;
                           }
 
@@ -5615,14 +5637,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           if (isLoss) {
                             estProfit -= parseFloat(child.stake);
                           } else if (isVoid) {
-                            // Void = Stake returned (Profit 0)
+                            // Void = Stake returned
                           } else {
                             // Win
                             const wins = resolvedChildLines.filter(l => l.result !== 'void');
                             let childOdds = 1.0;
                             if (wins.length > 0) {
-                              childOdds = wins.reduce((acc, l) => acc * (parseFloat(String(l.odds).replace(',', '.')) || 1), 1);
+                              childOdds = wins.reduce((acc, l) => acc * (parseFloat(String(l.odds || 0).replace(',', '.')) || 1), 1);
                             }
+                            // Fallback if odds are 0 (use child odds if available)
+                            if (childOdds === 1 && parseFloat(child.odds) > 1) childOdds = parseFloat(child.odds);
+
                             estProfit += (parseFloat(child.stake) * childOdds) - parseFloat(child.stake);
                           }
                         });
