@@ -5243,41 +5243,86 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                               const processedIds = new Set();
 
                               sorted.forEach(bet => {
-                                if (processedIds.has(bet.id)) return;
+                                try {
+                                  if (processedIds.has(bet.id)) return;
 
-                                if (bet.groupId) {
-                                  const groupMembers = sorted.filter(b => b.groupId === bet.groupId);
-                                  groupMembers.forEach(m => processedIds.add(m.id));
+                                  if (bet.groupId) {
+                                    const groupMembers = sorted.filter(b => b.groupId === bet.groupId);
 
-                                  // Calculate Group Stats
-                                  const totalStake = groupMembers.reduce((sum, b) => sum + (parseFloat(b.stake) || 0), 0);
-                                  const totalProfit = groupMembers.reduce((sum, b) => sum + (parseFloat(b.profit) || 0), 0);
-                                  // Determine Status: 'pending' if any pending, else 'win'/'loss' based on net profit? 
-                                  // Or just show profit.
-                                  const isPending = groupMembers.some(b => b.result === 'pending');
+                                    // Safety check for empty groups
+                                    if (!groupMembers || groupMembers.length === 0) {
+                                      groupedList.push({ type: 'single', ...bet });
+                                      processedIds.add(bet.id);
+                                      return;
+                                    }
 
-                                  // Odds range?
-                                  const oddsList = groupMembers.map(b => parseFloat(b.odds)).sort((a, b) => a - b);
-                                  const oddsDisplay = oddsList.length > 1 ? `${oddsList[0].toFixed(2)} - ${oddsList[oddsList.length - 1].toFixed(2)}` : (oddsList[0] ? oddsList[0].toFixed(2) : '0.00');
+                                    groupMembers.forEach(m => processedIds.add(m.id));
 
+                                    // Calculate Group Stats
+                                    const totalStake = groupMembers.reduce((sum, b) => sum + (parseFloat(b.stake) || 0), 0);
+                                    const totalProfit = groupMembers.reduce((sum, b) => sum + (parseFloat(b.profit) || 0), 0);
+                                    const isPending = groupMembers.some(b => b.result === 'pending');
+
+                                    // Odds range?
+                                    const oddsList = groupMembers.map(b => parseFloat(b.odds)).sort((a, b) => a - b);
+                                    const oddsDisplay = oddsList.length > 1 ? `${oddsList[0].toFixed(2)} - ${oddsList[oddsList.length - 1].toFixed(2)}` : (oddsList[0] ? oddsList[0].toFixed(2) : '0.00');
+
+                                    groupedList.push({
+                                      type: 'group',
+                                      id: bet.groupId,
+                                      date: bet.date,
+                                      tipster: bet.tipster,
+                                      description: `${bet.groupType || 'Sistema'} (${groupMembers.length} apuestas)`,
+                                      stake: totalStake,
+                                      odds: oddsDisplay,
+                                      profit: totalProfit,
+                                      result: isPending ? 'pending' : (totalProfit >= 0 ? 'win' : 'loss'),
+                                      children: groupMembers
+                                    });
+                                  } else {
+                                    groupedList.push({ type: 'single', ...bet });
+                                    processedIds.add(bet.id); // Add single ID to processed
+                                  }
+                                } catch (itemErr) {
+                                  console.error("Corrupt item found:", bet, itemErr);
+                                  // Push as corrupted item to visualize it
                                   groupedList.push({
-                                    type: 'group',
-                                    id: bet.groupId,
-                                    date: bet.date,
-                                    tipster: bet.tipster,
-                                    description: `${bet.groupType || 'Sistema'} (${groupMembers.length} apuestas)`,
-                                    stake: totalStake,
-                                    odds: oddsDisplay,
-                                    profit: totalProfit,
-                                    result: isPending ? 'pending' : (totalProfit >= 0 ? 'win' : 'loss'),
-                                    children: groupMembers
+                                    type: 'corrupted',
+                                    id: bet.id || Date.now(),
+                                    date: bet.date || 'Sin Fecha',
+                                    error: itemErr.message,
+                                    originalData: bet
                                   });
-                                } else {
-                                  groupedList.push({ type: 'single', ...bet });
+                                  processedIds.add(bet.id);
                                 }
                               });
 
                               return groupedList.map(item => {
+                                // RENDER CORRUPTED ITEM
+                                if (item.type === 'corrupted') {
+                                  return (
+                                    <tr key={item.id} className="bg-red-900/20 border-l-4 border-l-red-500 hover:bg-red-900/30 transition-colors">
+                                      <td className="p-4 text-red-400 text-xs whitespace-nowrap">{item.date}</td>
+                                      <td className="p-4">
+                                        <div className="flex items-center gap-2 text-red-300 font-bold">
+                                          <AlertTriangle size={16} /> Error de Datos
+                                        </div>
+                                        <div className="text-[10px] text-red-400 opacity-75 font-mono mt-1">ID: {item.id} | {item.error}</div>
+                                      </td>
+                                      <td colSpan="3" className="p-4 text-center text-xs text-red-500 italic">Datos inleíbles</td>
+                                      <td className="p-4 text-center">
+                                        <button
+                                          onClick={() => deleteBet(item.id)}
+                                          className="text-red-400 hover:text-white p-2 rounded bg-red-900/40 hover:bg-red-600 transition-colors border border-red-500/30"
+                                          title="Eliminar registro corrupto"
+                                        >
+                                          <Trash2 size={16} />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+
                                 if (item.type === 'group') {
                                   const isExpanded = expandedBets.includes(item.id);
                                   const profitColor = item.result === 'pending' ? 'text-slate-500' : (item.profit >= 0 ? 'text-emerald-400' : 'text-red-400');
