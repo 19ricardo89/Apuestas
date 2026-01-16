@@ -469,10 +469,32 @@
         }
       ];
 
+      // DATA SANITIZER (V_FIX_CRITICAL)
+      const sanitizeBets = (rawBets) => {
+        if (!Array.isArray(rawBets)) return [];
+        return rawBets.map(b => ({
+          ...b,
+          id: b.id || Date.now() + Math.random(),
+          date: b.date || new Date().toISOString().split('T')[0],
+          stake: parseFloat(b.stake) || 0,
+          odds: parseFloat(b.odds) || 1, // Store as number ideally, or ensure parseFloat works later
+          profit: parseFloat(b.profit) || 0,
+          tipster: b.tipster || 'Desconocido',
+          betLines: Array.isArray(b.betLines) ? b.betLines : [], // Ensure array
+          subPicks: Array.isArray(b.subPicks) ? b.subPicks : [],
+          result: b.result || 'pending'
+        }));
+      };
+
       // ESTADO APUESTAS PORTFOLIO
       const [bets, setBets] = useState(() => {
         const saved = localStorage.getItem('betPortfolioV29_bets');
-        return saved ? JSON.parse(saved) : fullHistory; // Fallback to fullHistory if empty
+        try {
+          const parsed = saved ? JSON.parse(saved) : fullHistory;
+          return sanitizeBets(parsed); // AUTO-SANITIZE ON LOAD
+        } catch (e) {
+          return sanitizeBets(fullHistory);
+        }
       });
 
       // PERSISTENCE EFFECT (V_FIX_IA)
@@ -888,7 +910,7 @@ La página se recargará ahora.`;
           console.log("Cloud Data Received, Opening Modal...", data.data);
           if (!data.data) throw new Error("Datos vacíos en la nube.");
 
-          setPendingImportData(data.data);
+          setPendingImportData({ ...data.data, bets: sanitizeBets(data.data.bets || []) });
           // setShowCloudModal(false); // USER REQUEST: Don't close Cloud Modal, open Import on top
 
           // Force Modal Open with slightly larger timeout and explicit check
@@ -917,7 +939,14 @@ La página se recargará ahora.`;
           if (key.includes('bets')) targetKey = 'betPortfolioV29_bets';
 
           // CRITICAL: Copy content to ACTIVE key
-          localStorage.setItem(targetKey, raw);
+          if (targetKey === 'betPortfolioV29_bets') {
+            // Sanitize before saving if it's bets
+            const parsed = JSON.parse(raw);
+            const clean = sanitizeBets(parsed);
+            localStorage.setItem(targetKey, JSON.stringify(clean));
+          } else {
+            localStorage.setItem(targetKey, raw);
+          }
           alert("Datos restaurados correctamente. Recargando...");
           window.location.reload();
         } catch (e) {
@@ -2524,22 +2553,27 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             validS1.forEach((s1, i1) => {
               validS2.forEach((s2, i2) => {
                 validS3.forEach((s3, i3) => {
-                  const combinedOdds = (parseFloat(s1.odds) * parseFloat(s2.odds) * parseFloat(s3.odds)).toFixed(2);
+                  const rawOdds = parseFloat(s1.odds) * parseFloat(s2.odds) * parseFloat(s3.odds);
+                  const combinedOdds = isNaN(rawOdds) ? 1.0 : parseFloat(rawOdds.toFixed(2));
+                  const validStake = isNaN(stake) || stake <= 0 ? 0.1 : stake;
+
                   newBets.push({
                     id: Date.now() + Math.random(),
-                    date: new Date().toISOString().split('T')[0], // FIX: Standardize Date Format
+                    date: new Date().toISOString().split('T')[0],
                     tipster: 'IA',
                     sport: 'Fútbol',
                     description: `[TRIPLE] ${m1.name} (${s1.score}) + ${m2.name} (${s2.score}) + ${m3.name} (${s3.score})`,
                     odds: combinedOdds,
-                    stake: stake,
+                    stake: validStake,
                     status: 'pending',
                     bookie: 'Bet365', // Default
                     groupTitle: 'IA System - Triples',
                     groupId: groupId,
                     groupType: 'system_triple',
-                    tag: finalTag,
-                    tags: [...tagsArray]
+                    tag: finalTag || 'IA',
+                    tags: [...tagsArray],
+                    profit: 0,
+                    result: 'pending'
                   });
                 });
               });
@@ -2553,7 +2587,10 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             // M1 x M2
             validS1.forEach((s1, i1) => {
               validS2.forEach((s2, i2) => {
-                const combinedOdds = (parseFloat(s1.odds) * parseFloat(s2.odds)).toFixed(2);
+                const rawOdds = parseFloat(s1.odds) * parseFloat(s2.odds);
+                const combinedOdds = isNaN(rawOdds) ? 1.0 : parseFloat(rawOdds.toFixed(2));
+                const validStake = isNaN(stake) || stake <= 0 ? 0.1 : stake;
+
                 newBets.push({
                   id: Date.now() + Math.random(),
                   date: new Date().toISOString().split('T')[0],
@@ -2561,14 +2598,16 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   sport: 'Fútbol',
                   description: `[DOBLE] ${m1.name} (${s1.score}) + ${m2.name} (${s2.score})`,
                   odds: combinedOdds,
-                  stake: stake,
+                  stake: validStake,
                   status: 'pending',
                   bookie: 'Bet365',
                   groupTitle: 'IA System - Dobles',
                   groupId: groupId,
                   groupType: 'system_double',
-                  tag: finalTag,
-                  tags: [...tagsArray]
+                  tag: finalTag || 'IA',
+                  tags: [...tagsArray],
+                  profit: 0,
+                  result: 'pending'
                 });
               });
             });
@@ -2577,42 +2616,54 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
               // M1 x M3
               validS1.forEach((s1, i1) => {
                 validS3.forEach((s3, i3) => {
-                  const combinedOdds = (parseFloat(s1.odds) * parseFloat(s3.odds)).toFixed(2);
+                  const rawOdds = parseFloat(s1.odds) * parseFloat(s3.odds);
+                  const combinedOdds = isNaN(rawOdds) ? 1.0 : parseFloat(rawOdds.toFixed(2));
+                  const validStake = isNaN(stake) || stake <= 0 ? 0.1 : stake;
+
                   newBets.push({
                     id: Date.now() + Math.random(),
-                    date: new Date().toISOString().split('T')[0], // FIX: Standardize Date Format
+                    date: new Date().toISOString().split('T')[0],
                     tipster: 'IA',
+                    sport: 'Fútbol',
                     description: `[DOBLE] ${m1.name} (${s1.score}) + ${m3.name} (${s3.score})`,
                     odds: combinedOdds,
-                    stake: stake,
+                    stake: validStake,
                     status: 'pending',
                     bookie: 'Bet365',
                     groupTitle: 'IA System - Dobles',
                     groupId: groupId,
                     groupType: 'system_double',
-                    tag: finalTag,
-                    tags: [...tagsArray]
+                    tag: finalTag || 'IA',
+                    tags: [...tagsArray],
+                    profit: 0,
+                    result: 'pending'
                   });
                 });
               });
               // M2 x M3
               validS2.forEach((s2, i2) => {
                 validS3.forEach((s3, i3) => {
-                  const combinedOdds = (parseFloat(s2.odds) * parseFloat(s3.odds)).toFixed(2);
+                  const rawOdds = parseFloat(s2.odds) * parseFloat(s3.odds);
+                  const combinedOdds = isNaN(rawOdds) ? 1.0 : parseFloat(rawOdds.toFixed(2));
+                  const validStake = isNaN(stake) || stake <= 0 ? 0.1 : stake;
+
                   newBets.push({
                     id: Date.now() + Math.random(),
-                    date: new Date().toISOString().split('T')[0], // FIX: Standardize Date Format
+                    date: new Date().toISOString().split('T')[0],
                     tipster: 'IA',
+                    sport: 'Fútbol',
                     description: `[DOBLE] ${m2.name} (${s2.score}) + ${m3.name} (${s3.score})`,
                     odds: combinedOdds,
-                    stake: stake,
+                    stake: validStake,
                     status: 'pending',
                     bookie: 'Bet365',
                     groupTitle: 'IA System - Dobles',
                     groupId: groupId,
                     groupType: 'system_double',
-                    tag: finalTag,
-                    tags: [...tagsArray]
+                    tag: finalTag || 'IA',
+                    tags: [...tagsArray],
+                    profit: 0,
+                    result: 'pending'
                   });
                 });
               });
@@ -3166,7 +3217,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                   <div className="p-2 bg-cyan-900/20 rounded text-cyan-400"><LayoutGrid size={24} /></div>
                                   <div className="flex-1">
                                     <h4 className="font-bold text-white flex flex-col md:flex-row md:items-center gap-1 md:gap-2 text-sm md:text-base leading-tight">
-                                      <span>{item.children[0].groupTitle || item.description}</span>
+                                      <span>{item.children?.[0]?.groupTitle || item.description || 'Sistema'}</span>
                                       <span className="text-slate-400 font-normal text-xs">({item.description})</span>
                                     </h4>
                                     <div className="text-xs text-slate-500 font-bold flex items-center gap-2 mt-1">
@@ -3188,7 +3239,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setEditingBet({ id: item.id, isGroup: true, children: item.children, description: item.description, groupType: item.children[0].groupType, stake: item.stake, odds: 0, date: item.date, tipster: item.tipster });
+                                          setEditingBet({ id: item.id, isGroup: true, children: item.children, description: item.description, groupType: item.children?.[0]?.groupType || 'Sistema', stake: item.stake, odds: 0, date: item.date, tipster: item.tipster });
                                           setActiveSection('dashboard');
                                         }}
                                         className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1 shadow-lg shadow-indigo-900/20 z-10 relative whitespace-nowrap transition-all active:scale-95 flex-1 md:flex-none justify-center"
@@ -5379,7 +5430,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                                           <ChevronDown size={16} className={`text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                         </td>
                                       </tr>
-                                      {isExpanded && item.children.map(child => (
+                                      {isExpanded && item.children && item.children.length > 0 && item.children.map(child => (
                                         <tr key={child.id} className="bg-slate-950/30 border-b border-slate-800/50">
                                           <td className="p-4 pl-8 text-slate-600 text-[10px]">{child.id}</td>
                                           <td className="p-4 pl-12 text-xs text-slate-400 flex items-center gap-2">
