@@ -717,6 +717,7 @@
       const [cashOutAmount, setCashOutAmount] = useState('');
       const [betLines, setBetLines] = useState([]);
       const [realResult, setRealResult] = useState(null); // V47: Detailed Cash Out Result (Win/Loss/Void)
+      const [cashOutSubFilter, setCashOutSubFilter] = useState('ALL'); // Granular Cash Out Filter
 
       // Legacy State (Moved from line ~1087 to prevent ReferenceErrors)
       const [formDesc, setFormDesc] = useState('');
@@ -976,11 +977,12 @@ La página se recargará ahora.`;
         setEditingBet(null);
       };
 
-      // --- CASH OUT HANDLERS (V51) ---
+      // --- CASH OUT HANDLERS (V51 + Granular V52) ---
       const handleOpenCashOut = (bet) => {
         setCashOutBet(bet);
         setCashOutValue(''); // User enters the returned amount
         setCashOutRealResult('loss'); // Default assumption: we cash out because we fear a loss
+        setCashOutSubFilter('ALL'); // Reset filter
         setShowCashOutModal(true);
       };
 
@@ -989,22 +991,66 @@ La página se recargará ahora.`;
         const amount = parseFloat(cashOutValue);
         if (isNaN(amount)) { alert("Introduce una cantidad válida"); return; }
 
-        const stake = parseFloat(cashOutBet.stake);
-        const profit = amount - stake;
+        // DETERMINE TARGET BETS
+        // If it's a Group, we might be targeting a subset or all children.
+        // If it's a Single Bet, it's just the bet itself.
 
-        const updatedBet = {
-          ...cashOutBet,
-          result: 'cashout',
-          profit: parseFloat(profit.toFixed(2)),
-          realResult: cashOutRealResult // Save for analytics (Money Saved vs Lost)
-        };
+        let targetIds = [];
+        let totalTargetStake = 0;
 
-        // Update in state
-        setBets(prevBets => prevBets.map(b => b.id === cashOutBet.id ? updatedBet : b));
+        // Check if it's a group (Check children existence)
+        // NOTE: cashOutBet coming from groupedBets has 'children'.
+        // Single bet from card has ID but no matching children property usually, or empty.
+        const isGroup = cashOutBet.children && cashOutBet.children.length > 0;
+
+        if (isGroup) {
+          // FILTER CHILDREN
+          const targets = cashOutBet.children.filter(child => {
+            if (cashOutSubFilter === 'ALL') return true;
+            // Granular Filter: Check groupType
+            if (cashOutSubFilter === 'TRIPLES') return child.groupType === 'system_triple' || child.description.includes('[TRIPLE]');
+            if (cashOutSubFilter === 'DOUBLES') return child.groupType === 'system_double' || child.description.includes('[DOBLE]');
+            return false;
+          });
+
+          if (targets.length === 0) { alert("No hay apuestas seleccionadas para este filtro."); return; }
+
+          targetIds = targets.map(c => c.id);
+          totalTargetStake = targets.reduce((sum, c) => sum + parseFloat(c.stake), 0);
+        } else {
+          // SINGLE BET
+          targetIds = [cashOutBet.id];
+          totalTargetStake = parseFloat(cashOutBet.stake);
+        }
+
+        // PROFIT CALCULATION
+        // Total Cash Out Amount is for the SELECTED portion.
+        const totalProfit = amount - totalTargetStake;
+
+        // UPDATE STATE
+        // We need to update bets in the global list. 
+        // For groups, we update each child proportionally.
+
+        setBets(prevBets => prevBets.map(b => {
+          if (targetIds.includes(b.id)) {
+            // Calculate proportional stats for this specific bet
+            // Weight = b.stake / totalTargetStake
+            const weight = parseFloat(b.stake) / totalTargetStake;
+            const myShareProfit = totalProfit * weight;
+
+            return {
+              ...b,
+              result: 'cashout',
+              profit: parseFloat(myShareProfit.toFixed(2)),
+              realResult: cashOutRealResult
+            };
+          }
+          return b;
+        }));
 
         setShowCashOutModal(false);
         setCashOutBet(null);
-        // alert(`Cash Out Confirmado: ${profit >= 0 ? '+' : ''}${profit.toFixed(2)}€`);
+        // alert(`Cash Out Confirmado: ${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(2)}€`);
       };
 
       const toggleLineVoid = (lineIndex) => {
@@ -7451,10 +7497,43 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="bg-slate-950 p-3 rounded border border-slate-800 mb-2">
+                    
+                    {/* GRANULAR FILTER UI */}
+                    {(() => {
+                      const isGroup = cashOutBet.children && cashOutBet.children.length > 0;
+                      if (!isGroup) return null;
+
+                      const triples = cashOutBet.children.filter(c => c.groupType === 'system_triple' || (c.description && c.description.includes('[TRIPLE]')));
+                      const doubles = cashOutBet.children.filter(c => c.groupType === 'system_double' || (c.description && c.description.includes('[DOBLE]')));
+
+                      // Only show if we have mixed types to filter
+                      if (triples.length === 0 || doubles.length === 0) return null;
+
+                      return (
+                        <div className="flex gap-2 mb-3 bg-slate-900 p-1 rounded-lg border border-slate-700">
+                            <button onClick={() => setCashOutSubFilter('ALL')} className={`flex-1 py-1 text-[10px] font-bold rounded transition-colors ${cashOutSubFilter === 'ALL' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Todo ({cashOutBet.children.length})</button>
+                            <button onClick={() => setCashOutSubFilter('TRIPLES')} className={`flex-1 py-1 text-[10px] font-bold rounded transition-colors ${cashOutSubFilter === 'TRIPLES' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Triples ({triples.length})</button>
+                            <button onClick={() => setCashOutSubFilter('DOUBLES')} className={`flex-1 py-1 text-[10px] font-bold rounded transition-colors ${cashOutSubFilter === 'DOUBLES' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Dobles ({doubles.length})</button>
+                        </div>
+                      );
+                    })()}
+
                     <div className="text-xs text-slate-500 font-bold uppercase mb-1">Apuesta Seleccionada</div>
                     <div className="text-sm font-bold text-white">{cashOutBet.description}</div>
                     <div className="flex justify-between mt-2 text-xs">
-                      <div className="text-slate-400">Stake: <span className="text-white font-mono">{cashOutBet.stake}€</span></div>
+                       {/* DYNAMIC STAKE CALC */}
+                      <div className="text-slate-400">Stake: <span className="text-white font-mono">
+                        {(() => {
+                            if (!cashOutBet.children || cashOutSubFilter === 'ALL') return parseFloat(cashOutBet.stake).toFixed(2);
+                            // Filter
+                            const targets = cashOutBet.children.filter(child => {
+                                     if (cashOutSubFilter === 'TRIPLES') return child.groupType === 'system_triple' || (child.description && child.description.includes('[TRIPLE]'));
+                                     if (cashOutSubFilter === 'DOUBLES') return child.groupType === 'system_double' || (child.description && child.description.includes('[DOBLE]'));
+                                     return false;
+                            });
+                            return targets.reduce((sum, c) => sum + parseFloat(c.stake), 0).toFixed(2);
+                        })()}€
+                      </span></div>
                       <div className="text-slate-400">Cuota: <span className="text-emerald-400 font-mono">@{cashOutBet.odds}</span></div>
                     </div>
                   </div>
@@ -7484,8 +7563,33 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                   {cashOutValue && (
                     <div className="flex justify-between items-center p-3 bg-slate-800/50 rounded border border-slate-700 mt-2">
                       <span className="text-xs font-bold text-slate-400 uppercase">Resultado Neto</span>
-                      <span className={`font-mono font-bold text-lg ${(parseFloat(cashOutValue) - cashOutBet.stake) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {(parseFloat(cashOutValue) - cashOutBet.stake) > 0 ? '+' : ''}{(parseFloat(cashOutValue) - cashOutBet.stake).toFixed(2)}€
+                      <span className={`font-mono font-bold text-lg ${
+                        (() => {
+                            let currentStake = parseFloat(cashOutBet.stake);
+                            if (cashOutBet.children && cashOutSubFilter !== 'ALL') {
+                                const targets = cashOutBet.children.filter(child => {
+                                     if (cashOutSubFilter === 'TRIPLES') return child.groupType === 'system_triple' || (child.description && child.description.includes('[TRIPLE]'));
+                                     if (cashOutSubFilter === 'DOUBLES') return child.groupType === 'system_double' || (child.description && child.description.includes('[DOBLE]'));
+                                     return false;
+                                });
+                                currentStake = targets.reduce((sum, c) => sum + parseFloat(c.stake), 0);
+                            }
+                            return (parseFloat(cashOutValue) - currentStake);
+                        })() >= 0 ? 'text-emerald-400' : 'text-red-400'
+                      }`}>
+                        {(() => {
+                            let currentStake = parseFloat(cashOutBet.stake);
+                            if (cashOutBet.children && cashOutSubFilter !== 'ALL') {
+                                const targets = cashOutBet.children.filter(child => {
+                                     if (cashOutSubFilter === 'TRIPLES') return child.groupType === 'system_triple' || (child.description && child.description.includes('[TRIPLE]'));
+                                     if (cashOutSubFilter === 'DOUBLES') return child.groupType === 'system_double' || (child.description && child.description.includes('[DOBLE]'));
+                                     return false;
+                                });
+                                currentStake = targets.reduce((sum, c) => sum + parseFloat(c.stake), 0);
+                            }
+                            const net = parseFloat(cashOutValue) - currentStake;
+                            return (net > 0 ? '+' : '') + net.toFixed(2);
+                        })()}€
                       </span>
                     </div>
                   )}
