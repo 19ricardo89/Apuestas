@@ -2492,7 +2492,7 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                 const combinedOdds = (parseFloat(s1.odds) * parseFloat(s2.odds)).toFixed(2);
                 newBets.push({
                   id: Date.now() + Math.random(),
-                  date: new Date().toISOString(),
+                  date: new Date().toISOString().split('T')[0],
                   tipster: 'IA',
                   sport: 'Fútbol',
                   description: `[DOBLE] ${m1.name} (${s1.score}) + ${m2.name} (${s2.score})`,
