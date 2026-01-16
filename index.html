@@ -2513,15 +2513,36 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
             });
           } else if (child.description && child.odds) {
             // Handle Single Bet as Line (Critical for IA Systems)
-            const key = child.description + '-' + child.odds;
-            if (!uniqueLinesMap.has(key)) {
-              uniqueLinesMap.set(key, {
-                description: child.description,
-                odds: child.odds,
-                tipster: child.tipster,
-                result: 'pending', // Reset result for resolution
-                status: 'pending'
+            // DETECT IF IT IS A COMBO STRING (e.g. "Roma 2-1 + PSG 2-2")
+            if (child.description.includes(' + ')) {
+              const parts = child.description.split(' + ');
+              // We need to try to find odds for each part... but we might only have total odds.
+              // For resolution purposes, we just need the NAME. The odds are secondary for result tracking.
+              // We can rely on the user to mark "Roma 2-1" (Odds ?) as Win/Loss.
+              parts.forEach(partName => {
+                const key = partName.trim(); // Key is just name if we lack odds
+                if (!uniqueLinesMap.has(key)) {
+                  uniqueLinesMap.set(key, {
+                    description: partName.trim(),
+                    odds: '0.00', // Unknown if not in metadata, but irrelevant for W/L resolution
+                    tipster: child.tipster, // Inherit
+                    result: 'pending',
+                    status: 'pending'
+                  });
+                }
               });
+            } else {
+              // True Single Result
+              const key = child.description + '-' + child.odds;
+              if (!uniqueLinesMap.has(key)) {
+                uniqueLinesMap.set(key, {
+                  description: child.description,
+                  odds: child.odds,
+                  tipster: child.tipster,
+                  result: 'pending',
+                  status: 'pending'
+                });
+              }
             }
           }
         });
@@ -5721,23 +5742,42 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                           const isChild = resolutionBet.children.some(child => child.id === b.id);
                           if (isChild) {
                             // Determine Child Result based on Lines
-                            const childLines = b.betLines || [];
+                            let childLines = b.betLines || [];
+
+                            // FALLBACK: If betLines missing, parse from description (for IA Systems)
+                            if (childLines.length === 0 && b.description.includes(' + ')) {
+                              childLines = b.description.split(' + ').map(desc => ({
+                                description: desc.trim(),
+                                tipster: b.tipster, // Assume same tipster
+                                odds: 0 // Unknown
+                              }));
+                            } else if (childLines.length === 0) {
+                              // Single component logic reference
+                              childLines = [{ description: b.description, tipster: b.tipster, odds: b.odds }];
+                            }
+
                             let childResult = 'win';
                             let childOdds = 1.0;
 
                             // Map results from resolution lines to child lines
-                            // Map results from resolution lines to child lines
                             const resolvedChildLines = childLines.map(cl => {
                               // Find matching line in resolutionBet.tempLines (which is `lines` here)
-                              // Match by description AND tipster AND odds (robust float check)
-                              // Normalize comma to dot for odds just in case
-                              const clOdds = parseFloat(String(cl.odds).replace(',', '.'));
+                              // Match by description AND tipster (if available) AND odds (if recognized)
+                              const clOdds = parseFloat(String(cl.odds || 0).replace(',', '.'));
 
                               const match = lines.find(rl => {
-                                const rlOdds = parseFloat(String(rl.odds).replace(',', '.'));
-                                return rl.description === cl.description &&
-                                  rl.tipster === cl.tipster &&
-                                  Math.abs(rlOdds - clOdds) < 0.01;
+                                const rlOdds = parseFloat(String(rl.odds || 0).replace(',', '.'));
+
+                                // Relaxed matching: Always match Description
+                                const descMatch = rl.description === cl.description;
+
+                                // Optional Tipster Match (only if both defined)
+                                const tipsterMatch = (!rl.tipster || !cl.tipster) || (rl.tipster === cl.tipster);
+
+                                // Optional Odds Match (only if both > 0)
+                                const oddsMatch = (rlOdds === 0 || clOdds === 0) || (Math.abs(rlOdds - clOdds) < 0.01);
+
+                                return descMatch && tipsterMatch && oddsMatch;
                               });
                               return match ? { ...cl, result: match.result } : cl;
                             });
@@ -5758,7 +5798,17 @@ Si no encuentras algún dato, usa null. Devuelve SOLO el JSON sin markdown.`;
                             } else {
                               const wins = resolvedChildLines.filter(l => l.result !== 'void');
                               if (wins.length > 0) {
-                                childOdds = wins.reduce((acc, l) => acc * (parseFloat(String(l.odds).replace(',', '.')) || 1), 1);
+                                // If original odds are available on the bet (b.odds), and it's a WIN, we might want to use THAT
+                                // instead of recalculating from parts (especially if parts have missing odds).
+                                // BUT if parts have odds, we should multiply them. 
+                                // If parts have 0 odds (fallback), we must rely on b.odds.
+                                const partsHaveOdds = wins.every(l => (parseFloat(l.odds) || 0) > 0);
+                                if (partsHaveOdds) {
+                                  childOdds = wins.reduce((acc, l) => acc * (parseFloat(String(l.odds).replace(',', '.')) || 1), 1);
+                                } else {
+                                  // Fallback to original total odds if we can't recalculate
+                                  childOdds = parseFloat(b.odds) || 0;
+                                }
                               }
                             }
 
